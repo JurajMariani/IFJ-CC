@@ -9,31 +9,30 @@
 /**
  * 	ENUMS
  */
-typedef enum {_bool,_int,_float,_string}dataType;
-typedef enum {_identifier,_keyword,_integer,_decimal}tokenType;
-typedef enum {_if,_else,_end}keywords;
+typedef enum {_integer,_number,_string,_nil}dataType;
+typedef enum {_identifier,_keyword,_const,_operand,_misc}tokenType;
+typedef enum {_bracketL,_bracketR,_komma,_doubleKomma,_assign} misc; //No We wont name it ass
+typedef enum {_length,_add,_sub,_mul,_div,_div2,_konk,_less,_lessEq,_great,_greatEq,_Eq,_nEq} operator;
+typedef enum {_do,_else,_end,_function,_global,_if,_local,_nil,_read,_require,_return,_then,_while,_write}keyword;
 
 /*
 	STRUCTS
 */
 
-//var
-//name ? *name
-
+// Variable -- not token stuff
 typedef struct variable{
 	char name[100];
 	dataType type;
 }variable;
 
 //TokenStuff
-//var ? *var
-
 typedef struct tokenData{
-	variable *var;
 	char *str;
 	double _double;
 	int _integer;
 	keyword kw;
+	misc msc;
+	operator oper;
 }tokenData;
 
 typedef struct token{
