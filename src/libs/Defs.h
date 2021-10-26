@@ -19,6 +19,7 @@ typedef enum {_do,_else,_end,_function,_global,_if,_local,_nil,_read,_require,_r
 	STRUCTS
 */
 
+//Ignore this for now
 // Variable -- not token stuff
 typedef struct variable{
 	char name[100];
@@ -33,6 +34,7 @@ typedef struct tokenData{
 	keyword kw;
 	misc msc;
 	operator oper;
+	dataType type;
 }tokenData;
 
 typedef struct token{
