@@ -13,7 +13,7 @@ typedef enum {_integer,_number,_string,_nan}dataType;
 typedef enum {_identifier,_keyword,_const,_operand,_misc}tokenType;
 typedef enum {_bracketL,_bracketR,_komma,_doubleKomma,_assign} misc; //No We wont name it ass
 typedef enum {_length,_add,_sub,_mul,_div,_div2,_konk,_less,_lessEq,_great,_greatEq,_Eq,_nEq} operator;
-typedef enum {_do,_else,_end,_function,_global,_if,_local,_nil,_read,_require,_return,_then,_while,_write}keyword;
+typedef enum {_do,_else,_end,_function,_global,_if,_local,_nil,_read,_require,_return,_then,_while,_write,_k_integer,_k_number,_k_string}keyword;
 
 /*
 	STRUCTS
