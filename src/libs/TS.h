@@ -3,9 +3,12 @@
 
 //TreeStuff
 
+typedef enum {w_var,w_func}treeElementType;
 
 typedef struct TreeElement{
-	variable *var;
+	char *name;
+	treeElementType type;
+	void *data;
 	struct TreeElement *left;
 	struct TreeElement *right;
 }TreeElement;
@@ -24,6 +27,8 @@ typedef struct TreeLayer{
 
 typedef struct TreeSupport{
 	TreeLayer *curLayer;
+	TreeLayer *functionLayer;
+	TreeLayer *bounceLayer;
 }TreeSupport;
 
 
@@ -49,7 +54,7 @@ void TreeDestroy(Tree *tree);
  * 	@param Tree pointer
  * 	@param Variable* data type pointer
  */ 
-int TreeInsert(Tree *tree, variable* gVar);
+int TreeInsert(Tree *tree, char* name,treeElementType type,void* data);
 
 /**
  * 	Looks if the variable is present in tree
@@ -59,7 +64,7 @@ int TreeInsert(Tree *tree, variable* gVar);
  * 	@param pointer to name of variable
  * 	@return pointer to found variable or NULL
  */
-variable* TreeLookUp(Tree *tree, char *name);
+TreeElement* TreeLookup(Tree *tree, char *name);
 
 
 //layered tree control
@@ -71,14 +76,6 @@ variable* TreeLookUp(Tree *tree, char *name);
  * 	@return 0 on succes, err code on memory fail
  */
 int TS_Init(TreeSupport *ts);
-
-/**
- * 	Insert new element to curently opened layer
- * 	@param TS pointer
- * 	@param variable* variable to add
- * 	@return 0 on succes, err code on memory fail
- */
-int TS_Insert(TreeSupport *ts,variable* gVar);
 
 /**
  * 	Opens a new layer on top of the one before
@@ -105,23 +102,54 @@ void TS_COLLAPSE(TreeSupport *ts);
  * 	This function is in dire need
  * 	This comment of it to yeet
  * 	#TOEXPAND if needed TODO
- * 	@param char *var name
- * 	@param dataType var type
- * 	@return variable* NULL if alloc error, pointer on succes
+ * 	@param defined *var / func defined
+ * 	@param dataType var type / if func _nan
+ *  @param param_type NULL if variable
+ *  @param return_type NULL if variable
+ * 	@return void* NULL if alloc error, pointer on succes
  */
-variable* Var_Create(char* name, dataType type);
+void* Data_Create(dataType type, dataType *pType, dataType *rType);
+
+/**
+ * 	Looks if variable currently exists at all
+ * 	@param TS pointer
+ * 	@param char* name of searched variable
+ * 	@return TreeElement* on found, NULL on not found
+ */
+TreeElement* TS_LookVariable(TreeSupport *ts,char *name);
 
 /**
  * 	Looks if element is in current tree
  * 	@param TS pointer
  * 	@param char* name of searched variable
- * 	@return variable* on found, NULL on not found
+ * 	@return TreeElement* on found, NULL on not found
  */
-variable* TS_LookLayer(TreeSupport *ts,char *name);
+TreeElement* TS_LookLayerVariable(TreeSupport *ts, char *name);
 
+/**
+ * 	Looks if function was declared
+ * 	@param TS pointer
+ * 	@param char* name of searched variable
+ * 	@return TreeElement* on found, NULL on not found
+ */
+TreeElement* TS_LookFunction(TreeSupport *ts,char *name);
 
+/**
+ * 	Insert new element to curently opened layer
+ * 	@param TS pointer
+ * 	@param @param char* variable to add
+ * 	@param void* data to add
+ * 	@return 0 on succes, err code on memory fail
+ */
+int TS_InsertVariable(TreeSupport *ts, char* name,treeElementType type, void* data);
 
-//WILL FINISH IF NEEDED #WIP
-//variable* TS_LookAll(TreeSupport *ts, char *name);
+/**
+ * 	Insert new element to curently opened layer
+ * 	@param TS pointer
+ * 	@param char* variable to add
+ * 	@param void* data to add
+ * 	@return 0 on succes, err code on memory fail
+ */
+int TS_InsertFunction(TreeSupport *ts, char* name,treeElementType type,void* data);
 
 //LIBARY ENDO
