@@ -1,30 +1,6 @@
 //TODO
 //ifndef atd
 
-/**
- *  @brief Structure Bubble_t contains elements of the Derivative tree. As of right now there is only one integer value inside, this is a PLACEHOLDER
- * TODO
- */
-typedef struct stack{
-    
-    int value;
-
-}Bubble_t;
-
-
-/**
- * @brief Structure BubbleStack_t is a stack structure containing Bubble_t elements inside
- *
- * ...
- */
-typedef struct bstack{
-
-    Bubble_t* BS_Element;
-
-    int BS_TopIndex;
-
-}BubbleStack_t;
-
 
 /**
  * @brief Global flag, when an error occures, this variable will be set to a non-zero value

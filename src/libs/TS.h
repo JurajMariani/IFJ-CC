@@ -1,36 +1,6 @@
 
 #include "Defs.h"
 
-//TreeStuff
-
-typedef enum {w_var,w_func}treeElementType;
-
-typedef struct TreeElement{
-	char *name;
-	treeElementType type;
-	void *data;
-	struct TreeElement *left;
-	struct TreeElement *right;
-}TreeElement;
-
-typedef struct{
-	TreeElement *root;	
-}Tree;
-
-
-//TreeSupprot
-
-typedef struct TreeLayer{
-	struct TreeLayer *prevLayer;
-	Tree *tree;
-}TreeLayer;
-
-typedef struct TreeSupport{
-	TreeLayer *curLayer;
-	TreeLayer *functionLayer;
-	TreeLayer *bounceLayer;
-}TreeSupport;
-
 
 //Binary search tree functions
 
