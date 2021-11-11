@@ -1,13 +1,26 @@
 #include "Defs.h"
 #include "TS.h"
 #include "BubbleStack.h"
+#include "expressionCommander.h"
 
 #define NEXT nextToken=GetNextToken(nextToken)
 #define DONE 2
 
 typedef enum{N_Prog,N_Params,N_ParamsR,N_SecondParamVar,N_SecondParamType,N_SecondParamR,N_Type,N_StList,N_Statement,
-                N_Else,N_SOperExpr,N_Expr_AfterLoc,N_Expr,N_ExprC,N_ExprE,N_SentPar,N_SPar,N_SExpr,
-                    N_SVar,N_Operand,N_OperandWs}notTerminal;
+                N_Else,N_Expr_AfterLoc,N_Exprb,N_Expression,N_SentPar,N_SPar,N_SExpr,
+                    N_SVar}notTerminal;
+
+/**
+ * @brief frees all the allocs
+ * @param ts pointer
+ */
+void FreeTheseBees(TreeSupport *ts);
+
+/**
+ * @brief Generates and writes error from parameter
+ * @param errCode 
+ */
+void GiveMeAnError(int errCode);
 
 TreeSupport ts; //global variable
 /**
@@ -38,15 +51,11 @@ int F_Statement(token* nextToken);
 
 int F_Else(token* nextToken);
 
-int F_SOperExpr(token *nextToken);
-
-int F_Expr(token* nextToken);
+int F_Exprb(token* nextToken);
 
 int F_ExprAfterLoc(token* nextToken);
 
-int F_ExprC(token* nextToken);
-
-int F_ExprE(token* nextToken);
+int F_Expression(token* nextToken);
 
 int F_SentPar(token* nextToken);
 
@@ -55,10 +64,6 @@ int F_SPar(token* nextToken);
 int F_SExpr(token* nextToken);
 
 int F_SVar(token* nextToken);
-
-int F_Operand(token* nextToken);
-
-int F_OperandWs(token* nextToken);
 
 //Will see if needed,mainly testing purposes
 int mainParseFunction(); 

@@ -13,18 +13,19 @@ int err_flag = 0;
 #define MALLOC_ERR_CODE -1;
 #define REDECLARATION_OF_FUNCTION 1;
 #define INVALID_TOKEN 2;
-#define SOMETHING_SOMETHING_CHIMICHANGAS 777;
 
 /**
  * 	ENUMS
  */
-typedef enum {_integer,_number,_string,_nan}dataType;
+typedef enum {_integer,_number,_string,_bool,_nan}dataType;
 typedef enum {_identifier,_keyword,_const,_operand,_misc}tokenType;
 typedef enum {_bracketL,_bracketR,_komma,_doubleKomma,_assign,_EOF} misc; //No We wont name it ass
 typedef enum {_length,_add,_sub,_mul,_div,_div2,_konk,_less,_lessEq,_great,_greatEq,_Eq,_nEq,_func} operator;
 typedef enum {_do,_else,_end,_function,_global,_if,_local,_nil,_read,_require,_return,_then,_while,_write,_k_integer,_k_number,_k_string}keyword;
-typedef enum {_operand_expr,_operator_expr,_func_expr}exprBlockType;
-typedef enum {_variable_oper,_constant_oper}operandType;
+
+typedef enum {_operand_expr,_operator_expr,_misc_expr}exprBlockType;
+typedef enum {_variable_oper,_constant_oper, _not_terminal_oper}operandType;
+
 typedef enum {_while_begin,_while_end,_if_begin,_if_else,_if_end,_assign_expression,_assign_variable}codeBlockTypes;
 /*
 	STRUCTS
@@ -83,8 +84,11 @@ typedef struct TreeSupport{
  * This is a block in an expression
  */
 typedef struct expression_block{
-	exprBlockType type;
+	exprBlockType blockType;
 	operandType operType;
+	dataType dt;
+	operator oper;
+	misc misc;
 	TreeElement *TSPointer;
 	char *str;
 	double _double;

@@ -2,7 +2,39 @@
 
 //TODO ERROR GENERATION AND REMOVE SOMETHING_SOMETHING_CHIMICHANGAS
 
-void FreeTheseBees(TreeSupport *ts);
+#define IFLeftBracket (nextToken->type ==_misc && nextToken->data.msc==_bracketL)
+#define IFDoubleKomma (nextToken->type ==_misc && nextToken->data.msc==_doubleKomma)
+#define IfKomma (nextToken->type ==_misc && nextToken->data.msc == _komma)
+#define IFRightBracket (nextToken->type ==_misc && nextToken->data.msc==_bracketR)
+#define IFKwFunction (nextToken->type ==_keyword && nextToken->data.kw==_function)
+#define IFKwEnd (nextToken->type ==_keyword && nextToken->data.kw==_end)
+#define IFKwDo (nextToken->type ==_keyword && nextToken->data.kw==_do)
+#define IFKwElse (nextToken->type ==_keyword && nextToken->data.kw==_else)
+#define IFKwNil (nextToken->type ==_keyword && nextToken->data.kw==_nil)
+#define IFKwRead (nextToken->type ==_keyword && nextToken->data.kw==_read)
+#define IFKwRequire (nextToken->type ==_keyword && nextToken->data.kw==_require)
+#define IFKwReturn (nextToken->type ==_keyword && nextToken->data.kw==_return)
+#define IFKwThen (nextToken->type==_keyword && nextToken->data.kw==_then)
+#define IFKwWrite (nextToken->type==_keyword && nextToken->data.kw==_write)
+#define IFIdentif (nextToken->type == _identifier)                                   //TU SA MODLI ABY DENIS NEPOSLAL NULL4
+#define IFKwWhile (nextToken->type == _keyword && nextToken->data.kw == _while)
+#define IFKwIf (nextToken->type == _keyword && nextToken->data.kw == _if)
+#define IFKwGlobal (nextToken->type == _keyword && nextToken->data.kw == _global)
+#define IFKwLocal (nextToken->type ==_keyword && nextToken->data.kw==_local)
+#define IFKwInteger (nextToken->type == _keyword && nextToken->data.kw == _k_integer)
+#define IFKwNumber (nextToken->type == _keyword && nextToken->data.kw == _k_number)
+#define IFKwString (nextToken->type == _keyword && nextToken->data.kw == _k_string)
+#define IFKwAssign (nextToken->type == _misc && nextToken->data.msc == _assign)
+#define IFEof (nextToken.type==_misc && nextToken.data == _EOF)
+
+//Function to free all the allocs - TBD
+void FreeTheseBees(TreeSupport *ts){
+
+}
+//Function to generate errors - TBD
+void GiveMeAnError(int errCode){
+
+}
 
 //DNT
 int PushDataType(dataType *toPush,dataType newType){
@@ -47,57 +79,57 @@ int F_Prog(token* nextToken){
     int test;
     if (nextToken->type==_keyword && nextToken->data.kw==_global){
         NEXT;
-        if (nextToken->type != _identifier) return INVALID_TOKEN;
+        if (!IFIdentif) return INVALID_TOKEN;
         if (TS_LookFunction(ts,nextToken->data.str)!=NULL) return REDECLARATION_OF_FUNCTION;
         user_func* newData = CreateFunctionData();
         if (newData==NULL)return MALLOC_ERR_CODE;
         if(TS_InsertFunction(ts,nextToken->data.str,w_func,newData)==MALLOC_ERR_CODE)return MALLOC_ERR_CODE;
         NEXT;
-        if (nextToken->type!=_misc || nextToken->data.msc!=_doubleKomma)return INVALID_TOKEN;
+        if (!IFDoubleKomma)return INVALID_TOKEN;
         NEXT;
-        if (nextToken->type!=_keyword || nextToken->data.kw!=_function)return INVALID_TOKEN;
+        if (!IFKwFunction)return INVALID_TOKEN;
         NEXT;
-        if (nextToken->type!=_misc || nextToken->data.msc!=_bracketL)return INVALID_TOKEN;
+        if (!IFLeftBracket)return INVALID_TOKEN;
         NEXT;
         test = workNotTerminal(N_Params,nextToken);
-        if (test!=0)return SOMETHING_SOMETHING_CHIMICHANGAS;
-        if (nextToken->type!=_misc || nextToken->data.msc!=_bracketR)return INVALID_TOKEN;
+        if (test!=0)return test;
+        if (!IFRightBracket)return INVALID_TOKEN;
         NEXT;
         test = workNotTerminal(N_ParamsR,nextToken);
-        if (test != 0) return SOMETHING_SOMETHING_CHIMICHANGAS;
+        if (test != 0) return test;
         return 0;
         
     }
     else if(nextToken->type ==_keyword && nextToken->data.kw == _function){
         NEXT;
-        if (nextToken->type!=_identifier) return INVALID_TOKEN;
+        if (!IFIdentif) return INVALID_TOKEN;
         if (TS_LookFunction(ts,nextToken->data.str)!=NULL) return REDECLARATION_OF_FUNCTION;
         user_func* newData = CreateFunctionData();
         if (newData==NULL) return MALLOC_ERR_CODE;
         if(TS_InsertFunction(ts,nextToken->data.str,w_func,newData)==MALLOC_ERR_CODE) return MALLOC_ERR_CODE;
         NEXT;
-        if (nextToken->type!=_misc || nextToken->data.msc!=_bracketL)return INVALID_TOKEN;
+        if (!IFLeftBracket)return INVALID_TOKEN;
         NEXT;
         test = workNotTerminal(N_Params,nextToken);
-        if (test != 0) return SOMETHING_SOMETHING_CHIMICHANGAS;
-        if (nextToken->type!=_misc || nextToken->data.msc!=_bracketR)return INVALID_TOKEN;
+        if (test != 0) return test;
+        if (!IFRightBracket)return INVALID_TOKEN;
         NEXT;
         test = workNotTerminal(N_ParamsR,nextToken);
-        if (test!= 0) return SOMETHING_SOMETHING_CHIMICHANGAS;
+        if (test!= 0) return test;
         test = workNotTerminal(N_StList,nextToken);
-        if (test!= 0) return SOMETHING_SOMETHING_CHIMICHANGAS;
-        if (nextToken->type!=_keyword && nextToken->data.kw!=_end)return INVALID_TOKEN;
+        if (test!= 0) return test;
+        if (!IFKwEnd)return INVALID_TOKEN;
         NEXT;
         return 0;
 
     }
     else if((nextToken->type == _identifier && TS_LookFunction(ts,nextToken->data.str)!=NULL)||
             (nextToken->type == _identifier && TS_LookVariable(ts,nextToken->data.str)!=NULL)||
-            (nextToken->type == _keyword && nextToken->data.kw == _while)||
-            (nextToken->type == _keyword && nextToken->data.kw == _if)){
+            IFKwWhile||
+            IFKwIf)){
         test = workNotTerminal(N_Statement,nextToken);
-        if(test!=0) return SOMETHING_SOMETHING_CHIMICHANGAS;
-    }else if(nextToken->type == _misc && nextToken->data.msc == _EOF)
+        if(test!=0) return test;
+    }else if(IFEof)
         return DONE;
     else return INVALID_TOKEN;
 }
@@ -118,15 +150,14 @@ int F_Statement(token* nextToken);
 
 int F_Else(token* nextToken);
 
-int F_SOperExpr(token *nextToken);
-
-int F_Expr(token* nextToken);
+int F_Exprb(token* nextToken);
 
 int F_ExprAfterLoc(token* nextToken);
 
-int F_ExprC(token* nextToken);
-
-int F_ExprE(token* nextToken);
+int F_Expression(token* nextToken){
+    int test = CallTheCommander(token* nextToken);
+    return test;
+}
 
 int F_SentPar(token* nextToken);
 
@@ -135,10 +166,6 @@ int F_SPar(token* nextToken);
 int F_SExpr(token* nextToken);
 
 int F_SVar(token* nextToken);
-
-int F_Operand(token* nextToken);
-
-int F_OperandWs(token* nextToken);
 
 int workNotTerminal(notTerminal terminal,token* nextToken){
     switch (termainal)
@@ -152,18 +179,13 @@ int workNotTerminal(notTerminal terminal,token* nextToken){
     case N_StList: return F_StList(token *nextToken); break;
     case N_Statement: return F_Statement(token *nextToken); break;
     case N_Else: return F_Else(token *nextToken); break;
-    case N_SOperExpr: return F_SOperExpr(token *nextToken); break;
-    case N_Expr: return F_Expr(token *nextToken); break;
     case N_Expr_AfterLoc: return F_ExprAfterLoc(token *nextToken); break;
-    case N_ExprC: return F_ExprC(token *nextToken); break;
-    case N_ExprE: return F_ExprE(token *nextToken); break;
+    case N_Expression: return F_Expression(token *nextToken); break;
+    case N_Exprb: return F_Exprb(token *nextToken); break;
     case N_SentPar: return F_SentPar(token *nextToken); break;
     case N_SPar: return F_SPar(token *nextToken); break;
     case N_SExpr: return F_SExpr(token *nextToken); break;
-    case N_SVar: return F_SVar(token *nextToken); break;
-    case N_Operand: return F_Operand(token *nextToken); break;
-    case N_OperandWs: return F_OperandWs(token *nextToken); break;
-    
+    case N_SVar: return F_SVar(token *nextToken); break;    
     
     default:
         //NO FUTURE
@@ -177,7 +199,7 @@ int mainParseFunction(){
     token nextToken;
     TS_Init(&ts);
     NEXT;
-    while (nextToken.type!=_misc && nextToken.data != _EOF){
+    while (!IFEof){
         int temp = workNotTerminal(N_Prog);
         if (temp != 0){
             flag = 1;
@@ -185,14 +207,16 @@ int mainParseFunction(){
                 mallocErr=1;
                 break;
             }else{
-                                                                                                                        //DO SOMETHING SIMMILIAR IN ST_LISTE
+                                                                                //Also not sure if this works                                        //DO SOMETHING SIMMILIAR IN ST_LISTE
                 while(!((nextToken->type == _identifier && TS_LookFunction(ts,nextToken->data.str)!=NULL)||
                         (nextToken->type == _identifier && TS_LookVariable(ts,nextToken->data.str)!=NULL)||
-                        (nextToken->type == _keyword && nextToken->data.kw == _while)||
-                        (nextToken->type == _keyword && nextToken->data.kw == _if)||
-                        (nextToken->type == _keyword && nextToken->data.kw == _global)||
-                        (nextToken->type == _keyword && nextToken->data.kw == _function)))
-                NEXT;
+                        (IFKwWhile)||
+                        (IFKwIf)||
+                        (IFKwGlobal)||
+                        (IFKwFunction))){
+                    NEXT;
+                    if (IFEof)break;
+                }
             }
 
         }
