@@ -3,8 +3,7 @@
 #include "BubbleStack.h"
 #include "expressionCommander.h"
 
-#define NEXT nextToken=GetNextToken(nextToken)
-#define DONE 2
+#define DONE 2 //<-- NOt sure if this should be used
 
 typedef enum{N_Prog,N_Params,N_ParamsR,N_SecondParamVar,N_SecondParamType,N_SecondParamR,N_Type,N_StList,N_Statement,
                 N_Else,N_Expr_AfterLoc,N_Exprb,N_Expression,N_SentPar,N_SPar,N_SExpr,

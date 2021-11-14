@@ -10,21 +10,27 @@ int err_flag = 0;
  * 	CONSTANTS
  */
 
-#define MALLOC_ERR_CODE -1;
-#define REDECLARATION_OF_FUNCTION 1;
-#define INVALID_TOKEN 2;
+#define MALLOC_ERR_CODE -1
+#define REDECLARATION_OF_FUNCTION 1
+#define INVALID_TOKEN 2
+#define UNKNOWN_IDENTIF 3
+#define INVALID_EXPRESSION 4
+#define FLOAT_INT_COMPARISM 5
+
+#define NEXT nextToken=GetNextToken(nextToken)
 
 /**
  * 	ENUMS
  */
 typedef enum {_integer,_number,_string,_bool,_nan}dataType;
-typedef enum {_identifier,_keyword,_const,_operand,_misc}tokenType;
+typedef enum {_identifier,_keyword,_const,_operand,_misc,_operator}tokenType;
 typedef enum {_bracketL,_bracketR,_komma,_doubleKomma,_assign,_EOF} misc; //No We wont name it ass
 typedef enum {_length,_add,_sub,_mul,_div,_div2,_konk,_less,_lessEq,_great,_greatEq,_Eq,_nEq,_func} operator;
 typedef enum {_do,_else,_end,_function,_global,_if,_local,_nil,_read,_require,_return,_then,_while,_write,_k_integer,_k_number,_k_string}keyword;
 
 typedef enum {_operand_expr,_operator_expr,_misc_expr}exprBlockType;
 typedef enum {_variable_oper,_constant_oper, _not_terminal_oper}operandType;
+typedef enum {_lbr, _rbr,_bgnMark,_endMark}exprMisc;
 
 typedef enum {_while_begin,_while_end,_if_begin,_if_else,_if_end,_assign_expression,_assign_variable}codeBlockTypes;
 /*
@@ -85,10 +91,10 @@ typedef struct TreeSupport{
  */
 typedef struct expression_block{
 	exprBlockType blockType;
+	exprMisc em;
 	operandType operType;
 	dataType dt;
 	operator oper;
-	misc misc;
 	TreeElement *TSPointer;
 	char *str;
 	double _double;
