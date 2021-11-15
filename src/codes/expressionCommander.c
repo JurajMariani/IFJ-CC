@@ -1,5 +1,6 @@
 #include "../libs/expressionCommander.h"
 
+#define INVALID_OPERATION 8
 #define IsPushMark (block->blockType == _misc_expr && block->em == _bgnMark)
 #define IsEndMark (block->blockType == _misc_expr && block->em == _endMark)
 #define IsTerminal (block->blockType!=_operand_expr && block->operType != _not_terminal_oper)
@@ -91,14 +92,16 @@ expression_block* FillEndMark(){
 
 //DNT
 dataType ResultData(expression_block* operand1, expression_block* operand2, expression_block *sign){
-    if (operand1->dt == _integer && operand2->dt == _integer) return _integer;
-    if (operand1->dt == _integer && operand2->dt == _number || operand1->dt == _number && operand2->dt == _integer) return _number;
-    if (operand1->dt == _number && operand2->dt == _number) return _number;
-    if (operand1->dt == _string && operand2->dt == _string) return _string;
-    return _nan;
+    if (sign->oper==_less || sign->oper == _lessEq || sign->oper == _great || sign->oper == _greatEq || sign->oper == _Eq || sign->oper == _nEq) return _bool;
+    else if (sign->oper==_konk) return _integer;
+    else if (operand1->dt == _integer && operand2->dt == _integer) return _integer;
+    else if (operand1->dt == _integer && operand2->dt == _number || operand1->dt == _number && operand2->dt == _integer) return _number;
+    else if (operand1->dt == _number && operand2->dt == _number) return _number;
+    else if (operand1->dt == _string && operand2->dt == _string) return _string;
+    else return _nan;
 }
 
-//TODO THIS IS NOT DONE
+//DNT
 int TypeCheck(expression_block* operand1,expression_block* sign, expression_block* operand2){
     if (sign->blockType==_operator_expr && sign->oper==_length){
         if (operand2==NULL && operand1->blockType==_operand_expr && operand1->dt=_string)
@@ -112,10 +115,20 @@ int TypeCheck(expression_block* operand1,expression_block* sign, expression_bloc
             return 0;
     }else if (sign-> blockType==_operator_expr && (sign->oper==_Eq || sign->oper==_nEq || sign->oper==_less || sign->oper==_lessEq || sign->oper==_great || sign->oper==_greatEq)){
         if (operand1->blockType==_operand_expr && operand2->blockType==_operand_expr){
-            if (operand1->dt==operand2->dt)return 1;
-            if (operand1->dt==_number && operand2->dt == _integer || operand1->dt==_integer && operand2->dt == _number) return FLOAT_INT_COMPARISM; //DAJ SEM MOZNO ROVNO VYPIS
+            if (operand1->dt==_integer && operand2->dt== _integer)return 1;
+            else if (operand1->dt==_number && operand2->dt == _integer || operand1->dt==_integer && operand2->dt == _number) return 0; //TODO -- NOT SURE ABOUT THIS ONE
+            else if (operand1->dt == _number && operand2->dt == _number) return FLOAT_INT_COMPARISM; //DAJ SEM MOZNO ROVNO VYPIS
+            else if (operand1->dt==_string && operand2->dt == _string) return 1;
+            else if (operand1->dt==_bool && operand2->dt == _bool) return 1;
             else return 0;
-        }
+        }else
+            return 0;  
+    }else if (sign->blockType==_operator_expr){
+        if(operand1->dt == _integer && operand2->dt==_integer)return 1;
+        else if(operand1->dt == _integer && operand2->dt==_number) {ConvertToFloat(operand1); return 1;} //<-- JUROVE FUNKCIE
+        else if(operand1->dt == _number && operand2->dt ==_integer) {ConvertToFloat(operand2); return 1;}
+        else if(operand1->dt == _number && operand2->dt == _number) return 1;
+        else return 0;
     }
 
 }
@@ -175,7 +188,7 @@ int TAB_Equals(BubbleStack_t *stack, token *nextToken){
     NEXT;
 }
 
-//DNT?
+//DNT
 int TAB_Terminalize(BubbleStack_t *stack,token *nextToken,int* termNumber){
     expression_block *operand1,*operand2,*sign,*bumper;
     BS_TopStack(stack,operand2);
@@ -200,6 +213,7 @@ int TAB_Terminalize(BubbleStack_t *stack,token *nextToken,int* termNumber){
     BS_Pop(stack);
     //Unary Operand
     if (operand1->blockType==_misc_expr && operand1->em==_bgnMark){
+        if(TypeCheck(operand2,sign,NULL)==0)return INVALID_OPERATION;
         expression_block *newTerm = malloc(sizeof(expression_block));
         if(newTerm==NULL)return MALLOC_ERR_CODE;
         newTerm->blockType=_operand_expr;
@@ -216,6 +230,7 @@ int TAB_Terminalize(BubbleStack_t *stack,token *nextToken,int* termNumber){
     BS_Pop(stack);
     //diary operand *duary *bilingual *binary
     if(bumper->blockType==_misc_expr && bumper->em == _bgnMark){
+        if (TypeCheck(operand1,sign,operand2)==0)return INVALID_OPERATION;
         expression_block *newTerm = malloc(sizeof(expression_block));
         if(newTerm==NULL)return MALLOC_ERR_CODE;
         newTerm->blockType=_operand_expr;
@@ -229,8 +244,6 @@ int TAB_Terminalize(BubbleStack_t *stack,token *nextToken,int* termNumber){
         return 0;
     }
     return INVALID_EXPRESSION;
-    //SEM SA ROZHODNI POCAS POCTU VYPOPOVANYCH POTOM TO POSUVAJ JUROVI 1 funckcia 2 odkazy na premmene 1 operator <-- I dont get this
-    //ADD TYPE CHECKS
 }
 
 //DNT
@@ -379,7 +392,12 @@ int SolveCycle(BubbleStack_t* stack,token *nextToken,int *termNumber){
         else return INVALID_EXPRESSION;
         curAction=ChooseAction(stack,nextToken);
     }
-
+    while(stack->BS_TopIndex!=1)
+        TAB_Terminalize(stack,nextToken,termNumber);
+    expression_block* result;
+    BS_TopStack(stack,result);
+    AssignToEndBlock(result); // <-- JUROVA FUNKCIA
+    BS_Dispose(stack);
 }
 
 int CallTheCommander(token *nextToken){

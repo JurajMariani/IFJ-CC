@@ -27,7 +27,7 @@ void BS_Init(BubbleStack_t* stack)
  * @param stack pointer to the BubbleStack_t stack structure
  * @param data pointer to the Bubble_t variable, where the pointer to the top of the stack is saved
  */
-void BS_TopStack(BubbleStack_t* stack, Bubble_t* data)
+void BS_TopStack(BubbleStack_t* stack, expression_block* data)
 {
     if ((stack == NULL) || (data == NULL))
     {
@@ -44,7 +44,7 @@ void BS_TopStack(BubbleStack_t* stack, Bubble_t* data)
  * @param stack pointer to the BubbleStack_t stack structure
  * @param data pointer to the Bubble_t variable, where the data pushed on the top of the stack are
  */
-void BS_Push(BubbleStack_t* stack, Bubble_t* data)
+void BS_Push(BubbleStack_t* stack, expression_block* data)
 {
     if ((stack == NULL) || (data == NULL) || (BS_IsFull(stack)))
     {

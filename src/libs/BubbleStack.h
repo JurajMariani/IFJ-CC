@@ -1,11 +1,8 @@
 //TODO
 //ifndef atd
-
-
-/**
- * @brief Global flag, when an error occures, this variable will be set to a non-zero value
- */
-int err_flag = 0;
+#ifndef BubbleStack
+#define BubbleStack
+#include "Defs.h"
 
 /**
  * @brief Defines the maximal amount of elements in the stack
@@ -29,7 +26,7 @@ void BS_Init( BubbleStack_t* );
  * @param stack pointer to the BubbleStack_t stack structure
  * @param data pointer to the Bubble_t variable, where the pointer to the top of the stack is saved
  */
-void BS_TopStack( BubbleStack_t* , Bubble_t* );
+void BS_TopStack( BubbleStack_t* , expression_block* );
 
 
 /**
@@ -38,7 +35,7 @@ void BS_TopStack( BubbleStack_t* , Bubble_t* );
  * @param stack pointer to the BubbleStack_t stack structure
  * @param data pointer to the Bubble_t variable, where the data pushed on the top of the stack are
  */
-void BS_Push( BubbleStack_t* , Bubble_t* );
+void BS_Push( BubbleStack_t* , expression_block* );
 
 
 /**
@@ -67,3 +64,7 @@ int BS_IsEmpty( BubbleStack_t* );
  * @return non-zero value when there is no space available, zero when there is
  */
 int BS_IsFull( BubbleStack_t* );
+
+#endif
+
+/* Insert funny end of file line */

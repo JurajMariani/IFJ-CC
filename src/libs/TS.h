@@ -1,4 +1,5 @@
-
+#ifndef TS
+#define TS
 #include "Defs.h"
 
 
@@ -122,4 +123,5 @@ int TS_InsertVariable(TreeSupport *ts, char* name,treeElementType type, void* da
  */
 int TS_InsertFunction(TreeSupport *ts, char* name,treeElementType type,void* data);
 
+#endif
 //LIBARY ENDO
