@@ -9,7 +9,8 @@
 /**
  * @brief Global flag, when an error occures, this variable will be set to a non-zero value
  */
-int err_flag = 0;
+int stack_err_flag = 0;
+int lex_err_flag = 0;
 
 /**
  * 	CONSTANTS
@@ -21,8 +22,7 @@ int err_flag = 0;
 #define UNKNOWN_IDENTIF 3
 #define INVALID_EXPRESSION 4
 #define FLOAT_INT_COMPARISM 5
-
-#define NEXT nextToken=GetNextToken(nextToken)
+#define UNEND_COMMENT -2
 
 /**
  * 	ENUMS
@@ -143,6 +143,10 @@ typedef struct token{
 	tokenType type;
 	tokenData data;
 }token;
+
+//Delete this later
+int GetNextToken(token*);
+#define NEXT GetNextToken(nextToken)
 
 void DebbugPrintToken(token *nextToken){
 	if (nextToken->type==_operator){

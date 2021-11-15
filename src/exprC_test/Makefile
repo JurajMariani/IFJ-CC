@@ -1,11 +1,21 @@
 CC=gcc
-CFLAGS=-std=gnu99 -Wall -Wextra -pedantic
-BIN=test
-SOURCE=ExprC.c
+CFLAGS=-Wall -Wextra -Werror -std=c99
+CodeFiles= ../codes/BubbleStack.c ../codes/expressionCommander.c ../codes/TS.c
+TestFiles= ExprC.c
+OutputName= test
+
+
+.PHONY= all run code
 
 all:
-	$(CC) $(CFLAGS) $(SOURCE) -o $(BIN)
+	$(CC) $(CFLAGS) $(CodeFiles) $(TestFiles) -o $(OutputName)
+
+
 run: all
-	./$(BIN)
-clean:
-	rm $(BIN)
+	./$(OutputName)
+
+
+code: 
+	$(CC) $(CFLAGS) $(CodeFiles) -o tmp_result
+
+

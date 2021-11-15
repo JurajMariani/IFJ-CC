@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "TS.h"
+#include "../libs/TS.h"
 
 /*
 	Tree

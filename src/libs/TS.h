@@ -2,6 +2,8 @@
 #define TS
 #include "Defs.h"
 
+//Global table of symbols
+TreeSupport *ts;
 
 //Binary search tree functions
 

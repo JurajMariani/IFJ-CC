@@ -1,10 +1,6 @@
 #include "../libs/expressionCommander.h"
 
-#define INVALID_OPERATION 8
-#define IsPushMark (block->blockType == _misc_expr && block->em == _bgnMark)
-#define IsEndMark (block->blockType == _misc_expr && block->em == _endMark)
-#define IsTerminal (block->blockType!=_operand_expr && block->operType != _not_terminal_oper)
-
+//TODO Juro ide menit ten errflag, alebo mozno ne nwm
 /* TODO FIND OUT HOW TO DO THIS
 //Only used to shorten the code in tab search <-- YES, It's dumb but what you gonna do
 #define sortRest 
@@ -22,9 +18,6 @@
             return _tab_error;
 */
 
-//TODO REMOVE THE LAST TWO IF THEY ARE NOT NEEDED
-typedef enum {_tab_shift,_tab_equals,_tab_terminalize,_tab_end,_tab_error}actions;
-
 //DNT
 int IsEndSymbol(token *nextToken){
     if ((nextToken->type == _keyword && nextToken->data.kw == _end) ||
@@ -40,11 +33,11 @@ int IsEndSymbol(token *nextToken){
 //DNT
 int ConvertToBlock(expression_block *block, token* nextToken){
     if (nextToken->type==_misc){
-        if (nextToken->data.msc == _bracketL)
+        if (nextToken->data.msc == _bracketL){
             block->em=_lbr; block->blockType=_misc_expr; return 0;
-        else if (nextToken->data.msc == _bracketR)
+        }else if (nextToken->data.msc == _bracketR){
             block->em=_rbr; block->blockType=_misc_expr; return 0;
-        else return INVALID_TOKEN;
+        }else return INVALID_TOKEN;
     }else
     if (nextToken->type==_operator){
         block->blockType=_operator_expr;
@@ -95,7 +88,7 @@ dataType ResultData(expression_block* operand1, expression_block* operand2, expr
     if (sign->oper==_less || sign->oper == _lessEq || sign->oper == _great || sign->oper == _greatEq || sign->oper == _Eq || sign->oper == _nEq) return _bool;
     else if (sign->oper==_konk) return _integer;
     else if (operand1->dt == _integer && operand2->dt == _integer) return _integer;
-    else if (operand1->dt == _integer && operand2->dt == _number || operand1->dt == _number && operand2->dt == _integer) return _number;
+    else if ((operand1->dt == _integer && operand2->dt == _number) || (operand1->dt == _number && operand2->dt == _integer)) return _number;
     else if (operand1->dt == _number && operand2->dt == _number) return _number;
     else if (operand1->dt == _string && operand2->dt == _string) return _string;
     else return _nan;
@@ -104,19 +97,19 @@ dataType ResultData(expression_block* operand1, expression_block* operand2, expr
 //DNT
 int TypeCheck(expression_block* operand1,expression_block* sign, expression_block* operand2){
     if (sign->blockType==_operator_expr && sign->oper==_length){
-        if (operand2==NULL && operand1->blockType==_operand_expr && operand1->dt=_string)
+        if (operand2==NULL && operand1->blockType==_operand_expr && operand1->dt==_string)
             return 1;
         else
             return 0;
     }else if (sign->blockType==_operator_expr && sign->oper==_konk){
-        if (operand1->blockType==_operand_expr && operand1->dt=_string && operand2->blockType==_operand_expr && operand2->dt=_string)
+        if (operand1->blockType==_operand_expr && operand1->dt==_string && operand2->blockType==_operand_expr && operand2->dt==_string)
             return 1;
         else
             return 0;
     }else if (sign-> blockType==_operator_expr && (sign->oper==_Eq || sign->oper==_nEq || sign->oper==_less || sign->oper==_lessEq || sign->oper==_great || sign->oper==_greatEq)){
         if (operand1->blockType==_operand_expr && operand2->blockType==_operand_expr){
             if (operand1->dt==_integer && operand2->dt== _integer)return 1;
-            else if (operand1->dt==_number && operand2->dt == _integer || operand1->dt==_integer && operand2->dt == _number) return 0; //TODO -- NOT SURE ABOUT THIS ONE
+            else if ((operand1->dt==_number && operand2->dt == _integer) || (operand1->dt==_integer && operand2->dt == _number)) return 0; //TODO -- NOT SURE ABOUT THIS ONE
             else if (operand1->dt == _number && operand2->dt == _number) return FLOAT_INT_COMPARISM; //DAJ SEM MOZNO ROVNO VYPIS
             else if (operand1->dt==_string && operand2->dt == _string) return 1;
             else if (operand1->dt==_bool && operand2->dt == _bool) return 1;
@@ -125,18 +118,19 @@ int TypeCheck(expression_block* operand1,expression_block* sign, expression_bloc
             return 0;  
     }else if (sign->blockType==_operator_expr){
         if(operand1->dt == _integer && operand2->dt==_integer)return 1;
-        else if(operand1->dt == _integer && operand2->dt==_number) {ConvertToFloat(operand1); return 1;} //<-- JUROVE FUNKCIE
-        else if(operand1->dt == _number && operand2->dt ==_integer) {ConvertToFloat(operand2); return 1;}
+        else if(operand1->dt == _integer && operand2->dt==_number) {/*ConvertToFloat(operand1);*/ return 1;} //<----------------------------------------------------------------------------------------------- JUROVE FUNKCIE
+        else if(operand1->dt == _number && operand2->dt ==_integer) {/*ConvertToFloat(operand2);*/ return 1;}
         else if(operand1->dt == _number && operand2->dt == _number) return 1;
         else return 0;
     }
+    else return 0;
 
 }
 
 //DNT
 int GetClosestTerminal(BubbleStack_t *stack, expression_block *block){
     BS_TopStack(stack,block);
-    CheckFlag;
+    if (err_flag == 1) return err_flag;
     if (IsTerminal) return 0;
     else{
         expression_block *helper;
@@ -151,16 +145,17 @@ int GetClosestTerminal(BubbleStack_t *stack, expression_block *block){
 
 //DNT
 int TAB_Shift(BubbleStack_t *stack,token *nextToken){
+    expression_block *block;
     if(nextToken->type==_identifier || nextToken->type==_const || (nextToken->type == _misc && nextToken->data.msc == _bracketL)){
-        expression_block *block = FillBeginMark();
+        block = FillBeginMark();
         if(block == NULL) return MALLOC_ERR_CODE;
         BS_Push(stack,block);
         if (err_flag != 0) return MALLOC_ERR_CODE;
     }else
     if (nextToken->type==_operator){
-        expression_block *block = FillBeginMark();
+        block = FillBeginMark();
         if (block == NULL) return MALLOC_ERR_CODE;
-        expression_block *helper;
+        expression_block *helper=NULL;
         BS_TopStack(stack,helper);
         BS_Pop(stack);
         BS_Push(stack,block);
@@ -178,7 +173,7 @@ int TAB_Shift(BubbleStack_t *stack,token *nextToken){
 
 //DNT
 int TAB_Equals(BubbleStack_t *stack, token *nextToken){
-    expression_block *nt;
+    expression_block *nt=NULL;
     BS_TopStack(stack,nt);
     BS_Pop(stack);                                          //TU by sa mozno hodili kontroly popovanych veci
     BS_Pop(stack);
@@ -186,11 +181,13 @@ int TAB_Equals(BubbleStack_t *stack, token *nextToken){
     BS_Push(stack,nt);
     if (err_flag != 0) return MALLOC_ERR_CODE;
     NEXT;
+    return 0;
 }
 
 //DNT
 int TAB_Terminalize(BubbleStack_t *stack,token *nextToken,int* termNumber){
-    expression_block *operand1,*operand2,*sign,*bumper;
+    (void)nextToken;//Remove later
+    expression_block *operand1 = NULL,*operand2=NULL,*sign=NULL,*bumper=NULL;
     BS_TopStack(stack,operand2);
     BS_Pop(stack);
     BS_TopStack(stack,sign);
@@ -204,7 +201,7 @@ int TAB_Terminalize(BubbleStack_t *stack,token *nextToken,int* termNumber){
         newTerm->dt=operand2->dt;
         newTerm->_integer=*termNumber;
         (*termNumber)++;
-        VarToTermAssign(newTerm,operand2); //<-- JUROVA FUNKCIA
+        //VarToTermAssign(newTerm,operand2); //<------------------------------------------------------------ JUROVA FUNKCIA
         BS_Push(stack,newTerm);
         if(err_flag==1)return MALLOC_ERR_CODE;
         return 0;
@@ -221,7 +218,7 @@ int TAB_Terminalize(BubbleStack_t *stack,token *nextToken,int* termNumber){
         newTerm->dt=_integer;
         newTerm->_integer=*termNumber;
         (*termNumber)++;
-        UnaryOperator(newTerm,operand2); //<-- JUROVA FUNKCIA
+        //UnaryOperator(newTerm,operand2); //<----------------------------------------------------------------------- JUROVA FUNKCIA
         BS_Push(stack,newTerm);
         if(err_flag==1)return MALLOC_ERR_CODE;
         return 0;
@@ -238,7 +235,7 @@ int TAB_Terminalize(BubbleStack_t *stack,token *nextToken,int* termNumber){
         newTerm->dt=ResultData(operand1,operand2,sign);
         newTerm->_integer=*termNumber;
         (*termNumber)++;
-        OperationQuickAction(newTerm,operand1,sign,operand2);
+        //OperationQuickAction(newTerm,operand1,sign,operand2);<--------------------------------------------------------Jurov funkca
         BS_Push(stack,newTerm);
         if(err_flag==1)return MALLOC_ERR_CODE;
         return 0;
@@ -248,11 +245,11 @@ int TAB_Terminalize(BubbleStack_t *stack,token *nextToken,int* termNumber){
 
 //DNT
 actions ChooseAction(BubbleStack_t *stack,token* nextToken){
-    expression_block *block;
+    expression_block *block=NULL;
     if (GetClosestTerminal(stack,block)!=0) return _tab_error;
     //#
     if (block->blockType == _operator_expr && block->oper == _length){
-        if (nextToken->type == _operator && nextToken->data.oper = _length)
+        if (nextToken->type == _operator && nextToken->data.oper == _length)
             return _tab_terminalize; //NOT SURE ABOUT THIS ONE, CHECK LATER, MIGHT BE STRAIGHT OUT ERROR
         else if (nextToken->type == _operator)
             return _tab_terminalize;
@@ -268,7 +265,7 @@ actions ChooseAction(BubbleStack_t *stack,token* nextToken){
             return _tab_error;
     }else
     if (block->blockType == _operator_expr && (block->oper == _mul || block->oper==_div || block->oper==_div2)){
-        if (nextToken->type == _operator && nextToken->data.oper = _length)
+        if (nextToken->type == _operator && nextToken->data.oper == _length)
             return _tab_shift;
         else if (nextToken->type == _operator)
             return _tab_terminalize;
@@ -284,7 +281,7 @@ actions ChooseAction(BubbleStack_t *stack,token* nextToken){
             return _tab_error;
     }else
     if (block->blockType == _operator_expr && (block->oper == _sub || block->oper == _add)){
-        if (nextToken->type == _operator && (nextToken->data.oper = _length || nextToken->data.oper = _mul || nextToken->data.oper = _div || nextToken->data.oper = _div2))
+        if (nextToken->type == _operator && (nextToken->data.oper == _length || nextToken->data.oper == _mul || nextToken->data.oper == _div || nextToken->data.oper == _div2))
             return _tab_shift;
         else if (nextToken->type == _operator)
             return _tab_terminalize;
@@ -300,7 +297,7 @@ actions ChooseAction(BubbleStack_t *stack,token* nextToken){
             return _tab_error;
     }else
     if (block->blockType == _operator_expr && block->oper == _konk){
-        if (nextToken->type == _operator && (nextToken->data.oper = _length || nextToken->data.oper = _mul || nextToken->data.oper = _div || nextToken->data.oper = _div2 || nextToken->data.oper = _sub || nextToken->data.oper = _add))
+        if (nextToken->type == _operator && (nextToken->data.oper == _length || nextToken->data.oper == _mul || nextToken->data.oper == _div || nextToken->data.oper == _div2 || nextToken->data.oper == _sub || nextToken->data.oper == _add))
             return _tab_shift;
         else if (nextToken->type == _operator)
             return _tab_terminalize;
@@ -316,7 +313,7 @@ actions ChooseAction(BubbleStack_t *stack,token* nextToken){
             return _tab_error;
     }else
     if (block->blockType == _operator_expr){
-        if (nextToken->type == _operator && (nextToken->data.oper = _length || nextToken->data.oper = _mul || nextToken->data.oper = _div || nextToken->data.oper = _div2 || nextToken->data.oper = _sub || nextToken->data.oper = _add || nextToken->data.oper = _konk ))
+        if (nextToken->type == _operator && (nextToken->data.oper == _length || nextToken->data.oper == _mul || nextToken->data.oper == _div || nextToken->data.oper == _div2 || nextToken->data.oper == _sub || nextToken->data.oper == _add || nextToken->data.oper == _konk ))
             return _tab_shift;
         else if (nextToken->type == _operator)
             return _tab_terminalize;
@@ -344,9 +341,9 @@ actions ChooseAction(BubbleStack_t *stack,token* nextToken){
     if (block->blockType == _misc_expr && block->em == _rbr){
         if (nextToken->type == _operator)
             return _tab_terminalize;
-        else if(nextToken->type == _misc && nextToken->data = _bracketR)
+        else if(nextToken->type == _misc && nextToken->data.msc == _bracketR)
             return _tab_terminalize;
-        else if(IsEndSymbol)
+        else if(IsEndSymbol(nextToken))
             return _tab_end;
         else if (nextToken->type ==_identifier)
             return _tab_end;    //IT SHOULD END HERE, NOT SURE IF THIS IS ENOUGH
@@ -356,9 +353,9 @@ actions ChooseAction(BubbleStack_t *stack,token* nextToken){
     if (block->blockType == _operand_expr && block->operType == _variable_oper){
         if (nextToken->type == _operator)
             return _tab_terminalize;
-        else if(nextToken->type == _misc && nextToken->data = _bracketR)
+        else if(nextToken->type == _misc && nextToken->data.msc == _bracketR)
             return _tab_terminalize;
-        else if(IsEndSymbol)
+        else if(IsEndSymbol(nextToken))
             return _tab_end;
         else if (nextToken->type ==_identifier)
             return _tab_end;    //IT SHOULD END HERE, NOT SURE IF THIS IS ENOUGH
@@ -372,11 +369,12 @@ actions ChooseAction(BubbleStack_t *stack,token* nextToken){
             return _tab_shift;
         else if (nextToken->type == _identifier)
             return _tab_shift;
-        else if(IsEndSymbol)
+        else if(IsEndSymbol(nextToken))
             return _tab_end; // TODO AGAIN NOT SURE ABOUT THIS
         else
             return _tab_error;
     }
+    return _tab_error;
 
 }
 
@@ -394,19 +392,21 @@ int SolveCycle(BubbleStack_t* stack,token *nextToken,int *termNumber){
     }
     while(stack->BS_TopIndex!=1)
         TAB_Terminalize(stack,nextToken,termNumber);
-    expression_block* result;
+    expression_block* result=NULL;
     BS_TopStack(stack,result);
-    AssignToEndBlock(result); // <-- JUROVA FUNKCIA
-    BS_Dispose(stack);
+    //AssignToEndBlock(result); // <--------------------------------------------- JUROVA FUNKCIA
+    //BS_Dispose(stack); <-------------------------------------------------------__TODO Restore
+    return 0;
 }
 
 int CallTheCommander(token *nextToken){
     expression_block *block;
-    BubbleStack_t *stack;
+    BubbleStack_t stack;
     int termNumber = 0;
-    BS_Init(stack);
+    BS_Init(&stack);
     block = FillEndMark();
     if(block==NULL)return MALLOC_ERR_CODE;
-    BS_Push(stack,block);
-    SolveCycle(stack,nextToken,termNumber);
+    BS_Push(&stack,block);
+    SolveCycle(&stack,nextToken,&termNumber);
+    return 0;
 }
