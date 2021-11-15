@@ -14,7 +14,7 @@ void BS_Init(BubbleStack_t* stack)
 {
     if (stack == NULL)
     {
-        err_flag = 1;
+        stack_err_flag = 1;
         return;
     }
 
@@ -31,7 +31,7 @@ void BS_TopStack(BubbleStack_t* stack, expression_block* data)
 {
     if ((stack == NULL) || (data == NULL))
     {
-        err_flag = 1;
+        stack_err_flag = 1;
         return;
     }
 
@@ -48,7 +48,7 @@ void BS_Push(BubbleStack_t* stack, expression_block* data)
 {
     if ((stack == NULL) || (data == NULL) || (BS_IsFull(stack)))
     {
-        err_flag = 1;
+        stack_err_flag = 1;
         return;
     }
 
@@ -65,15 +65,14 @@ void BS_Pop(BubbleStack_t* stack)
 {
     if ( BS_IsEmpty(stack) || (stack == NULL) )
     {
-        err_flag = 1;
+        stack_err_flag = 1;
         return;
     }
 
-    if (stack->BS_Element[stack->TopIndex]->str != NULL)
-	    free(stack->BS_Element[stack->TopIndex]->str);
+    if (stack->BS_Element[stack->BS_TopIndex].str != NULL)
+	    free(stack->BS_Element[stack->BS_TopIndex].str);
 
-    free(stack->BS_Element[stack->TopIndex]);
-    stack->BS_Element[stack->TopIndex] = NULL;
+    free(&(stack->BS_Element[stack->BS_TopIndex]));
 
     stack->BS_TopIndex--;
 }
@@ -90,7 +89,7 @@ int BS_IsEmpty(BubbleStack_t* stack)
 
     if (stack == NULL)
     {
-        err_flag = 1;
+        stack_err_flag = 1;
         return 1;
     }
 
@@ -110,14 +109,32 @@ int BS_IsFull(BubbleStack_t* stack)
 
     if (stack == NULL)
     {
-        err_flag = 1;
+        stack_err_flag = 1;
         return 1;
     }
 
-    return ( stack->BS_TopIndex == max_elements );
+    return ( stack->BS_TopIndex == (int)max_elements );
 
 }
 
+/**
+ * @brief Dtor. Destroys the contents of the stack
+ * 
+ * @param stack pointer to the BubbleStack_t structure
+ */
+void BS_Dispose(BubbleStack_t* stack)
+{
+    if (stack == NULL)
+    {
+        stack_err_flag = 1;
+        return;
+    }
+
+    while(!BS_IsEmpty(stack))
+    {
+        BS_Pop(stack);
+    }
+}
 
 
 /**------------------  End of File BubbleStack.c --------------------*/
