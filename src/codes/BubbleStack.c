@@ -69,6 +69,12 @@ void BS_Pop(BubbleStack_t* stack)
         return;
     }
 
+    if (stack->BS_Element[stack->TopIndex]->str != NULL)
+	    free(stack->BS_Element[stack->TopIndex]->str);
+
+    free(stack->BS_Element[stack->TopIndex]);
+    stack->BS_Element[stack->TopIndex] = NULL;
+
     stack->BS_TopIndex--;
 }
 
@@ -111,3 +117,7 @@ int BS_IsFull(BubbleStack_t* stack)
     return ( stack->BS_TopIndex == max_elements );
 
 }
+
+
+
+/**------------------  End of File BubbleStack.c --------------------*/
