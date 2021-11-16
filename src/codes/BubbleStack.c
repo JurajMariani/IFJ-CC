@@ -26,16 +26,18 @@ void BS_Init(BubbleStack_t* stack)
  *
  * @param stack pointer to the BubbleStack_t stack structure
  * @param data pointer to the Bubble_t variable, where the pointer to the top of the stack is saved
+ *
+ * @return ...
  */
-void BS_TopStack(BubbleStack_t* stack, expression_block* data)
+expression_block* BS_TopStack(BubbleStack_t* stack)
 {
-    if ((stack == NULL) || (data == NULL))
+    if (stack == NULL)
     {
         stack_err_flag = 1;
         return;
     }
 
-    *data = stack->BS_Element[stack->BS_TopIndex];
+    return(stack->BS_Element[stack->BS_TopIndex]);
 }
 
 /**
@@ -53,7 +55,7 @@ void BS_Push(BubbleStack_t* stack, expression_block* data)
     }
 
     stack->BS_TopIndex++;
-    stack->BS_Element[ stack->BS_TopIndex ] = (*data);
+    stack->BS_Element[ stack->BS_TopIndex ] = data;
 }
 
 /**
@@ -69,10 +71,10 @@ void BS_Pop(BubbleStack_t* stack)
         return;
     }
 
-    if (stack->BS_Element[stack->BS_TopIndex].str != NULL)
-	    free(stack->BS_Element[stack->BS_TopIndex].str);
+    if (stack->BS_Element[stack->BS_TopIndex]->str != NULL)
+	    free(stack->BS_Element[stack->BS_TopIndex]->str);
 
-    free(&(stack->BS_Element[stack->BS_TopIndex]));
+    free(stack->BS_Element[stack->BS_TopIndex]);
 
     stack->BS_TopIndex--;
 }
@@ -113,7 +115,7 @@ int BS_IsFull(BubbleStack_t* stack)
         return 1;
     }
 
-    return ( stack->BS_TopIndex == (int)max_elements );
+    return ( stack->BS_TopIndex == 200 );
 
 }
 

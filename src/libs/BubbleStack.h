@@ -38,8 +38,10 @@ void BS_Init( BubbleStack_t* );
  *
  * @param stack_pointer to the BubbleStack_t stack structure
  * @param data_pointer to the Bubble_t variable, where the pointer to the top of the stack is saved
+ *
+ * @return ...
  */
-void BS_TopStack( BubbleStack_t* , expression_block* );
+expression_block* BS_TopStack( BubbleStack_t* );
 
 
 /**

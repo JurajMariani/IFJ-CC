@@ -109,7 +109,7 @@ typedef struct expression_block{
  */
 typedef struct bstack{
 
-    expression_block* BS_Element;
+    expression_block** BS_Element;
 
     int BS_TopIndex;
 
