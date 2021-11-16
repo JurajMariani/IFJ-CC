@@ -14,7 +14,7 @@
 #include "Defs.h"
 
 #define STACK_ERROR -2
-#define CHECK_FLAG if(err_flag != 0)              \
+#define CHECK_FLAG if(stack_err_flag != 0)              \
                     return STACK_ERROR
 
 /**

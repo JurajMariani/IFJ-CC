@@ -130,14 +130,14 @@ int TypeCheck(expression_block* operand1,expression_block* sign, expression_bloc
 //DNT
 int GetClosestTerminal(BubbleStack_t *stack, expression_block *block){
     BS_TopStack(stack,block);
-    if (err_flag == 1) return err_flag;
+    if (stack_err_flag == 1) return MALLOC_ERR_CODE;
     if (IsTerminal) return 0;
     else{
         expression_block *helper;
         helper = block;
         BS_Pop(stack);
         BS_TopStack(stack,block);
-        if (err_flag == 1) return err_flag;
+        if (stack_err_flag == 1) return MALLOC_ERR_CODE;
         BS_Push(stack,helper);
     }
     return 0;
@@ -150,7 +150,7 @@ int TAB_Shift(BubbleStack_t *stack,token *nextToken){
         block = FillBeginMark();
         if(block == NULL) return MALLOC_ERR_CODE;
         BS_Push(stack,block);
-        if (err_flag != 0) return MALLOC_ERR_CODE;
+        if (stack_err_flag != 0) return MALLOC_ERR_CODE;
     }else
     if (nextToken->type==_operator){
         block = FillBeginMark();
@@ -159,15 +159,15 @@ int TAB_Shift(BubbleStack_t *stack,token *nextToken){
         BS_TopStack(stack,helper);
         BS_Pop(stack);
         BS_Push(stack,block);
-        if (err_flag != 0) return MALLOC_ERR_CODE;
+        if (stack_err_flag != 0) return MALLOC_ERR_CODE;
         BS_Push(stack,helper);
-        if (err_flag != 0) return MALLOC_ERR_CODE;
+        if (stack_err_flag != 0) return MALLOC_ERR_CODE;
     }
     int test = ConvertToBlock(block,nextToken);
     if (test != 0) return test;
     NEXT;
     BS_Push(stack,block);
-    if (err_flag != 0) return MALLOC_ERR_CODE;
+    if (stack_err_flag != 0) return MALLOC_ERR_CODE;
     return 0;
 }
 
@@ -179,7 +179,7 @@ int TAB_Equals(BubbleStack_t *stack, token *nextToken){
     BS_Pop(stack);
     BS_Pop(stack);
     BS_Push(stack,nt);
-    if (err_flag != 0) return MALLOC_ERR_CODE;
+    if (stack_err_flag != 0) return MALLOC_ERR_CODE;
     NEXT;
     return 0;
 }
@@ -203,7 +203,7 @@ int TAB_Terminalize(BubbleStack_t *stack,token *nextToken,int* termNumber){
         (*termNumber)++;
         //VarToTermAssign(newTerm,operand2); //<------------------------------------------------------------ JUROVA FUNKCIA
         BS_Push(stack,newTerm);
-        if(err_flag==1)return MALLOC_ERR_CODE;
+        if(stack_err_flag==1)return MALLOC_ERR_CODE;
         return 0;
     }
     BS_TopStack(stack,operand1);
@@ -220,7 +220,7 @@ int TAB_Terminalize(BubbleStack_t *stack,token *nextToken,int* termNumber){
         (*termNumber)++;
         //UnaryOperator(newTerm,operand2); //<----------------------------------------------------------------------- JUROVA FUNKCIA
         BS_Push(stack,newTerm);
-        if(err_flag==1)return MALLOC_ERR_CODE;
+        if(stack_err_flag==1)return MALLOC_ERR_CODE;
         return 0;
     }
     BS_TopStack(stack,bumper);
@@ -237,7 +237,7 @@ int TAB_Terminalize(BubbleStack_t *stack,token *nextToken,int* termNumber){
         (*termNumber)++;
         //OperationQuickAction(newTerm,operand1,sign,operand2);<--------------------------------------------------------Jurov funkca
         BS_Push(stack,newTerm);
-        if(err_flag==1)return MALLOC_ERR_CODE;
+        if(stack_err_flag==1)return MALLOC_ERR_CODE;
         return 0;
     }
     return INVALID_EXPRESSION;

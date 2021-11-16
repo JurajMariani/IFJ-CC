@@ -1,4 +1,4 @@
-#include "../libs/expressionCommander.h"
+#include "../libs/parser.h"
 
 int curToken = 0;
 token tokenArr[25];
@@ -42,7 +42,7 @@ int GetNextToken(token* nextToken){
 }
 
 int main(){
-    lex_err_flag=0;
+	lex_err_flag=0;
 	stack_err_flag=0;
     TS_Init(ts);
     token* nextToken=malloc(sizeof(token));
@@ -64,3 +64,4 @@ int main(){
     TS_COLLAPSE(ts);
     return 0;
 }
+

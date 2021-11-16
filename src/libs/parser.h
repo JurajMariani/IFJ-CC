@@ -1,3 +1,6 @@
+#ifndef PARSER_HH
+#define PARSER_HH
+
 #include "Defs.h"
 #include "TS.h"
 #include "BubbleStack.h"
@@ -21,7 +24,6 @@ void FreeTheseBees(TreeSupport *ts);
  */
 void GiveMeAnError(int errCode);
 
-TreeSupport ts; //global variable
 /**
  * This is main recursive function that turns not terminals to terminals, by seeing the next token
  * next token is handled as adress, so it can be updated by calling get next token anywhere
@@ -68,3 +70,4 @@ int F_SVar(token* nextToken);
 int mainParseFunction(); 
 
 int PushDataType(dataType *toPush,dataType newType);
+#endif
