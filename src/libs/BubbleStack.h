@@ -17,10 +17,6 @@
 #define CHECK_FLAG if(stack_err_flag != 0)              \
                     return STACK_ERROR
 
-/**
- * @brief Defines the maximal amount of elements in the stack
- */
-unsigned int max_elements;
 
 
 // STACK FUNCTIONS:

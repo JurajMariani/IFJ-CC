@@ -34,7 +34,7 @@ expression_block* BS_TopStack(BubbleStack_t* stack)
     if (stack == NULL)
     {
         stack_err_flag = 1;
-        return;
+        return NULL;
     }
 
     return(stack->BS_Element[stack->BS_TopIndex]);
