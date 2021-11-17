@@ -143,7 +143,8 @@ typedef struct token{
 }token;
 
 //Delete this later
-int GetNextToken(token*);
+void GetNextToken(token*);
+int GetLineNumber();
 
 #define NEXT GetNextToken(nextToken)
 
