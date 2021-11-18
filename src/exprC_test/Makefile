@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall -Wextra -Werror -std=c99
+CFLAGS=-Wall -Wextra -std=c99
 CodeFiles= ../codes/DebugHelp.c ../codes/BubbleStack.c ../codes/expressionCommander.c ../codes/TS.c
 TestFiles= ExprC.c
 OutputName= test

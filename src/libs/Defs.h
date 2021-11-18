@@ -153,4 +153,6 @@ void DebbugPrintToken(token *nextToken);
 
 void DebbugPrintExpress(expression_block *block);
 
+void DebbugPrintStack(BubbleStack_t *stack);
+
 #endif

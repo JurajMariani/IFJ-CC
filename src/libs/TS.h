@@ -5,6 +5,10 @@
 //Global table of symbols
 TreeSupport *ts;
 
+user_func* CreateFunctionData();
+
+variable* CreateVariableData(dataType newType);
+
 //Binary search tree functions
 
 /**	
@@ -48,7 +52,7 @@ TreeElement* TreeLookup(Tree *tree, char *name);
  * 	@param TS pointer
  * 	@return 0 on succes, err code on memory fail
  */
-int TS_Init(TreeSupport *ts);
+int TS_Init(TreeSupport **ts);
 
 /**
  * 	Opens a new layer on top of the one before

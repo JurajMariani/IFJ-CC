@@ -4,6 +4,29 @@
 #include <stdio.h>
 #include "../libs/TS.h"
 
+//DNT
+user_func* CreateFunctionData(){
+    user_func* newData = malloc(sizeof(user_func));
+    if (newData == NULL) return NULL;
+    newData->params=malloc(sizeof(dataType));
+    if(newData->params==NULL){free(newData); return NULL;}
+    newData->returns=malloc(sizeof(dataType));
+    if(newData->returns==NULL){free(newData->params);free(newData);return NULL;}
+    newData->params=NULL;
+    newData->returns=NULL;
+    newData->vDefined=0;
+    return newData;
+}
+
+//DNT
+variable* CreateVariableData(dataType newType){
+    variable *newData = malloc(sizeof(variable));
+    if(newData==NULL)return NULL;
+    newData->type=newType;
+    newData->vDefined=0;
+    return newData;
+}
+
 /*
 	Tree
 */
@@ -125,16 +148,18 @@ TreeLayer *TS_GetLayer(){
 	return newLayer;
 }
 
-int TS_Init(TreeSupport *ts){
-        ts->curLayer=TS_GetLayer();
-        if(ts->curLayer==NULL)return MALLOC_ERR_CODE;
-		ts->functionLayer=ts->curLayer;
-		if(TS_OpenLayer(ts)!=0){
-			TS_CloseLayer(ts);
-			return MALLOC_ERR_CODE;
-		}
-		ts->bounceLayer=ts->curLayer;
-        return 0;
+int TS_Init(TreeSupport **ts){
+	*ts=malloc(sizeof(TreeSupport));
+	if(*ts==NULL) return MALLOC_ERR_CODE;
+    (*ts)->curLayer=TS_GetLayer();
+    if((*ts)->curLayer==NULL){free(*ts); return MALLOC_ERR_CODE;}
+	(*ts)->functionLayer=(*ts)->curLayer;
+	if(TS_OpenLayer(*ts)!=0){
+		TS_CloseLayer(*ts);
+		return MALLOC_ERR_CODE;
+	}
+	(*ts)->bounceLayer=(*ts)->curLayer;
+    return 0;
 }
 
 int TS_OpenLayer(TreeSupport *ts){
@@ -157,6 +182,7 @@ void TS_COLLAPSE(TreeSupport *ts){
 	while(ts->curLayer!=NULL){
 		TS_CloseLayer(ts);
 	}
+	free(ts);
 }
 
 int TS_InsertVariable(TreeSupport *ts, char* name,treeElementType type,void* data){

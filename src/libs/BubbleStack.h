@@ -17,6 +17,10 @@
 #define CHECK_FLAG if(stack_err_flag != 0)              \
                     return STACK_ERROR
 
+/**
+ * @brief Defines the maximal amount of elements in the stack
+ */
+unsigned int max_elements;
 
 
 // STACK FUNCTIONS:
@@ -75,6 +79,8 @@ int BS_IsEmpty( BubbleStack_t* );
  * @return non-zero value when there is no space available, zero when there is
  */
 int BS_IsFull( BubbleStack_t* );
+
+void BS_Dispose(BubbleStack_t* stack);
 
 #endif
 

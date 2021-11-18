@@ -71,7 +71,7 @@ int TypeCheck(expression_block* operand1,expression_block* sign, expression_bloc
  * @param block 
  * @return int 
  */
-int GetClosestTerminal(BubbleStack_t *stack, expression_block *block);
+int GetClosestTerminal(BubbleStack_t *stack, expression_block **block);
 
 /**
  * @brief Makes < operation
