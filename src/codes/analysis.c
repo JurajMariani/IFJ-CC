@@ -2,14 +2,24 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "Defs.h"
-#include "lex_analyz.h"
+#include "analysis.h"
 
-token get_next_token()
+void GetNextToken(token *tokenOut)
 {
+    if(tokenOut->type == _misc)
+    {
+        if(tokenOut->data.msc == _EOF) 
+        {
+            printf("ERROR: It's already end of file\n");
+            return;
+        }
+    }
+
     char *output = (char*) malloc(STR_SIZE * sizeof(char));
     if(output == NULL)
     {
-        //TODO
+        lex_err_flag = MALLOC_ERR_CODE;
+        return;
     }
 
     char state[20];
@@ -24,7 +34,7 @@ token get_next_token()
         if(input_c == '\n') line_cnt++;
         input_c = fgetc(stdin);
     } 
-
+    
     switch(input_c)
     {
         case 'a' ... 'z' :
@@ -33,7 +43,7 @@ token get_next_token()
         {
             strcpy(state, "id");
             output[output_length++] = input_c;
-            first_perimeter(state, output, &output_length);
+            first_perimeter(state, &output, &output_length);
             break;
         }
 
@@ -41,7 +51,7 @@ token get_next_token()
         {
             strcpy(state, "num");
             output[output_length++] = input_c;
-            first_perimeter(state, output, &output_length);
+            first_perimeter(state, &output, &output_length);
             break;
         }
 
@@ -49,7 +59,7 @@ token get_next_token()
         {
             strcpy(state, "dot");
             output[output_length++] = input_c;
-            first_perimeter(state, output, &output_length);
+            first_perimeter(state, &output, &output_length);
             break;
         }
 
@@ -57,7 +67,7 @@ token get_next_token()
         {
             strcpy(state, "add");
             output[output_length++] = input_c;
-            first_perimeter(state, output, &output_length);
+            first_perimeter(state, &output, &output_length);
             break;
         }
             
@@ -65,7 +75,7 @@ token get_next_token()
         {
             strcpy(state, "sub");
             output[output_length++] = input_c;
-            first_perimeter(state, output, &output_length);
+            first_perimeter(state, &output, &output_length);
             break;
         }
 
@@ -73,7 +83,7 @@ token get_next_token()
         {
             strcpy(state, "mult");
             output[output_length++] = input_c;
-            first_perimeter(state, output, &output_length);
+            first_perimeter(state, &output, &output_length);
             break;
         }
 
@@ -81,7 +91,7 @@ token get_next_token()
         {
             strcpy(state, "div");
             output[output_length++] = input_c;
-            first_perimeter(state, output, &output_length);
+            first_perimeter(state, &output, &output_length);
             break;
         }
 
@@ -89,7 +99,7 @@ token get_next_token()
         {
             strcpy(state, "assign");
             output[output_length++] = input_c;
-            first_perimeter(state, output, &output_length);
+            first_perimeter(state, &output, &output_length);
             break;
         }
 
@@ -97,7 +107,7 @@ token get_next_token()
         {
             strcpy(state, "less");
             output[output_length++] = input_c;
-            first_perimeter(state, output, &output_length);
+            first_perimeter(state, &output, &output_length);
             break;
         }
 
@@ -105,7 +115,7 @@ token get_next_token()
         {
             strcpy(state, "great");
             output[output_length++] = input_c;
-            first_perimeter(state, output, &output_length);
+            first_perimeter(state, &output, &output_length);
             break;
         }
 
@@ -113,7 +123,7 @@ token get_next_token()
         {
             strcpy(state, "not");
             output[output_length++] = input_c;
-            first_perimeter(state, output, &output_length);
+            first_perimeter(state, &output, &output_length);
             break;
         }
 
@@ -121,14 +131,14 @@ token get_next_token()
         {
             strcpy(state, "len");
             output[output_length++] = input_c;
-            first_perimeter(state, output, &output_length);
+            first_perimeter(state, &output, &output_length);
             break;
         }
         
         case '"':
         {
             strcpy(state, "start_str");
-            first_perimeter(state, output, &output_length);
+            first_perimeter(state, &output, &output_length);
             break;
         }
 
@@ -137,7 +147,7 @@ token get_next_token()
         {
             strcpy(state, "bracket_L");
             output[output_length++] = input_c;
-            first_perimeter(state, output, &output_length);
+            first_perimeter(state, &output, &output_length);
             break;
         }
 
@@ -146,7 +156,7 @@ token get_next_token()
         {
             strcpy(state, "bracket_R");
             output[output_length++] = input_c;
-            first_perimeter(state, output, &output_length);
+            first_perimeter(state, &output, &output_length);
             break;
         }
 
@@ -154,7 +164,7 @@ token get_next_token()
         {
             strcpy(state, "doubleKomma");
             output[output_length++] = input_c;
-            first_perimeter(state, output, &output_length);
+            first_perimeter(state, &output, &output_length);
             break;
         }
 
@@ -162,43 +172,90 @@ token get_next_token()
         {
             strcpy(state, "komma");
             output[output_length++] = input_c;
-            first_perimeter(state, output, &output_length);
+            first_perimeter(state, &output, &output_length);
             break;
         }
         
+        case EOF:
+        {
+            result.type = _misc;
+            result.data.msc = _EOF;
+            break;
+        }
 
-        default: break;
+        default:
+        {
+            // fprintf("LEXICAL ERROR: ")
+            // lex_err_flag = 2;
+            return;
+        }
+    }
+    
+    if(!strcmp(state, "start"))
+    {
+        if(result.data.msc == _EOF)
+        {
+            tokenOut->type = _misc;
+            tokenOut->data.msc = _EOF;
+        }
+
+        free(output);
+        GetNextToken(tokenOut);
+        return;
     }
 
-    return result;
+    if(lex_err_flag == -1)
+    {
+       free(output);
+       return; 
+    }
+    else if(lex_err_flag == 2)
+    {
+        //TODO
+        //fprintf
+        //free(output);
+        //get_next_token(tokenOut);
+    }
+
+    printf("OUTPUT: %s\n", output);
+
+    free(output);
+    tokenOut->type = result.type;
+    tokenOut->data.kw = result.data.kw;
+    tokenOut->data.msc = result.data.msc;
+    tokenOut->data.oper = result.data.oper;
+    tokenOut->data.str = result.data.str;
+    tokenOut->data.type = result.data.type;
+    tokenOut->data._double = result.data._double;
+    tokenOut->data._integer = result.data._integer;
+
+    return;
 }
 
-void first_perimeter(char *state, char *output, unsigned *output_length)
+void first_perimeter(char *state, char **output, unsigned *output_length)
 {
     char input_c;
-    
     if (!strcmp(state, "id"))
     {
         input_c = fgetc(stdin);
 
         while(((input_c >= 'A') && (input_c <= 'Z')) || ((input_c >= 'a') && (input_c <= 'z')) || ((input_c >= 0) && (input_c <= 9)) || (input_c == '_'))
         {
-            output[(*output_length)++] = input_c;
+            (*output)[(*output_length)++] = input_c;
 
             if(!(*output_length % (unsigned) STR_SIZE)) 
             {
                 char tmp[*output_length];
-                strcpy(tmp, output);
+                strcpy(tmp, (*output));
+                int size = (((*output_length) / STR_SIZE)+1 * (STR_SIZE)) * sizeof(char);
 
-                output = realloc(output, (((*output_length) / STR_SIZE)+1 * (STR_SIZE)) * sizeof(char));
-                if(output == NULL)
+                (*output) = realloc((*output), size);
+                if((*output) == NULL)
                 {
-                    strcpy(state, "id");
-                    strcpy(output, tmp);
-                    err_flag = MALLOC_ERR_CODE;
-                    return;
-                    //TODO navratova hodnota tokenu
+                    lex_err_flag = MALLOC_ERR_CODE;
+                    return;  
                 }
+                else strcpy((*output), tmp);
             }
 
             input_c = fgetc(stdin);
@@ -206,10 +263,10 @@ void first_perimeter(char *state, char *output, unsigned *output_length)
 
         ungetc(input_c, stdin);
 
-        output[*output_length] = '\0';
-
+        (*output)[*output_length] = '\0';
+        
         int tmp = Is_Keyword(output);
-        if(tmp > 0)
+        if((tmp >= 0) && (tmp != 8) && (tmp != 13))
         {
             result.type = _keyword;
             result.data.type = _string;
@@ -219,47 +276,47 @@ void first_perimeter(char *state, char *output, unsigned *output_length)
         {
             result.type = _identifier;
             result.data.type = _string;
-            strcpy(result.data.str, output);
+            strcpy(result.data.str, (*output));
         }
 
         return;
     }
 
-    if (!strcmp(state, "num "))
+    if (!strcmp(state, "num"))
     {
         input_c = fgetc(stdin);
-
-        while((input_c >= 0) && (input_c <= 9))
+        while((input_c >= '0') && (input_c <= '9'))
         {
-            output[(*output_length)++] = input_c;
+            (*output)[(*output_length)++] = input_c;
             if(!(*output_length % STR_SIZE)) 
             {
                 char tmp[*output_length];
-                strcpy(tmp, output);
+                strcpy(tmp, (*output));
 
-                output = realloc(output, ((*output_length / STR_SIZE)+1 * (STR_SIZE)) * sizeof(char));
-                if(output == NULL)
+                int size = (((*output_length / STR_SIZE)+1) * (STR_SIZE)) * sizeof(char);
+                (*output) = realloc((*output), size);
+                if((*output) == NULL)
                 {
-                    strcpy(state, "int");
-                    strcpy(output, tmp);
-                    err_flag = MALLOC_ERR_CODE;
+                    lex_err_flag = MALLOC_ERR_CODE;
                     return;
-                    //TODO navratova hodnota tokenu
                 }
+                else strcpy((*output), tmp);
             }
             input_c = fgetc(stdin);
         }
 
+        
+
         if((input_c == 'e') || (input_c == 'E'))
         {
-            output[(*output_length)++] = input_c;
+            (*output)[(*output_length)++] = input_c;
             strcpy(state, "int_exp");
             second_perimeter(state, output, output_length);
             return;
         }
         else if(input_c == '.')
         {
-            output[(*output_length)++] = input_c;
+            (*output)[(*output_length)++] = input_c;
             strcpy(state, "float");
             second_perimeter(state, output, output_length);
             return;
@@ -267,11 +324,11 @@ void first_perimeter(char *state, char *output, unsigned *output_length)
         else
         {
             ungetc(input_c, stdin);
-            output[*output_length] = '\0';
+            (*output)[*output_length] = '\0';
 
             result.type = _const;
             result.data.type = _integer;
-            result.data._integer = atoi(output);
+            result.data._integer = atoi((*output));
 
             return;
         }
@@ -283,7 +340,7 @@ void first_perimeter(char *state, char *output, unsigned *output_length)
 
         if(input_c == '.')
         {
-            output[(*output_length)++] = input_c;
+            (*output)[(*output_length)++] = input_c;
             strcpy(state, "conc");
             second_perimeter(state, output, output_length);
             return;
@@ -292,22 +349,22 @@ void first_perimeter(char *state, char *output, unsigned *output_length)
         {
             //TODO nespravny operand
             ungetc(input_c, stdin);
-            output[*output_length] = '\0';
-            err_flag = INVALID_TOKEN;
+            (*output)[*output_length] = '\0';
+            lex_err_flag = INVALID_TOKEN;
             return;
         }
     }
 
     if (!strcmp(state, "add"))
     {
-        result.type = _operand;
+        result.type = _operator;
         result.data.oper = _add;
         return;
     }
 
     if (!strcmp(state, "mult"))
     {
-        result.type = _operand;
+        result.type = _operator;
         result.data.oper = _mul;
         return;
     }
@@ -318,7 +375,7 @@ void first_perimeter(char *state, char *output, unsigned *output_length)
 
         if(input_c == '/')
         {
-            output[(*output_length)++] = input_c;
+            (*output)[(*output_length)++] = input_c;
             strcpy(state, "fdiv");
             second_perimeter(state, output, output_length);
             return;
@@ -328,7 +385,7 @@ void first_perimeter(char *state, char *output, unsigned *output_length)
         {
             ungetc(input_c, stdin);
             
-            result.type = _operand;
+            result.type = _operator;
             result.data.oper = _div;
             return;
         }
@@ -336,6 +393,7 @@ void first_perimeter(char *state, char *output, unsigned *output_length)
 
     if (!strcmp(state, "sub"))
     {
+       
         input_c = fgetc(stdin);
 
         if(input_c == '-')
@@ -348,7 +406,7 @@ void first_perimeter(char *state, char *output, unsigned *output_length)
         {
             ungetc(input_c, stdin);
 
-            result.type = _operand;
+            result.type = _operator;
             result.data.oper = _sub;
             return;
         }
@@ -359,7 +417,7 @@ void first_perimeter(char *state, char *output, unsigned *output_length)
         input_c = fgetc(stdin);
         if(input_c == '=')
         {
-            output[(*output_length)++] = input_c;
+            (*output)[(*output_length)++] = input_c;
             strcpy(state, "eq");
             second_perimeter(state, output, output_length);
             return;
@@ -381,7 +439,7 @@ void first_perimeter(char *state, char *output, unsigned *output_length)
 
         if(input_c == '=')
         {
-            output[(*output_length)++] = input_c;
+            (*output)[(*output_length)++] = input_c;
             strcpy(state, "leq");
             second_perimeter(state, output, output_length);
             return;
@@ -389,7 +447,7 @@ void first_perimeter(char *state, char *output, unsigned *output_length)
         else
         {
             ungetc(input_c, stdin);
-            result.type = _operand;
+            result.type = _operator;
             result.data.oper = _less;
             return;
         }
@@ -401,7 +459,7 @@ void first_perimeter(char *state, char *output, unsigned *output_length)
 
         if(input_c == '=')
         {
-            output[(*output_length)++] = input_c;
+            (*output)[(*output_length)++] = input_c;
             strcpy(state, "geq");
             second_perimeter(state, output, output_length);
             return;
@@ -409,7 +467,7 @@ void first_perimeter(char *state, char *output, unsigned *output_length)
         else
         {
             ungetc(input_c, stdin);
-            result.type = _operand;
+            result.type = _operator;
             result.data.oper = _great;
             return;
         }
@@ -421,7 +479,7 @@ void first_perimeter(char *state, char *output, unsigned *output_length)
 
         if(input_c == '=')
         {
-            output[(*output_length)++] = input_c;
+            (*output)[(*output_length)++] = input_c;
             strcpy(state, "neq");
             second_perimeter(state, output, output_length);
             return;
@@ -429,61 +487,57 @@ void first_perimeter(char *state, char *output, unsigned *output_length)
         else
         {
             ungetc(input_c, stdin);
-            err_flag = INVALID_TOKEN;
-            //TODO
+            lex_err_flag = INVALID_TOKEN;
             return;
         }
     }
    
     if (!strcmp(state, "len"))
     {
-        result.type = _operand;
+        result.type = _operator;
         result.data.oper = _length;
         return;
     }
 
     if (!strcmp(state, "start_str"))
-    {
+    {   
         input_c = fgetc(stdin);
+       
         while(input_c != '"')
         {
-            output[(*output_length)++] = input_c;
-
-            if(input_c == 10) 
+            if(input_c == 10 || input_c == EOF) 
             {
                 line_cnt++;
-                err_flag = INVALID_TOKEN;
+                lex_err_flag = INVALID_TOKEN;
                 return;
-                // TODO navratovy token
             }
 
             if(!(*output_length % STR_SIZE)) 
             {
                 char tmp[*output_length];
-                strcpy(tmp, output);
+                strcpy(tmp, (*output));
 
-                output = realloc(output, ((*output_length / STR_SIZE)+1 * (STR_SIZE)) * sizeof(char));
-                if(output == NULL)
+                int size = (((*output_length / STR_SIZE)+1) * (STR_SIZE)) * sizeof(char);
+                (*output) = realloc((*output), size);
+                if((*output) == NULL)
                 {
-                    strcpy(state, "id");
-                    strcpy(output, tmp);
-                    err_flag = MALLOC_ERR_CODE;
-                    //TODO navratova hodnota tokenu
+                    lex_err_flag = MALLOC_ERR_CODE;
                     return;
                 }
+                else strcpy((*output), tmp);
             }
 
             if(input_c == '\\')
             {
                 strcpy(state,"esc_seq");
-                output[(*output_length)++] = input_c;
                 second_perimeter(state, output, output_length);
-                
-                strcpy(state, "start_str");
-                first_perimeter(state, output, output_length);
-                return;
             }
+            else (*output)[(*output_length)++] = input_c;
+
+            input_c = fgetc(stdin);
+           
         }
+
         strcpy(state, "end_str");
         second_perimeter(state, output, output_length);
         return;
@@ -492,21 +546,21 @@ void first_perimeter(char *state, char *output, unsigned *output_length)
     if (!strcmp(state, "bracket_L"))
     {
         result.type = _misc;
-        result.data.oper = _bracketL;
+        result.data.msc = _bracketL;
         return;
     }
 
     if (!strcmp(state, "bracket_R"))
     {
         result.type = _misc;
-        result.data.oper = _bracketR;
+        result.data.msc = _bracketR;
         return;
     }
 
     if (!strcmp(state, "doubleKomma"))
     {
         result.type = _misc;
-        result.data.oper = _bracketL;
+        result.data.msc = _doubleKomma;
         return;
     }
 
@@ -518,7 +572,7 @@ void first_perimeter(char *state, char *output, unsigned *output_length)
     }
 }
 
-void second_perimeter(char *state, char *output, unsigned *output_length)
+void second_perimeter(char *state, char **output, unsigned *output_length)
 {
     char input_c;
 
@@ -526,24 +580,23 @@ void second_perimeter(char *state, char *output, unsigned *output_length)
     {
         input_c = fgetc(stdin);
 
-        while((input_c >= 0) && (input_c <= 9))
+        while((input_c >= '0') && (input_c <= '9'))
         {
-            output[(*output_length)++] = input_c;
+            (*output)[(*output_length)++] = input_c;
 
             if(!(*output_length % STR_SIZE)) 
             {
                 char tmp[*output_length];
-                strcpy(tmp, output);
+                strcpy(tmp, (*output));
 
-                output = realloc(output, ((*output_length / STR_SIZE)+1 * (STR_SIZE)) * sizeof(char));
-                if(output == NULL)
+                int size = (((*output_length / STR_SIZE)+1) * (STR_SIZE)) * sizeof(char);
+                (*output) = realloc((*output), size);
+                if((*output) == NULL)
                 {
-                    strcpy(state, "dec");
-                    strcpy(output, tmp);
-                    err_flag = MALLOC_ERR_CODE;
+                    lex_err_flag = MALLOC_ERR_CODE;
                     return;
-                    //TODO NAVRATOVA HODNOTA
                 }
+                else strcpy((*output), tmp);
             }
 
             input_c = fgetc(stdin);
@@ -551,7 +604,7 @@ void second_perimeter(char *state, char *output, unsigned *output_length)
 
         if((input_c == 'e') || (input_c == 'E'))
         {
-            output[(*output_length)++] = input_c;
+            (*output)[(*output_length)++] = input_c;
             strcpy(state, "float_exp");
             other_states(state, output, output_length);
             return;
@@ -561,7 +614,7 @@ void second_perimeter(char *state, char *output, unsigned *output_length)
             ungetc(input_c, stdin);
             result.type = _const;
             result.data.type = _number;
-            result.data._double = atof(output);
+            result.data._double = atof((*output));
             return;
         }
     }
@@ -572,22 +625,20 @@ void second_perimeter(char *state, char *output, unsigned *output_length)
 
         while(((input_c >= 0) && (input_c <= 9)) || (input_c == '+') || (input_c == '-'))
         {
-            output[(*output_length)++] = input_c;
-
+            (*output)[(*output_length)++] = input_c;
             if(!(*output_length % STR_SIZE)) 
             {
                 char tmp[*output_length];
-                strcpy(tmp, output);
+                strcpy(tmp, (*output));
 
-                output = realloc(output, ((*output_length / STR_SIZE)+1 * (STR_SIZE)) * sizeof(char));
-                if(output == NULL)
+                int size = (((*output_length / STR_SIZE)+1) * (STR_SIZE)) * sizeof(char);
+                (*output) = realloc((*output), size);
+                if((*output) == NULL)
                 {
-                    strcpy(state, "dec");
-                    strcpy(output, tmp);
-                    err_flag = MALLOC_ERR_CODE;
+                    lex_err_flag = MALLOC_ERR_CODE;
                     return;
-                    //TODO NAVRATOVA HODNOTA
                 }
+                else strcpy((*output), tmp);
             }
 
             input_c = fgetc(stdin);
@@ -596,20 +647,20 @@ void second_perimeter(char *state, char *output, unsigned *output_length)
         ungetc(input_c, stdin);
         result.type = _const;
         result.data.type = _number;
-        result.data._double = atof(output);
+        result.data._double = atof((*output));
         return;
     }
 
     if (!strcmp(state, "conc"))
     {
-        result.type = _operand;
+        result.type = _operator;
         result.data.oper = _konk;
         return;
     }
 
     if (!strcmp(state, "fdiv"))
     {
-        result.type = _operand;
+        result.type = _operator;
         result.data.oper = _div2;
         return;
     }
@@ -617,14 +668,23 @@ void second_perimeter(char *state, char *output, unsigned *output_length)
     if (!strcmp(state, "ln_cmt"))
     {
         input_c = fgetc(stdin);
-
-        while((input_c != '\0') || (input_c != '['))
+        
+        while((input_c != '\n') && (input_c != '[') && (input_c != EOF))
         {
             input_c = fgetc(stdin);
         }
 
-        if(input_c == '\0') 
+        if(input_c == EOF)
         {
+            result.data.msc = _EOF;
+            result.type = _misc;
+            strcpy(state, "start");
+            return;
+        }
+
+        if(input_c == '\n') 
+        {
+            ungetc(input_c, stdin);
             strcpy(state, "start");
             return;
         }
@@ -642,38 +702,40 @@ void second_perimeter(char *state, char *output, unsigned *output_length)
 
     if (!strcmp(state, "eq"))
     {
-        result.type = _operand;
+        result.type = _operator;
         result.data.oper = _Eq;
         return;
     }
 
     if (!strcmp(state, "leq"))
     {
-        result.type = _operand;
+        result.type = _operator;
         result.data.oper = _lessEq;
         return;
     }
 
     if (!strcmp(state, "geq"))
     {
-        result.type = _operand;
+        result.type = _operator;
         result.data.oper = _greatEq;
         return;
     }
 
     if (!strcmp(state, "neq"))
     {
-        result.type = _operand;
+        result.type = _operator;
         result.data.oper = _nEq;
         return;
     }
 
     if (!strcmp(state, "end_str"))
     {
-        output[*output_length] = '\0';
+        (*output)[*output_length] = '\0';
         result.type = _const;
         result.data.type = _string;
-        strcpy(result.data.str, output);
+
+        result.data.str = malloc(strlen((*output))*sizeof(char));
+        strcpy(result.data.str, (*output));
         return;
     }
 
@@ -684,20 +746,26 @@ void second_perimeter(char *state, char *output, unsigned *output_length)
         switch(input_c)
         {   
             case 'n':
+            {
+                (*output)[(*output_length)++] = 10;
+                return;
+            }
+
             case 't':
             {
-                output[(*output_length)++] = input_c;
+                (*output)[(*output_length)++] = '\t';
                 return;
             }
 
             case '"':
             {
-                output[(*output_length)-1] = input_c;
+                (*output)[(*output_length)-1] = input_c;
                 return;
             }
 
             case '\\':
             {
+                (*output)[(*output_length)++] = input_c;
                 return;
             }
 
@@ -707,7 +775,7 @@ void second_perimeter(char *state, char *output, unsigned *output_length)
                 char tmp = esc_num();
                 if(tmp != '9')
                 {
-                    output[(*output_length)++] = tmp;
+                    (*output)[(*output_length)++] = tmp;
                     return;
                 }
                 else return;
@@ -716,7 +784,7 @@ void second_perimeter(char *state, char *output, unsigned *output_length)
 
             default:
             {
-                err_flag = INVALID_TOKEN;
+                lex_err_flag = INVALID_TOKEN;
                 ungetc(input_c, stdin);
                 return;
             }
@@ -724,7 +792,7 @@ void second_perimeter(char *state, char *output, unsigned *output_length)
     }
 }
 
-void other_states(char *state, char *output, unsigned *output_length)
+void other_states(char *state, char **output, unsigned *output_length)
 {
     char input_c;
 
@@ -734,21 +802,21 @@ void other_states(char *state, char *output, unsigned *output_length)
 
         while(((input_c >= 0) && (input_c <= 9)) || (input_c == '+') || (input_c == '-'))
         {
-            output[(*output_length)++] = input_c;
+            (*output)[(*output_length)++] = input_c;
 
             if(!(*output_length % STR_SIZE)) 
             {
                 char tmp[*output_length];
-                strcpy(tmp, output);
+                strcpy(tmp, (*output));
 
-                output = realloc(output, ((*output_length / STR_SIZE)+1 * (STR_SIZE)) * sizeof(char));
-                if(output == NULL)
+                int size = (((*output_length / STR_SIZE)+1) * (STR_SIZE)) * sizeof(char);
+                (*output) = realloc((*output), size);
+                if((*output) == NULL)
                 {
-                    strcpy(output, tmp);
-                    err_flag = MALLOC_ERR_CODE;
+                    lex_err_flag = MALLOC_ERR_CODE;
                     return;
-                    //TODO navratova hpdnota
                 }
+                else strcpy((*output), tmp);
             }
 
             input_c = fgetc(stdin);
@@ -757,7 +825,7 @@ void other_states(char *state, char *output, unsigned *output_length)
         ungetc(input_c, stdin);
         result.type = _const;
         result.data.type = _number;
-        result.data._double = atof(output);
+        result.data._double = atof((*output));
         return;
     }
 
@@ -801,8 +869,7 @@ void bl_cmt(char* state)
     }
     else
     {
-        //TODO
-        //error_flag = -2; 
+        lex_err_flag = UNEND_COMMENT;
         return;
     }
 }
@@ -823,18 +890,18 @@ int right_bracket(char* state)
     }
 }
 
-int Is_Keyword(char *output)
+int Is_Keyword(char **output)
 {
     int i = 0;
-    while((i != ARR_LEN) || !(strcmp(output, arr_keywords[i])))
+    while((i < ARR_LEN) && (strcmp((*output), arr_keywords[i])))
     {
         i++;
     }
+    
+    if(i == ARR_LEN-1) return -1;
+    if (!strcmp((*output), arr_keywords[i])) return i;
 
-    if(i == ARR_LEN) return 0;
-    if (!strcmp(output, arr_keywords[i])) return i;
-
-    return -1;
+    return -2;
 }
 
 char esc_num(void)
@@ -868,7 +935,7 @@ char esc_num(void)
 
         default:
         {
-            err_flag = INVALID_TOKEN;
+            lex_err_flag = INVALID_TOKEN;
             ungetc(input_c, stdin);
             return '9';
         }
@@ -901,7 +968,7 @@ void zero(char *output_c, unsigned *output_len)
 
         default:
         {
-            err_flag = INVALID_TOKEN;
+            lex_err_flag = INVALID_TOKEN;
             ungetc(input_c, stdin);
             return;
         }
@@ -919,7 +986,7 @@ void one(char *output_c, unsigned *output_len)
     }
     else
     {
-        err_flag = INVALID_TOKEN;
+        lex_err_flag = INVALID_TOKEN;
         ungetc(input_c,stdin);
         return;
     }
@@ -946,7 +1013,7 @@ void two(char *output_c, unsigned *output_len)
 
         default:
         {
-            err_flag = INVALID_TOKEN;
+            lex_err_flag = INVALID_TOKEN;
             ungetc(input_c, stdin);
             return;
         }
@@ -963,7 +1030,7 @@ void zero_zero(char *output_c, unsigned *output_len)
     }
     else
     {
-        err_flag = INVALID_TOKEN;
+        lex_err_flag = INVALID_TOKEN;
         ungetc(input_c, stdin);
         return;
     }
@@ -979,7 +1046,7 @@ void two_five(char *output_c, unsigned *output_len)
     }
     else
     {
-        err_flag = INVALID_TOKEN;
+        lex_err_flag = INVALID_TOKEN;
         ungetc(input_c, stdin);
         return;
     }
@@ -995,13 +1062,13 @@ void others(char *output_c, unsigned *output_len)
     }
     else
     {
-        err_flag = INVALID_TOKEN;
+        lex_err_flag = INVALID_TOKEN;
         ungetc(input_c, stdin);
         return;
     }
 }
 
-int get_line_number()
+int GetLineNumber()
 {
     return line_cnt;
 }

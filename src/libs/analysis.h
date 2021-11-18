@@ -1,10 +1,11 @@
 #include<stdio.h>
 #include<stdlib.h>
+#include <string.h>
 
 #define STR_SIZE 10
 
-#define ARR_LEN 15
-char arr_keywords[15][10] = 
+#define ARR_LEN 17
+char arr_keywords[ARR_LEN][10] = 
 {
     "do",
     "else",
@@ -12,27 +13,28 @@ char arr_keywords[15][10] =
     "function",
     "global",
     "if",
-    "integer",
     "local",
     "nil",
-    "number",
+    "read",
     "require",
     "return",
-    "string",
     "then",
-    "while"             
+    "while",
+    "write",
+    "integer",
+    "number",
+    "string"            
 };
 
-int line_cnt = 0;
+int line_cnt = 1;
 token result;
 
-token get_next_token( );
-void first_perimeter( char * , char * , unsigned * );
-void second_perimeter( char * , char * , unsigned * );
-void other_states( char * , char * , unsigned * );
+void get_next_token( token *);
+void first_perimeter( char * , char ** , unsigned * );
+void second_perimeter( char * , char ** , unsigned * );
+void other_states( char * , char ** , unsigned * );
 
-int Is_Keyword(char *);
-int get_line_number();
+int Is_Keyword(char **);
 
 int left_bracket(char *);
 int right_bracket(char *);
