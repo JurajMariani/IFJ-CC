@@ -217,8 +217,6 @@ void GetNextToken(token *tokenOut)
         //get_next_token(tokenOut);
     }
 
-    printf("OUTPUT: %s\n", output);
-
     free(output);
     tokenOut->type = result.type;
     tokenOut->data.kw = result.data.kw;
