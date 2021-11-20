@@ -345,9 +345,7 @@ void first_perimeter(char *state, char **output, unsigned *output_length)
         }
         else
         {
-            //TODO nespravny operand
             ungetc(input_c, stdin);
-            (*output)[*output_length] = '\0';
             lex_err_flag = INVALID_TOKEN;
             return;
         }
