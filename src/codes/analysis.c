@@ -4,13 +4,14 @@
 #include "Defs.h"
 #include "analysis.h"
 
+
 void GetNextToken(token *tokenOut)
 {
     if(tokenOut->type == _misc)
     {
         if(tokenOut->data.msc == _EOF) 
         {
-            printf("ERROR: It's already end of file\n");
+            fprintf(stderr,"\nIt's already end of file\n");
             return;
         }
     }
@@ -25,6 +26,7 @@ void GetNextToken(token *tokenOut)
     char state[20];
     strcpy(state, "start");
 
+    lex_err_flag = 0;
     unsigned output_length = 0;
       
     char input_c = fgetc(stdin);
@@ -185,8 +187,7 @@ void GetNextToken(token *tokenOut)
 
         default:
         {
-            // fprintf("LEXICAL ERROR: ")
-            // lex_err_flag = 2;
+            lex_err_flag = 2;
             return;
         }
     }
@@ -211,10 +212,9 @@ void GetNextToken(token *tokenOut)
     }
     else if(lex_err_flag == 2)
     {
-        //TODO
-        //fprintf
-        //free(output);
-        //get_next_token(tokenOut);
+        free(output);
+        GetNextToken(tokenOut);
+        return;
     }
 
     free(output);
@@ -237,7 +237,7 @@ void first_perimeter(char *state, char **output, unsigned *output_length)
     {
         input_c = fgetc(stdin);
 
-        while(((input_c >= 'A') && (input_c <= 'Z')) || ((input_c >= 'a') && (input_c <= 'z')) || ((input_c >= 0) && (input_c <= 9)) || (input_c == '_'))
+        while(((input_c >= 'A') && (input_c <= 'Z')) || ((input_c >= 'a') && (input_c <= 'z')) || ((input_c >= '0') && (input_c <= '9')) || (input_c == '_'))
         {
             (*output)[(*output_length)++] = input_c;
 
@@ -527,6 +527,7 @@ void first_perimeter(char *state, char **output, unsigned *output_length)
 
             if(input_c == '\\')
             {
+                (*output)[(*output_length)++] = input_c;
                 strcpy(state,"esc_seq");
                 second_perimeter(state, output, output_length);
             }
@@ -621,7 +622,7 @@ void second_perimeter(char *state, char **output, unsigned *output_length)
     {
         input_c = fgetc(stdin);
 
-        while(((input_c >= 0) && (input_c <= 9)) || (input_c == '+') || (input_c == '-'))
+        while(((input_c >= '0') && (input_c <= '9')) || (input_c == '+') || (input_c == '-'))
         {
             (*output)[(*output_length)++] = input_c;
             if(!(*output_length % STR_SIZE)) 
@@ -728,13 +729,20 @@ void second_perimeter(char *state, char **output, unsigned *output_length)
 
     if (!strcmp(state, "end_str"))
     {
-        (*output)[*output_length] = '\0';
-        result.type = _const;
-        result.data.type = _string;
+        if(lex_err_flag == INVALID_TOKEN)
+        {
+            return;
+        }
+        else
+        {
+            (*output)[*output_length] = '\0';
+            result.type = _const;
+            result.data.type = _string;
 
-        result.data.str = malloc(strlen((*output))*sizeof(char));
-        strcpy(result.data.str, (*output));
-        return;
+            result.data.str = malloc(strlen((*output))*sizeof(char));
+            strcpy(result.data.str, (*output));
+            return;
+        }
     }
 
     if (!strcmp(state, "esc_seq"))
@@ -745,13 +753,13 @@ void second_perimeter(char *state, char **output, unsigned *output_length)
         {   
             case 'n':
             {
-                (*output)[(*output_length)++] = 10;
+                (*output)[(*output_length)-1] = 10;
                 return;
             }
 
             case 't':
             {
-                (*output)[(*output_length)++] = '\t';
+                (*output)[(*output_length)-1] = '\t';
                 return;
             }
 
@@ -763,7 +771,6 @@ void second_perimeter(char *state, char **output, unsigned *output_length)
 
             case '\\':
             {
-                (*output)[(*output_length)++] = input_c;
                 return;
             }
 
@@ -773,7 +780,7 @@ void second_perimeter(char *state, char **output, unsigned *output_length)
                 char tmp = esc_num();
                 if(tmp != '9')
                 {
-                    (*output)[(*output_length)++] = tmp;
+                    (*output)[(*output_length)-1] = tmp;
                     return;
                 }
                 else return;
@@ -798,7 +805,7 @@ void other_states(char *state, char **output, unsigned *output_length)
     {
         input_c = fgetc(stdin);
 
-        while(((input_c >= 0) && (input_c <= 9)) || (input_c == '+') || (input_c == '-'))
+        while(((input_c >= '0') && (input_c <= '9')) || (input_c == '+') || (input_c == '-'))
         {
             (*output)[(*output_length)++] = input_c;
 
@@ -851,7 +858,7 @@ void bl_cmt(char* state)
 {
     char input_c = fgetc(stdin);
 
-    while(input_c != ']' || input_c != EOF)
+    while(input_c != ']' && input_c != EOF)
     {
         if(input_c == '\n') line_cnt++;
         input_c = fgetc(stdin);
