@@ -28,6 +28,8 @@
 #define IFKwAssign (nextToken->type == _misc && nextToken->data.msc == _assign)
 #define IFEof (nextToken->type==_misc && nextToken->data.msc == _EOF)
 
+int param_cter;
+
 //Function to free all the allocs - TBD
 void FreeTheseBees(TreeSupport *ts){
     // Bees Knees 
@@ -105,7 +107,7 @@ int update_param_name(char* param_name, char** param_names, int position)
         }
 
         if (param_names[index] == NULL)
-            return 1;   // define Conflicting number of parameters ' ' new integer 
+            return CONFLICTING_NUMBER_OF_PARAMS;   // define Conflicting number of parameters ' ' new integer 
         
         if (param_names[index][0] == '\0')
             strcpy(param_names[index], param_name);
@@ -115,7 +117,7 @@ int update_param_name(char* param_name, char** param_names, int position)
         if ( position < max )
             strcpy(param_names[position], param_name);
         else
-            return 2;   // internal error, should not happen
+            return INTERNAL_UPDATE_PARAM_NAME_ERROR;   // internal error, should not happen
     }
 
     return 0;
@@ -168,6 +170,7 @@ variable* CreateVariableData(dataType newType){
 int F_Prog(token* nextToken){                                     
     int test;
     if (nextToken->type==_keyword && nextToken->data.kw==_global){
+        param_cter = -1;
         NEXT;
         if (!IFIdentif){INVALID_TOKEN}
         if (TS_LookFunction(ts,nextToken->data.str)!=NULL) return REDECLARATION_OF_FUNCTION;
@@ -190,10 +193,13 @@ int F_Prog(token* nextToken){
         //test = workNotTerminal(N_ParamsR,nextToken);
         test = F_ParamsR(nextToken, name_func);
         if (test != 0) return test;
+        // TreeElement* function = TS_LookFunction(ts,name_func);   <- uncomment when CodeGen ready
+        //G_function_bgn(function);                                 <- uncomment when CodeGen ready 
         return 0;
         
     }
     else if(nextToken->type ==_keyword && nextToken->data.kw == _function){
+        param_cter = -1;
         NEXT;
         if (!IFIdentif){INVALID_TOKEN}
         if (TS_LookFunction(ts,nextToken->data.str)!=NULL) return REDECLARATION_OF_FUNCTION;
@@ -215,22 +221,22 @@ int F_Prog(token* nextToken){
         test = workNotTerminal(N_StList,nextToken);
         if (test!= 0) return test;
         if (!IFKwEnd){INVALID_TOKEN}
+        // TreeElement* function = TS_LookFunction(ts,name_func);   <- uncomment when CodeGen ready
+        //G_function_bgn(function);                                 <- uncomment when CodeGen ready 
         NEXT;
-        // my : fill structure before sending 
-        // generate function head
         return 0;
 
     }
     else 
         if((nextToken->type == _identifier && TS_LookFunction(ts,nextToken->data.str)!=NULL)||(nextToken->type == _identifier && TS_LookVariable(ts,nextToken->data.str)!=NULL)||IFKwWhile||IFKwIf)
         {
-        test = workNotTerminal(N_Statement,nextToken);
-        if(test!=0)
-        {
-            // my : send params
-            // generate function call
-            return test;
-        }
+            test = workNotTerminal(N_Statement,nextToken);
+            if(test!=0)
+            {
+                return test;
+            }
+            // Fill params & returns                                    <- TODO + uncomment when CodeGent ready
+            // G_CallFunc(nextToken->data.str, #params#, #returns#);    <- TODO + uncomment when CodeGent ready
         }
         else 
             if(IFEof)
@@ -239,31 +245,45 @@ int F_Prog(token* nextToken){
             {
                 INVALID_TOKEN
             }
-    INVALID_TOKEN
+    return 0;
 }
 
 
 int F_Params(token* nextToken, char* func_name)
 {
     int output = 0;
+    char** test;
 
     TreeElement* func = TS_LookFunction(ts, func_name);
     dataType* param_array = ((user_func*)(func->data))->params;
 
     if ( IFKwInteger || IFKwString || IFKwNumber || IFKwNil )
     {
+        param_cter++;
+        test = PushParamName(((user_func*)func->data)->param_names, NULL);
+        if (test == NULL)
+            return MALLOC_ERR_CODE;
+        ((user_func*)func->data)->param_names = test;
         F_Type(nextToken, param_array);
 
         ((user_func*)func->data)->params = param_array;
 
         NEXT
         output = F_SecondParam(nextToken, func_name);
-        if (output)
-            return output;
+        if (!output)
+            return 0;
     }
     else
         if ( IFIdentif )
         {
+            param_cter++;
+            test = PushParamName(((user_func*)func->data)->param_names, NULL);
+            if (test == NULL)
+                return MALLOC_ERR_CODE;
+            ((user_func*)func->data)->param_names = test;
+            output = update_param_name(nextToken->data.str, ((user_func*)func->data)->param_names, param_cter);
+            if ((output == INTERNAL_UPDATE_PARAM_NAME_ERROR ) || (output == CONFLICTING_NUMBER_OF_PARAMS))
+                return output;
             NEXT
             if (!IFDoubleKomma)
             {

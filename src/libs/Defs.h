@@ -24,6 +24,7 @@ int generate_code;
 #define INVALID_EXPRESSION_CONST_CODE 4
 #define INVALID_EXPRESSION generate_code = 0; return INVALID_EXPRESSION_CONST_CODE; // generate = 0; \ return 4
 #define FLOAT_INT_COMPARISM 5
+#define CONFLICTING_NUMBER_OF_PARAMS 7 // Hetes
 #define UNEND_COMMENT -2
 
 #define exitus(__code__) //call error_write() and exit(__code__)
