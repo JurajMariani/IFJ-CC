@@ -3,6 +3,7 @@
 #include "Defs.h"
 #include "TS.h"
 #include "BubbleStack.h"
+#include <string.h>
 
 //TODO REMOVE THE LAST TWO IF THEY ARE NOT NEEDED
 typedef enum {_tab_shift,_tab_equals,_tab_terminalize,_tab_end,_tab_error}actions;
@@ -10,8 +11,20 @@ typedef enum {_tab_shift,_tab_equals,_tab_terminalize,_tab_end,_tab_error}action
 #define INVALID_OPERATION 8
 #define IsPushMark (block->blockType == _misc_expr && block->em == _bgnMark)
 #define IsEndMark (block->blockType == _misc_expr && block->em == _endMark)
+#define IsErrMark (block->blockType == _oprand_expr && block->operType == _std_err)
 #define IsTerminal (block->blockType!=_operand_expr && block->operType != _not_terminal_oper)
 
+//VL FUNCS
+
+TreeElement** VL_INIT();
+TreeElement** VL_PUSH(TreeElement **vl,TreeElement* new);
+void VL_Dispose (TreeElement **vl);
+
+int ParamCheck(TreeElement* func, BubbleStack_t *stack);
+int C_AssignToVar(TreeElement* , expression_block* );
+int SemanticCheck(TreeElement**,BubbleStack_t *);
+int ReturnsCheck(TreeElement *, BubbleStack_t *);
+int MoveStack(BubbleStack_t*, BubbleStack_t*);
 
 /**
  * @brief checks if token is one of those that end expression by default
@@ -29,6 +42,13 @@ int IsEndSymbol(token *nextToken);
  * @return int 
  */
 int ConvertToBlock(expression_block *block, token* nextToken);
+
+/**
+ * @brief Fills with error marker used to distinguish errors from malloc errors
+ * 
+ * @return expression_block* 
+ */
+expression_block* FillErrorMark();
 
 /**
  * @brief Fills begin mark to expression block
@@ -116,15 +136,15 @@ actions ChooseAction(BubbleStack_t *stack,token* nextToken);
  * @param stack 
  * @param nextToken 
  * @param termNumber 
- * @return int 
+ * @return expression_block 
  */
-int SolveCycle(BubbleStack_t* stack,token *nextToken,int *termNumber);
+expression_block* SolveCycle(BubbleStack_t* stack,token *nextToken,int *termNumber);
 
 /**
  * @brief this is main of this program
  * 
  * @param nextToken 
- * @return int 
+ * @return expression_block
  */
-int CallTheCommander(token *nextToken);
+expression_block* CallTheCommander(token *nextToken);
 #endif

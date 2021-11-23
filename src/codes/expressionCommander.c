@@ -1,5 +1,187 @@
 #include "../libs/expressionCommander.h"
 
+TreeElement** VL_INIT(){
+    TreeElement **vl;
+    vl=malloc(sizeof(TreeElement*));
+    *vl = NULL;
+    return(vl);
+}
+
+TreeElement** VL_PUSH(TreeElement **vl,TreeElement* new){
+    int i=0;
+    while (vl[i]!=NULL){
+        i++;
+    }
+    vl[i]=new;
+    i++;
+    TreeElement** tmp = vl;
+    vl=realloc(vl,sizeof(TreeElement*)*(i+1));
+    if (vl==NULL){free(tmp);return vl;}
+    vl[i]=NULL;
+    return vl;
+}
+
+void VL_DISPOSE(TreeElement **vl){
+    free(vl);
+}
+
+int ParamCheck(TreeElement* func, BubbleStack_t *stack){
+    BubbleStack_t helper;
+    BS_Init(&helper);
+    if (helper.BS_Element==NULL)return MALLOC_ERR_CODE;
+
+    while (!BS_IsEmpty(stack))
+    {
+        BS_Push(&helper,BS_TopStack(stack));
+        BS_Pop(stack);
+    }
+    int i=0;
+    int bad = 0;
+    user_func* data=(user_func*)func->data;
+    while (!BS_IsEmpty(&helper)){
+        dataType* paramPointer=(data->params)+i*sizeof(dataType*);
+        if(paramPointer==NULL){BS_Dispose(stack);BS_Dispose(&helper);return 0;}
+        expression_block* tmp = BS_TopStack(&helper);
+        if(tmp->dt!=data->params[i]){
+            if(tmp->dt==_number && data->params[i]==_integer) printf("plc");//ConvertToFloat(tmp);
+            else if(tmp->dt==_integer && data->params[i]==_number)printf("plc");//ConvertToInt(tmp);
+            else bad=1;
+        }
+
+        BS_Push(stack,tmp);
+        BS_Pop(&helper);
+        i++;
+    }
+    dataType* paramPointer=(data->params)+i*sizeof(dataType*);
+    if(paramPointer!=NULL){BS_Dispose(stack);BS_Dispose(&helper);return 0;}
+    BS_Dispose(&helper);
+    if(bad==0)return 1;
+    else return 0;
+}
+
+int SemanticCheck(TreeElement** vl,BubbleStack_t *stack){
+    BubbleStack_t helper;
+    BS_Init(&helper);
+    if(helper.BS_Element==NULL)return MALLOC_ERR_CODE; 
+    int bad = 0;
+    int length=0;
+    while (vl[length]!=NULL){length++;}
+    for(int i=0;i<length;i++){
+        if(BS_IsEmpty(stack)){break;}
+        BS_Push(&helper,BS_TopStack(stack));
+        BS_Pop(stack);
+        variable* temp = (variable*)vl[length]->data;
+        if(BS_TopStack(&helper)->dt!= temp->type){
+            if(BS_TopStack(&helper)->dt==_integer && temp->type==_number)printf("plch");//ConvertToFloat(BS_TopStack(&helper));
+            else if(BS_TopStack(&helper)->dt==_number && temp->type==_integer) printf("plch");//ConvertToInt(BS_TopStack(&helper));
+            else bad=1;
+        }
+    }
+    if(!BS_IsEmpty(stack)){
+        bad=1;
+        while (!BS_IsEmpty(stack)){BS_Push(&helper,BS_TopStack(stack));BS_Pop(stack);}
+    }
+    while(!BS_IsEmpty(&helper)){BS_Push(stack,BS_TopStack(&helper));BS_Pop(&helper);}
+
+    //if(result)PrinttError
+
+    BS_Dispose(&helper);
+    if(bad)
+        return 0;
+    else
+        return 1;
+}
+
+int ReturnsCheck(TreeElement *func, BubbleStack_t * returnedStack){
+    BubbleStack_t helperStack;
+    BS_Init(&helperStack);
+    if(helperStack.BS_Element==NULL)return MALLOC_ERR_CODE;
+
+    int lengthStack=0;
+    while(!BS_IsEmpty(returnedStack)){
+        BS_Push(&helperStack,BS_TopStack(returnedStack));
+        BS_Pop(returnedStack);
+        lengthStack++;
+    }
+    int lengthReturns=0;
+    user_func* data=(user_func*)func->data;
+    while ((data->returns) + lengthReturns*sizeof(dataType*)!=NULL)
+    {
+        lengthReturns++;
+    }
+    int i = 0;
+    while (lengthReturns>lengthStack)
+    {
+        expression_block* tmp = malloc(sizeof(expression_block));
+        if (tmp==NULL){BS_Dispose(returnedStack);BS_Dispose(&helperStack);return MALLOC_ERR_CODE;}
+        tmp->blockType=_operand_expr;
+        tmp->dt=data->returns[i];
+        // FillWithNill(tmp);<--------------------------------------------------------------------------------------------------------------------LK
+        BS_Push(returnedStack,tmp);
+        lengthStack++;
+        i++;
+    }
+    int bad=0;
+    while(!BS_IsEmpty(&helperStack)){
+        expression_block* tmp = BS_TopStack(&helperStack);
+        if(tmp->dt!=data->returns[i]){
+            if(tmp->dt==_number && data->returns[i]==_integer){/*ConvertToInt(tmp)*/printf("plh");}//<--------------------------------------------LK
+            else if(tmp->dt==_integer && data->returns[i]==_number){/*ConvertToFloat(tmp)*/printf("plh");}
+            else bad=1;
+        }
+        i++;
+    }
+    BS_Dispose(&helperStack);
+    if(bad)return 0;
+    else return 1;
+}
+
+int MoveStack(BubbleStack_t* dest, BubbleStack_t* target){
+    BubbleStack_t helper;
+    BS_Init(&helper);
+    if(helper.BS_Element==NULL)return MALLOC_ERR_CODE;
+    while(BS_IsEmpty(dest)){
+        BS_Push(&helper,BS_TopStack(target));
+        BS_Pop(target);
+    }
+    while (BS_IsEmpty(&helper))
+    {
+        BS_Push(dest,BS_TopStack(&helper));
+        BS_Pop(&helper);
+    }
+
+    BS_Dispose(&helper);
+    return 0;
+}
+
+int C_AssignToVar(TreeElement* target, expression_block* source){
+    if(((variable*)target->data)->type==_string){
+        if(source->dt == _string)return 1;
+        else return 0;
+    }else
+    if (((variable*)target->data)->type==_number){
+        if(source->dt==_integer){
+            //ConvertToFloat(source);<----------------------------------------------LK
+            return 1;
+        }else
+        if (source->dt==_number) 
+            return 1;
+        else
+            return 0;
+    }else
+    if(((variable*)target->data)->type==_integer){
+        if(source->dt==_integer){
+            return 1;
+        }else
+        if (source->dt==_number){ 
+            //ConvertToInt(source);<--------------------------------------------------------------LK
+            return 1;
+        }else
+            return 0;
+    }else
+        return 0;
+}
+
 //DNT
 int IsEndSymbol(token *nextToken){
     if ((nextToken->type == _keyword && nextToken->data.kw == _end) ||
@@ -64,6 +246,15 @@ expression_block* FillEndMark(){
     if (block==NULL)return block;
     block->blockType=_misc_expr;
     block->em=_endMark;
+    return block;
+}
+
+//DNT
+expression_block* FillErrorMark(){
+    expression_block* block=malloc(sizeof(expression_block));
+    if (block==NULL)return block;
+    block->blockType=_operand_expr;
+    block->operType=_std_error;
     return block;
 }
 
@@ -397,9 +588,12 @@ actions ChooseAction(BubbleStack_t *stack,token* nextToken){
         return _tab_error;
     }
 
-int SolveCycle(BubbleStack_t* stack,token *nextToken,int *termNumber){
+expression_block* SolveCycle(BubbleStack_t* stack,token *nextToken,int *termNumber){
     actions curAction = ChooseAction(stack,nextToken);
     int control;
+
+    expression_block* err=FillErrorMark();
+
     while (curAction!=_tab_end){
         DebbugPrintStack(stack);
         if(curAction==_tab_shift){
@@ -408,33 +602,36 @@ int SolveCycle(BubbleStack_t* stack,token *nextToken,int *termNumber){
             control=TAB_Terminalize(stack,nextToken,termNumber);
         }else if (curAction == _tab_equals){
             control=TAB_Equals(stack,nextToken);
-        }else return INVALID_EXPRESSION;
+        }else return err;
         if(control!=0)break;
         curAction=ChooseAction(stack,nextToken);
     }
-    if (control!=0)return INVALID_EXPRESSION;
+    if (control==MALLOC_ERR_CODE){free(err); return NULL;}
+    else if(control==INVALID_EXPRESSION){return err;}
     DebbugPrintStack(stack);
     while(stack->BS_TopIndex!=1){
         control=TAB_Terminalize(stack,nextToken,termNumber);
-        if(control!=0)return INVALID_EXPRESSION;
+        if (control==MALLOC_ERR_CODE){free(err); return NULL;}
+        else if(control==INVALID_EXPRESSION){return err;}
         DebbugPrintStack(stack);
     }
     expression_block* result=NULL;
     result=BS_TopStack(stack);
-    DebbugPrintExpress(result);
-    //AssignToEndBlock(result); // <--------------------------------------------- JUROVA FUNKCIA
-    return 0;
+    BS_Pop(stack);
+    free(err);
+    return result;
 }
 
-int CallTheCommander(token *nextToken){
+expression_block* CallTheCommander(token *nextToken){
+    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Add undefined and unknown var support
     expression_block *block = NULL;
     BubbleStack_t stack;
     int termNumber = 0;
     BS_Init(&stack);
     block = FillEndMark();
-    if(block==NULL)return MALLOC_ERR_CODE;
+    if(block==NULL)return NULL;
     BS_Push(&stack,block);
-    int flag = SolveCycle(&stack,nextToken,&termNumber);
+    expression_block* result = SolveCycle(&stack,nextToken,&termNumber);
     BS_Dispose(&stack);
-    return flag;
+    return result;
 }
