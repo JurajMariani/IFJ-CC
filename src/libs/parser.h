@@ -5,10 +5,11 @@
 #include "TS.h"
 #include "BubbleStack.h"
 #include "expressionCommander.h"
+#include <string.h>
 
 #define DONE 2 //<-- NOt sure if this should be used
 
-typedef enum{N_Prog,N_Params,N_ParamsR,N_SecondParamVar,N_SecondParamType,N_SecondParamR,N_Type,N_StList,N_Statement,
+typedef enum{N_Prog,N_Params,N_ParamsR,N_SecondParamVar,N_SecondParam, N_SecondParamType,N_SecondParamR,N_Type,N_StList,N_Statement,
                 N_Else,N_Expr_AfterLoc,N_Exprb,N_Expression,N_SentPar,N_SPar,N_SExpr,
                     N_SVar}notTerminal;
 
@@ -36,15 +37,15 @@ int workNotTerminal(notTerminal terminal,token* nextToken);
 
 int F_Prog(token* nextToken);
 
-int F_Params(token* nextToken);
+int F_Params(token* nextToken, char* );
 
-int F_ParamsR(token *nextToken);
+int F_ParamsR(token *nextToken, char* );
 
-int F_SecondParam(token* nextToken);
+int F_SecondParam(token* nextToken, char* );
 
-int F_SecondParamR(token* nextToken);
+int F_SecondParamR(token* nextToken, char* );
 
-int F_Type(token* nextToken);
+int F_Type(token* nextToken, dataType* );
 
 int F_StList(token* nextToken);
 
@@ -52,22 +53,22 @@ int F_Statement(token* nextToken);
 
 int F_Else(token* nextToken);
 
-int F_Exprb(token* nextToken);
+int F_Exprb(token* nextToken, BubbleStack_t *);
 
-int F_ExprAfterLoc(token* nextToken);
+int F_ExprAfterLoc(token* nextToken, TreeElement*);
 
-int F_Expression(token* nextToken);
+expression_block* F_Expression(token* nextToken);
 
-int F_SentPar(token* nextToken);
+int F_SentPar(token* nextToken, BubbleStack_t *);
 
-int F_SPar(token* nextToken);
+int F_SPar(token* nextToken, BubbleStack_t *);
 
-int F_SExpr(token* nextToken);
+int F_SExpr(token* nextToken, BubbleStack_t *);
 
-int F_SVar(token* nextToken);
+int F_SVar(token* nextToken, TreeElement ***);
 
 //Will see if needed,mainly testing purposes
 int mainParseFunction(); 
 
-int PushDataType(dataType *toPush,dataType newType);
+dataType* PushDataType(dataType *toPush,dataType newType);
 #endif

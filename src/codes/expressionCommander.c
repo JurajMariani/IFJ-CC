@@ -1,5 +1,11 @@
 #include "../libs/expressionCommander.h"
 
+void DebbugPrintStack(BubbleStack_t* stack)
+{
+    (void)stack;
+    printf("stack\n");
+}
+
 TreeElement** VL_INIT(){
     TreeElement **vl;
     vl=malloc(sizeof(TreeElement*));
@@ -420,7 +426,7 @@ int TAB_Terminalize(BubbleStack_t *stack,token *nextToken,int* termNumber){
     //diary operand *duary *bilingual *binary
     if(bumper->blockType==_misc_expr && bumper->em == _bgnMark){
         free(bumper);
-        if (TypeCheck(operand1,sign,operand2)==0){free(operand1);free(operand2);free(sign);return INVALID_EXPRESSION;}
+        if (TypeCheck(operand1,sign,operand2)==0){free(operand1);free(operand2);free(sign);return INVALID_EXPRESSION_CONST_CODE ;}
         expression_block *newTerm = malloc(sizeof(expression_block));
         if(newTerm==NULL){free(operand1);free(operand2);free(sign);return MALLOC_ERR_CODE;}
         newTerm->blockType=_operand_expr;
@@ -437,7 +443,7 @@ int TAB_Terminalize(BubbleStack_t *stack,token *nextToken,int* termNumber){
         free(sign);
         if(stack_err_flag==1){free(operand1);free(operand2);free(sign);return MALLOC_ERR_CODE;}
         return 0;
-    }else{free(bumper);free(operand1);free(operand2);free(sign);return INVALID_EXPRESSION;}
+    }else{free(bumper);free(operand1);free(operand2);free(sign);return INVALID_EXPRESSION_CONST_CODE;}
 }
 
 //DNT
@@ -607,12 +613,12 @@ expression_block* SolveCycle(BubbleStack_t* stack,token *nextToken,int *termNumb
         curAction=ChooseAction(stack,nextToken);
     }
     if (control==MALLOC_ERR_CODE){free(err); return NULL;}
-    else if(control==INVALID_EXPRESSION){return err;}
+    else if(control==INVALID_EXPRESSION_CONST_CODE){return err;}
     DebbugPrintStack(stack);
     while(stack->BS_TopIndex!=1){
         control=TAB_Terminalize(stack,nextToken,termNumber);
         if (control==MALLOC_ERR_CODE){free(err); return NULL;}
-        else if(control==INVALID_EXPRESSION){return err;}
+        else if(control==INVALID_EXPRESSION_CONST_CODE){return err;}
         DebbugPrintStack(stack);
     }
     expression_block* result=NULL;
@@ -635,3 +641,4 @@ expression_block* CallTheCommander(token *nextToken){
     BS_Dispose(&stack);
     return result;
 }
+

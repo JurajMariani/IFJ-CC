@@ -18,7 +18,8 @@ void BS_Init(BubbleStack_t* stack)
         return;
     }
 
-    stack->BS_Element=malloc(sizeof(expression_block*)*200);
+    stack->BS_Element = (expression_block**) malloc(BS_MAX_ELEMS * sizeof(expression_block*));
+
     stack->BS_TopIndex = -1;
 }
 
@@ -32,7 +33,7 @@ void BS_Init(BubbleStack_t* stack)
  */
 expression_block* BS_TopStack(BubbleStack_t* stack)
 {
-    if (stack == NULL)
+    if ( (stack == NULL) || () )
     {
         stack_err_flag = 1;
         return NULL;
@@ -71,8 +72,13 @@ void BS_Pop(BubbleStack_t* stack)
         stack_err_flag = 1;
         return;
     }
-    
-    stack->BS_TopIndex-=1;
+
+    if (stack->BS_Element[stack->BS_TopIndex]->str != NULL)
+	    free(stack->BS_Element[stack->BS_TopIndex]->str);
+
+    free(stack->BS_Element[stack->BS_TopIndex]);
+
+    stack->BS_TopIndex--;
 }
 
 /**
@@ -111,7 +117,7 @@ int BS_IsFull(BubbleStack_t* stack)
         return 1;
     }
 
-    return ( stack->BS_TopIndex == 200 );
+    return ( stack->BS_TopIndex == BS_MAX_ELEMS );
 
 }
 
@@ -130,9 +136,7 @@ void BS_Dispose(BubbleStack_t* stack)
 
     while(!BS_IsEmpty(stack))
     {
-        expression_block* block=BS_TopStack(stack);
         BS_Pop(stack);
-        free(block);
     }
 
     free(stack->BS_Element);

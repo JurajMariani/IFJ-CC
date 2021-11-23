@@ -11,7 +11,7 @@ typedef enum {_tab_shift,_tab_equals,_tab_terminalize,_tab_end,_tab_error}action
 #define INVALID_OPERATION 8
 #define IsPushMark (block->blockType == _misc_expr && block->em == _bgnMark)
 #define IsEndMark (block->blockType == _misc_expr && block->em == _endMark)
-#define IsErrMark (block->blockType == _oprand_expr && block->operType == _std_err)
+#define IsErrMark (block->blockType == _operand_expr && block->operType == _std_error)
 #define IsTerminal (block->blockType!=_operand_expr && block->operType != _not_terminal_oper)
 
 //VL FUNCS
