@@ -4,33 +4,13 @@
 #include "../libs/analysis.h"
 
 
-void key_arr_init(){
-    strcpy(arr_keywords[0],"do");
-    strcpy(arr_keywords[1],"else");
-    strcpy(arr_keywords[2],"end");
-    strcpy(arr_keywords[3],"function");
-    strcpy(arr_keywords[4],"global");
-    strcpy(arr_keywords[5],"if");
-    strcpy(arr_keywords[6],"local");
-    strcpy(arr_keywords[7],"nil");
-    strcpy(arr_keywords[8],"read");
-    strcpy(arr_keywords[9],"require");
-    strcpy(arr_keywords[10],"return");
-    strcpy(arr_keywords[11],"then");
-    strcpy(arr_keywords[12],"while");
-    strcpy(arr_keywords[13],"write");
-    strcpy(arr_keywords[14],"integer");
-    strcpy(arr_keywords[15],"number");
-    strcpy(arr_keywords[16],"string");            
-}
-
 void GetNextToken(token *tokenOut)
 {
     if(tokenOut->type == _misc)
     {
         if(tokenOut->data.msc == _EOF) 
         {
-            fprintf(stderr,"\nIt's already end of file\n");
+            fprintf(stderr,"\nIt's already end of file\n\n");
             return;
         }
     }
@@ -55,7 +35,7 @@ void GetNextToken(token *tokenOut)
         if(input_c == '\n') line_cnt++;
         input_c = fgetc(stdin);
     } 
-    
+
     switch(input_c)
     {
         case 'a' ... 'z' :
@@ -281,7 +261,7 @@ void first_perimeter(char *state, char **output, unsigned *output_length)
         ungetc(input_c, stdin);
 
         (*output)[*output_length] = '\0';
-        
+
         int tmp = Is_Keyword(output);
         if((tmp >= 0) && (tmp != 8) && (tmp != 13))
         {
@@ -293,9 +273,11 @@ void first_perimeter(char *state, char **output, unsigned *output_length)
         {
             result.type = _identifier;
             result.data.type = _string;
+
+            result.data.str = malloc(strlen((*output))*sizeof(char));
             strcpy(result.data.str, (*output));
         }
-
+         
         return;
     }
 
@@ -408,7 +390,6 @@ void first_perimeter(char *state, char **output, unsigned *output_length)
 
     if (!strcmp(state, "sub"))
     {
-       
         input_c = fgetc(stdin);
 
         if(input_c == '-')
@@ -520,6 +501,12 @@ void first_perimeter(char *state, char **output, unsigned *output_length)
        
         while(input_c != '"')
         {
+            if(input_c < 32)
+            {
+                lex_err_flag = INVALID_TOKEN_CONST_CODE;
+                return;
+            }
+
             if(input_c == 10 || input_c == EOF) 
             {
                 line_cnt++;
@@ -712,7 +699,10 @@ void second_perimeter(char *state, char **output, unsigned *output_length)
             {
                 second_perimeter(state, output, output_length);
             }
-            else return;
+            else 
+            {
+                return;
+            }
         }
     }
 
@@ -771,43 +761,46 @@ void second_perimeter(char *state, char **output, unsigned *output_length)
             case 'n':
             {
                 (*output)[(*output_length)-1] = 10;
+                strcpy(state, "start_str");
                 return;
             }
 
             case 't':
             {
                 (*output)[(*output_length)-1] = '\t';
+                strcpy(state, "start_str");
                 return;
             }
 
             case '"':
             {
                 (*output)[(*output_length)-1] = input_c;
+                strcpy(state, "start_str");
                 return;
             }
 
             case '\\':
             {
+                strcpy(state, "start_str");
                 return;
             }
 
             case '0' ... '2':
             {
                 ungetc(input_c, stdin);
-                char tmp = esc_num();
-                if(tmp != '9')
-                {
-                    (*output)[(*output_length)-1] = tmp;
-                    return;
-                }
-                else return;
-                
+                strcpy(state, "esc_num");
+                char tmp = esc_num(state);
+                (*output)[(*output_length)-1] = tmp;
+                strcpy(state, "start_str");
+
+                return;
             }
 
             default:
             {
                 lex_err_flag = INVALID_TOKEN_CONST_CODE;
                 ungetc(input_c, stdin);
+                strcpy(state, "start_str");
                 return;
             }
         }
@@ -883,11 +876,15 @@ void bl_cmt(char* state)
           
     if(input_c == ']')
     {
+        strcpy(state, "right_bracket");
         if(!right_bracket(state))
         {
             bl_cmt(state);
         }
-        else return;
+        else 
+        {
+            return;
+        }
     }
     else
     {
@@ -914,9 +911,12 @@ int right_bracket(char* state)
 
 int Is_Keyword(char **output)
 {
+    KeyArrInit();
+
     int i = 0;
     while((i < ARR_LEN) && (strcmp((*output), arr_keywords[i])))
     {
+
         i++;
     }
     
@@ -926,7 +926,7 @@ int Is_Keyword(char **output)
     return -2;
 }
 
-char esc_num(void)
+char esc_num(char *state)
 {
     char input_c = fgetc(stdin);
     char output_c[3];
@@ -937,38 +937,42 @@ char esc_num(void)
         case '0': 
         {
             output_c[output_len++] = input_c;
-            zero(output_c, &output_len);
+            strcpy(state, "zero");
+            zero(output_c, &output_len, state);
             break;
         }
 
         case '1':
         {
             output_c[output_len++] = input_c;
-            one(output_c, &output_len);
+            strcpy(state, "one");
+            one(output_c, &output_len, state);
             break;
         }
 
         case '2':
         {
             output_c[output_len++] = input_c;
-            two(output_c, &output_len);
+            strcpy(state, "two");
+            two(output_c, &output_len, state);
             break;
         }
 
         default:
         {
             lex_err_flag = INVALID_TOKEN_CONST_CODE;
-            ungetc(input_c, stdin);
-            return '9';
+            strcpy(state, "esc_seq");
+            return input_c;
         }
     }
 
     int tmp = atoi(output_c);
     char result = tmp;
+    strcpy(state, "esc_seq");
     return result;
 }
 
-void zero(char *output_c, unsigned *output_len)
+void zero(char *output_c, unsigned *output_len, char *state)
 {
     char input_c = fgetc(stdin);
 
@@ -977,44 +981,49 @@ void zero(char *output_c, unsigned *output_len)
         case '0':
         {
             output_c[(*output_len)++] = input_c;
-            zero_zero(output_c, output_len);
+            strcpy(state, "zero_zero");
+            zero_zero(output_c, output_len, state);
             return;   
         }
 
         case '1' ... '9':
         {
             output_c[(*output_len)++] = input_c;
-            others(output_c, output_len);
+            strcpy(state, "others");
+            others(output_c, output_len, state);
             return;   
         }
 
         default:
         {
             lex_err_flag = INVALID_TOKEN_CONST_CODE;
+            strcpy(state, "esc_num");
             ungetc(input_c, stdin);
             return;
         }
     }
 }
 
-void one(char *output_c, unsigned *output_len)
+void one(char *output_c, unsigned *output_len, char *state)
 {
     char input_c = fgetc(stdin);
     if(input_c >= '0' && input_c <= '9')
     {
         output_c[(*output_len)++] = input_c;
-        others(output_c, output_len);
+        strcpy(state, "others");
+        others(output_c, output_len, state);
         return;
     }
     else
     {
         lex_err_flag = INVALID_TOKEN_CONST_CODE;
         ungetc(input_c,stdin);
+        strcpy(state, "esc_num");
         return;
     }
 }
 
-void two(char *output_c, unsigned *output_len)
+void two(char *output_c, unsigned *output_len, char *state)
 {
     char input_c = fgetc(stdin);
     switch(input_c)
@@ -1022,14 +1031,16 @@ void two(char *output_c, unsigned *output_len)
         case '0' ... '4':
         {
             output_c[(*output_len)++] = input_c;
-            others(output_c, output_len);
+            strcpy(state, "others");
+            others(output_c, output_len, state);
             return;
         }
 
         case '5':
         {
             output_c[(*output_len)++] = input_c;
-            two_five(output_c, output_len);
+            strcpy(state, "two_five");
+            two_five(output_c, output_len, state);
             return;
         }
 
@@ -1042,50 +1053,56 @@ void two(char *output_c, unsigned *output_len)
     }
 }
 
-void zero_zero(char *output_c, unsigned *output_len)
+void zero_zero(char *output_c, unsigned *output_len, char *state)
 {
     char input_c = fgetc(stdin);
     if(input_c >= '1' && input_c <= '9')
     {
         output_c[*output_len] = input_c;
+        strcpy(state, "esc_num");
         return;
     }
     else
     {
         lex_err_flag = INVALID_TOKEN_CONST_CODE;
         ungetc(input_c, stdin);
+        strcpy(state, "esc_num");
         return;
     }
 }
 
-void two_five(char *output_c, unsigned *output_len)
+void two_five(char *output_c, unsigned *output_len, char *state)
 {
     char input_c = fgetc(stdin);
     if(input_c >= '0' && input_c <= '5')
     {
         output_c[*output_len] = input_c;
+        strcpy(state, "esc_num");
         return;
     }
     else
     {
         lex_err_flag = INVALID_TOKEN_CONST_CODE;
         ungetc(input_c, stdin);
+        strcpy(state, "esc_num");
         return;
     }
 }
 
-void others(char *output_c, unsigned *output_len)
+void others(char *output_c, unsigned *output_len, char *state)
 {
     char input_c = fgetc(stdin);
     if(input_c >= '0' && input_c <= '9')
     {
         output_c[*output_len] = input_c;
+        strcpy(state, "esc_num");
         return;
     }
     else
     {
         lex_err_flag = INVALID_TOKEN_CONST_CODE;
         ungetc(input_c, stdin);
+        strcpy(state, "esc_num");
         return;
     }
 }
@@ -1093,4 +1110,25 @@ void others(char *output_c, unsigned *output_len)
 int GetLineNumber()
 {
     return line_cnt;
+}
+
+void KeyArrInit()
+{
+    strcpy(arr_keywords[0],"do");
+    strcpy(arr_keywords[1],"else");
+    strcpy(arr_keywords[2],"end");
+    strcpy(arr_keywords[3],"function");
+    strcpy(arr_keywords[4],"global");
+    strcpy(arr_keywords[5],"if");
+    strcpy(arr_keywords[6],"local");
+    strcpy(arr_keywords[7],"nil");
+    strcpy(arr_keywords[8],"read");
+    strcpy(arr_keywords[9],"require");
+    strcpy(arr_keywords[10],"return");
+    strcpy(arr_keywords[11],"then");
+    strcpy(arr_keywords[12],"while");
+    strcpy(arr_keywords[13],"write");
+    strcpy(arr_keywords[14],"integer");
+    strcpy(arr_keywords[15],"number");
+    strcpy(arr_keywords[16],"string");            
 }
