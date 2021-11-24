@@ -134,8 +134,10 @@ void BS_Dispose(BubbleStack_t* stack)
         free(BS_TopStack(stack));
         BS_Pop(stack);
     }
-
-    free(stack->BS_Element);
+    if(stack->BS_Element!=NULL){
+        free(stack->BS_Element);
+        stack->BS_Element=NULL;
+    }
 }
 
 

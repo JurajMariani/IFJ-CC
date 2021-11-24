@@ -36,6 +36,8 @@ void GiveMeAnError(int errCode);
  * @return 0 on sucess, 1 on invalid termianl find
  */ 
 
+int PushBuiltInFunctions();
+
 variable* CreateVariableData(dataType newType);
 
 user_func* CreateFunctionData();

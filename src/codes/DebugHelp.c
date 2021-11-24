@@ -95,6 +95,7 @@ void DebbugPrintExpress(expression_block *block){
 			if(block->dt==_number){printf(" Cfloat %fC ",block->_double);}
 			if(block->dt==_integer){printf(" Cinteger %dC ",block->_integer);}
 			if(block->dt==_string){printf(" Cstring %sC ",block->str);}
+			if(block->dt==_nan)printf(" nil ");
 		}else
 		if (block->operType==_variable_oper){
 			if(block->dt==_number)printf(" Vfloat %sV ",block->str);
@@ -106,6 +107,7 @@ void DebbugPrintExpress(expression_block *block){
 			if(block->dt==_string)printf(" <string %d> ", block->_integer);
 			if(block->dt==_number)printf(" <number %d> ", block->_integer);
 			if(block->dt==_bool)printf(" <bool %d> ", block->_integer);
+			if(block->dt==_nan)printf(" <nil %d> ", block->_integer);
 		}
 		else printf(" Invalid ");
 	}
