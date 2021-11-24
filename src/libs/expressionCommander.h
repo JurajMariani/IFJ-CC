@@ -18,7 +18,8 @@ typedef enum {_tab_shift,_tab_equals,_tab_terminalize,_tab_end,_tab_error}action
 
 TreeElement** VL_INIT();
 TreeElement** VL_PUSH(TreeElement **vl,TreeElement* new);
-void VL_Dispose (TreeElement **vl);
+
+void VL_Dispose (TreeElement **);
 
 int ParamCheck(TreeElement* func, BubbleStack_t *stack);
 int C_AssignToVar(TreeElement* , expression_block* );

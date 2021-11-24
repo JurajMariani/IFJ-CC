@@ -72,7 +72,7 @@ void TS_CloseLayer(TreeSupport *ts);
  * 	Closes all Layers and frees memory
  * 	@param TS pointer
  */
-void TS_COLLAPSE(TreeSupport *ts);
+void TS_COLLAPSE(TreeSupport **ts);
 
 /**
  * 	Creates a variable for thee to insert to a tree

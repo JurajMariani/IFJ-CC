@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include "../libs/TS.h"
 
+/*
 //DNT
 user_func* CreateFunctionData(){
     user_func* newData = malloc(sizeof(user_func));
@@ -26,7 +27,7 @@ variable* CreateVariableData(dataType newType){
     newData->vDefined=0;
     return newData;
 }
-
+*/
 /*
 	Tree
 */
@@ -178,11 +179,12 @@ void TS_CloseLayer(TreeSupport *ts){
 	free(toDelete);
 }
 
-void TS_COLLAPSE(TreeSupport *ts){
-	while(ts->curLayer!=NULL){
-		TS_CloseLayer(ts);
+void TS_COLLAPSE(TreeSupport **ts){
+	while((*ts)->curLayer!=NULL){
+		TS_CloseLayer(*ts);
 	}
-	free(ts);
+	free(*ts);
+	*ts=NULL;
 }
 
 int TS_InsertVariable(TreeSupport *ts, char* name,treeElementType type,void* data){

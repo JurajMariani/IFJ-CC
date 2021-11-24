@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS=-Wall -Wextra -std=c99
-CodeFiles= ../codes/DebugHelp.c ../codes/BubbleStack.c ../codes/expressionCommander.c ../codes/TS.c
+CodeFiles= ../codes/DebugHelp.c ../codes/BubbleStack.c ../codes/expressionCommander.c ../codes/TS.c ../codes/analysis.c ../codes/parser.c
 TestFiles= ParsTest.c
 OutputName= test
 

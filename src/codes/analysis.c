@@ -1,9 +1,28 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "Defs.h"
-#include "analysis.h"
+#include "../libs/analysis.h"
 
+
+void key_arr_init(){
+    strcpy(arr_keywords[0],"do");
+    strcpy(arr_keywords[1],"else");
+    strcpy(arr_keywords[2],"end");
+    strcpy(arr_keywords[3],"function");
+    strcpy(arr_keywords[4],"global");
+    strcpy(arr_keywords[5],"if");
+    strcpy(arr_keywords[6],"local");
+    strcpy(arr_keywords[7],"nil");
+    strcpy(arr_keywords[8],"read");
+    strcpy(arr_keywords[9],"require");
+    strcpy(arr_keywords[10],"return");
+    strcpy(arr_keywords[11],"then");
+    strcpy(arr_keywords[12],"while");
+    strcpy(arr_keywords[13],"write");
+    strcpy(arr_keywords[14],"integer");
+    strcpy(arr_keywords[15],"number");
+    strcpy(arr_keywords[16],"string");            
+}
 
 void GetNextToken(token *tokenOut)
 {
@@ -346,7 +365,7 @@ void first_perimeter(char *state, char **output, unsigned *output_length)
         else
         {
             ungetc(input_c, stdin);
-            lex_err_flag = INVALID_TOKEN;
+            lex_err_flag = INVALID_TOKEN_CONST_CODE;
             return;
         }
     }
@@ -483,7 +502,7 @@ void first_perimeter(char *state, char **output, unsigned *output_length)
         else
         {
             ungetc(input_c, stdin);
-            lex_err_flag = INVALID_TOKEN;
+            lex_err_flag = INVALID_TOKEN_CONST_CODE;
             return;
         }
     }
@@ -504,7 +523,7 @@ void first_perimeter(char *state, char **output, unsigned *output_length)
             if(input_c == 10 || input_c == EOF) 
             {
                 line_cnt++;
-                lex_err_flag = INVALID_TOKEN;
+                lex_err_flag = INVALID_TOKEN_CONST_CODE;
                 return;
             }
 
@@ -727,7 +746,7 @@ void second_perimeter(char *state, char **output, unsigned *output_length)
 
     if (!strcmp(state, "end_str"))
     {
-        if(lex_err_flag == INVALID_TOKEN)
+        if(lex_err_flag == INVALID_TOKEN_CONST_CODE)
         {
             return;
         }
@@ -787,7 +806,7 @@ void second_perimeter(char *state, char **output, unsigned *output_length)
 
             default:
             {
-                lex_err_flag = INVALID_TOKEN;
+                lex_err_flag = INVALID_TOKEN_CONST_CODE;
                 ungetc(input_c, stdin);
                 return;
             }
@@ -938,7 +957,7 @@ char esc_num(void)
 
         default:
         {
-            lex_err_flag = INVALID_TOKEN;
+            lex_err_flag = INVALID_TOKEN_CONST_CODE;
             ungetc(input_c, stdin);
             return '9';
         }
@@ -971,7 +990,7 @@ void zero(char *output_c, unsigned *output_len)
 
         default:
         {
-            lex_err_flag = INVALID_TOKEN;
+            lex_err_flag = INVALID_TOKEN_CONST_CODE;
             ungetc(input_c, stdin);
             return;
         }
@@ -989,7 +1008,7 @@ void one(char *output_c, unsigned *output_len)
     }
     else
     {
-        lex_err_flag = INVALID_TOKEN;
+        lex_err_flag = INVALID_TOKEN_CONST_CODE;
         ungetc(input_c,stdin);
         return;
     }
@@ -1016,7 +1035,7 @@ void two(char *output_c, unsigned *output_len)
 
         default:
         {
-            lex_err_flag = INVALID_TOKEN;
+            lex_err_flag = INVALID_TOKEN_CONST_CODE;
             ungetc(input_c, stdin);
             return;
         }
@@ -1033,7 +1052,7 @@ void zero_zero(char *output_c, unsigned *output_len)
     }
     else
     {
-        lex_err_flag = INVALID_TOKEN;
+        lex_err_flag = INVALID_TOKEN_CONST_CODE;
         ungetc(input_c, stdin);
         return;
     }
@@ -1049,7 +1068,7 @@ void two_five(char *output_c, unsigned *output_len)
     }
     else
     {
-        lex_err_flag = INVALID_TOKEN;
+        lex_err_flag = INVALID_TOKEN_CONST_CODE;
         ungetc(input_c, stdin);
         return;
     }
@@ -1065,7 +1084,7 @@ void others(char *output_c, unsigned *output_len)
     }
     else
     {
-        lex_err_flag = INVALID_TOKEN;
+        lex_err_flag = INVALID_TOKEN_CONST_CODE;
         ungetc(input_c, stdin);
         return;
     }

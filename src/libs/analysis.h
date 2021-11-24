@@ -1,34 +1,17 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include <string.h>
+#include "Defs.h"
 
 #define STR_SIZE 10
 
 #define ARR_LEN 17
-char arr_keywords[ARR_LEN][10] = 
-{
-    "do",
-    "else",
-    "end",
-    "function",
-    "global",
-    "if",
-    "local",
-    "nil",
-    "read",
-    "require",
-    "return",
-    "then",
-    "while",
-    "write",
-    "integer",
-    "number",
-    "string"            
-};
+char arr_keywords[ARR_LEN][10];
 
-int line_cnt = 1;
+int line_cnt;
 token result;
 
+void key_arr_init();
 void get_next_token( token *);
 void first_perimeter( char * , char ** , unsigned * );
 void second_perimeter( char * , char ** , unsigned * );

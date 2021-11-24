@@ -1,11 +1,5 @@
 #include "../libs/expressionCommander.h"
 
-void DebbugPrintStack(BubbleStack_t* stack)
-{
-    (void)stack;
-    printf("stack\n");
-}
-
 TreeElement** VL_INIT(){
     TreeElement **vl;
     vl=malloc(sizeof(TreeElement*));
@@ -27,7 +21,7 @@ TreeElement** VL_PUSH(TreeElement **vl,TreeElement* new){
     return vl;
 }
 
-void VL_DISPOSE(TreeElement **vl){
+void VL_Dispose(TreeElement **vl){
     free(vl);
 }
 
@@ -45,8 +39,8 @@ int ParamCheck(TreeElement* func, BubbleStack_t *stack){
     int bad = 0;
     user_func* data=(user_func*)func->data;
     while (!BS_IsEmpty(&helper)){
-        dataType* paramPointer=(data->params)+i*sizeof(dataType*);
-        if(paramPointer==NULL){BS_Dispose(stack);BS_Dispose(&helper);return 0;}
+        dataType paramPointer=data->params[i];
+        if(paramPointer==_ender){BS_Dispose(stack);BS_Dispose(&helper);return 0;}
         expression_block* tmp = BS_TopStack(&helper);
         if(tmp->dt!=data->params[i]){
             if(tmp->dt==_number && data->params[i]==_integer) printf("plc");//ConvertToFloat(tmp);
@@ -58,8 +52,8 @@ int ParamCheck(TreeElement* func, BubbleStack_t *stack){
         BS_Pop(&helper);
         i++;
     }
-    dataType* paramPointer=(data->params)+i*sizeof(dataType*);
-    if(paramPointer!=NULL){BS_Dispose(stack);BS_Dispose(&helper);return 0;}
+    dataType paramPointer=data->params[i];
+    if(paramPointer!=_ender){BS_Dispose(stack);BS_Dispose(&helper);return 0;}
     BS_Dispose(&helper);
     if(bad==0)return 1;
     else return 0;

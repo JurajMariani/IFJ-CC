@@ -33,7 +33,7 @@ void BS_Init(BubbleStack_t* stack)
  */
 expression_block* BS_TopStack(BubbleStack_t* stack)
 {
-    if ( (stack == NULL) || () )
+    if ( (stack == NULL) )
     {
         stack_err_flag = 1;
         return NULL;
@@ -72,11 +72,6 @@ void BS_Pop(BubbleStack_t* stack)
         stack_err_flag = 1;
         return;
     }
-
-    if (stack->BS_Element[stack->BS_TopIndex]->str != NULL)
-	    free(stack->BS_Element[stack->BS_TopIndex]->str);
-
-    free(stack->BS_Element[stack->BS_TopIndex]);
 
     stack->BS_TopIndex--;
 }
@@ -136,6 +131,7 @@ void BS_Dispose(BubbleStack_t* stack)
 
     while(!BS_IsEmpty(stack))
     {
+        free(BS_TopStack(stack));
         BS_Pop(stack);
     }
 

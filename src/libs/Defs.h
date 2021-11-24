@@ -32,7 +32,7 @@ int generate_code;
 /**
  * 	ENUMS
  */
-typedef enum {_integer,_number,_string,_bool,_nan}dataType;
+typedef enum {_integer,_number,_string,_bool,_nan,_ender}dataType;
 typedef enum {_identifier,_keyword,_const,_operand,_misc,_operator}tokenType;
 typedef enum {_bracketL,_bracketR,_komma,_doubleKomma,_assign,_EOF} misc; //No We wont name it ass
 typedef enum {_length,_add,_sub,_mul,_div,_div2,_konk,_less,_lessEq,_great,_greatEq,_Eq,_nEq,_func} operator;
@@ -150,15 +150,16 @@ typedef struct token{
 	tokenData data;
 }token;
 
-//Delete this later
-int GetNextToken(token*);
-int GetLineNumber();
+void GetNextToken(token* tokenOut);
 
-#define NEXT GetNextToken(nextToken);
+int GetLineNumber();
 
 //Debug functions
 void DebbugPrintToken(token *nextToken);
 
 void DebbugPrintExpress(expression_block *block);
 
+void DebbugPrintStack(BubbleStack_t *);
+
+#define NEXT GetNextToken(nextToken);
 #endif

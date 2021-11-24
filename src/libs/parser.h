@@ -5,6 +5,7 @@
 #include "TS.h"
 #include "BubbleStack.h"
 #include "expressionCommander.h"
+#include "analysis.h"
 #include <string.h>
 
 #define DONE 2 //<-- NOt sure if this should be used
@@ -34,7 +35,10 @@ void GiveMeAnError(int errCode);
  * @param token* next unprocessed token
  * @return 0 on sucess, 1 on invalid termianl find
  */ 
-int workNotTerminal(notTerminal terminal,token* nextToken);
+
+variable* CreateVariableData(dataType newType);
+
+user_func* CreateFunctionData();
 
 int F_Prog(token* nextToken);
 
