@@ -1,7 +1,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "Defs.h"
+#include "../libs/Defs.h"
 #include <unistd.h>
 #include <fcntl.h>
 
@@ -36,7 +36,7 @@ int main()
     fprintf(fout, "-----------------------------\n");
     while(write_token.data.msc != _EOF)
     {
-        line_cnt = GetLineNumber();
+        line_cnt = GetLineNumber() + 1;
         switch(write_token.type)
         {
             case 0:
@@ -91,5 +91,4 @@ int main()
 
     fclose(fout);
     exit(0);
-   
 }
