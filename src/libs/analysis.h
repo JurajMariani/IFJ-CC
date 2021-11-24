@@ -1,5 +1,5 @@
-#include<stdio.h>
-#include<stdlib.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "Defs.h"
 
@@ -11,8 +11,7 @@ char arr_keywords[ARR_LEN][10];
 int line_cnt;
 token result;
 
-void key_arr_init();
-void get_next_token( token *);
+void KeyArrInit();
 void first_perimeter( char * , char ** , unsigned * );
 void second_perimeter( char * , char ** , unsigned * );
 void other_states( char * , char ** , unsigned * );
@@ -23,10 +22,10 @@ int left_bracket(char *);
 int right_bracket(char *);
 void bl_cmt(char *);
 
-char esc_num(void);
-void zero(char *, unsigned *);
-void one(char *, unsigned *);
-void two(char *, unsigned *);
-void zero_zero(char *, unsigned *);
-void two_five(char *, unsigned *);
-void others(char *, unsigned *);
+char esc_num(char *);
+void zero(char *, unsigned *, char *);
+void one(char *, unsigned *, char *);
+void two(char *, unsigned *, char *);
+void zero_zero(char *, unsigned *, char *);
+void two_five(char *, unsigned *, char *);
+void others(char *, unsigned *, char *);

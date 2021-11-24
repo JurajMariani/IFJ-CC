@@ -15,17 +15,18 @@ int generate_code;
  * 	CONSTANTS
  */
 
+
+#define UNEND_COMMENT -2
 #define MALLOC_ERR_CODE -1
 #define REDECLARATION_OF_FUNCTION 1
-#define REDECLARATION_OF_VARIABLE 6
 #define INVALID_TOKEN_CONST_CODE 2
-#define INVALID_TOKEN generate_code = 0; return INVALID_TOKEN_CONST_CODE;
 #define UNKNOWN_IDENTIF 3
 #define INVALID_EXPRESSION_CONST_CODE 4
-#define INVALID_EXPRESSION generate_code = 0; return INVALID_EXPRESSION_CONST_CODE; // generate = 0; \ return 4
 #define FLOAT_INT_COMPARISM 5
+#define REDECLARATION_OF_VARIABLE 6
 #define CONFLICTING_NUMBER_OF_PARAMS 7 // Hetes
-#define UNEND_COMMENT -2
+#define INVALID_TOKEN generate_code = 0; return INVALID_TOKEN_CONST_CODE;
+#define INVALID_EXPRESSION generate_code = 0; return INVALID_EXPRESSION_CONST_CODE; // generate = 0; \ return 4
 
 #define exitus(__code__) //call error_write() and exit(__code__)
 
