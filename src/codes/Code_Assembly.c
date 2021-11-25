@@ -63,8 +63,7 @@ char* generate_name(TreeElement* var)
 char * generate_term_name(expression_block* term)
 {
 //T_int_double
-
-    char *out = malloc(sizeof(char));
+    char *out = malloc(sizeof(char)*203);
     unsigned i = 0;
     out[i++] = 'T';
     out[i++] = '_';
@@ -79,7 +78,7 @@ char * generate_term_name(expression_block* term)
         out[i] = char_pom1[i-2];
         i++;
     }
-    out[i] = '_';
+    out[i++] = '_';
     while (char_pom2[i-4] != '\0')
     {
         if (char_pom2[i-4] == '.')
@@ -88,6 +87,7 @@ char * generate_term_name(expression_block* term)
             out[i] = char_pom2[i-4];
         i++;
     }
+    out[i]='\0';
     return out;
 }
 
@@ -426,7 +426,7 @@ int G_IfBGN(expression_block* term)
  * @brief 
  * 
  */
-void IfELSE()
+void G_IfELSE()
 {
     out_partial("JUMP END_");
     out_integer(if_counter);
@@ -443,7 +443,7 @@ void IfELSE()
  * @brief 
  * 
  */
-void IfEND()
+void G_IfEND()
 {
     newline
     newline
@@ -635,7 +635,7 @@ void G_AssignToVars(TreeElement** var,BubbleStack_t* stack)//<----------------- 
     }
 }
 
-int G_function_bng(TreeElement* func)
+int G_function_bgn(TreeElement* func)
 {
     generate_execute_jump();
 
@@ -987,7 +987,6 @@ void convert_to_float(expression_block* term)
     newline
 
     term->dt = _number;
-
 }
 
 

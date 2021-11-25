@@ -92,26 +92,27 @@ void DebbugPrintExpress(expression_block *block){
 	}else 
 	if (block->blockType==_operand_expr){
 		if(block->operType==_constant_oper){
-			if(block->dt==_number){printf(" Cfloat %fC ",block->_double);}
-			if(block->dt==_integer){printf(" Cinteger %dC ",block->_integer);}
-			if(block->dt==_string){printf(" Cstring %sC ",block->str);}
+			if(block->dt==_number){printf(" CfloatC ");}
+			if(block->dt==_integer){printf(" CintegerC ");}
+			if(block->dt==_string){printf(" CstringC ");}
 			if(block->dt==_nan)printf(" nil ");
 		}else
 		if (block->operType==_variable_oper){
 			if(block->dt==_number)printf(" Vfloat %sV ",block->str);
 			if(block->dt==_integer)printf(" Vinteger %sV ",block->str);
-			if(block->dt==_string)printf(" Vstring %sV ",block->str);
+			if(block->dt==_string)printf(" Vstring %sV  ",block->str);
 		}else
 		if(block->operType==_not_terminal_oper){
-			if(block->dt==_integer)printf(" <integer %d> ",block->_integer);
-			if(block->dt==_string)printf(" <string %d> ", block->_integer);
-			if(block->dt==_number)printf(" <number %d> ", block->_integer);
-			if(block->dt==_bool)printf(" <bool %d> ", block->_integer);
-			if(block->dt==_nan)printf(" <nil %d> ", block->_integer);
+			if(block->dt==_integer)printf(" <integer %d %f> ",block->_integer, block->_double);
+			if(block->dt==_string)printf(" <string %d %f> ", block->_integer, block->_double);
+			if(block->dt==_number)printf(" <number %d %f> ", block->_integer, block->_double);
+			if(block->dt==_bool)printf(" <bool %d %f> ", block->_integer, block->_double);
+			if(block->dt==_nan)printf(" <nil %d %f> ", block->_integer, block->_double);
 		}
 		else printf(" Invalid ");
 	}
 	else printf(" Invalid ");
+	fflush(stdout);
 }
 
 void DebbugPrintStack(BubbleStack_t *stack){

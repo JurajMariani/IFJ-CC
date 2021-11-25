@@ -72,8 +72,8 @@ int SemanticCheck(TreeElement** vl,BubbleStack_t *stack){
         BS_Pop(stack);
         variable* temp = (variable*)vl[i]->data;
         if(BS_TopStack(&helper)->dt!= temp->type){
-            if(BS_TopStack(&helper)->dt==_integer && temp->type==_number)printf("plch");//ConvertToFloat(BS_TopStack(&helper));
-            else if(BS_TopStack(&helper)->dt==_number && temp->type==_integer) printf("plch");//ConvertToInt(BS_TopStack(&helper));
+            if(BS_TopStack(&helper)->dt==_integer && temp->type==_number)convert_to_float(BS_TopStack(&helper)); //<-----------------LK
+            else if(BS_TopStack(&helper)->dt==_number && temp->type==_integer) convert_to_int(BS_TopStack(&helper));
             else bad=1;
         }
     }
@@ -116,7 +116,8 @@ int ReturnsCheck(TreeElement *func, BubbleStack_t * returnedStack){
         if (tmp==NULL){BS_Dispose(returnedStack);BS_Dispose(&helperStack);return MALLOC_ERR_CODE;}
         tmp->blockType=_operand_expr;
         tmp->dt=data->returns[i];
-        // FillWithNill(tmp);<--------------------------------------------------------------------------------------------------------------------LK
+        tmp->_double = exprCounter;
+        // FillWithNill(tmp);<--------------------------------------------------------------------------------------------------------------------LK TODO
         BS_Push(returnedStack,tmp);
         lengthStack++;
         i++;
@@ -160,7 +161,7 @@ int C_AssignToVar(TreeElement* target, expression_block* source){
     }else
     if (((variable*)target->data)->type==_number){
         if(source->dt==_integer){
-            //ConvertToFloat(source);<----------------------------------------------LK
+            convert_to_float(source);//<-------------------------------LK
             return 1;
         }else
         if (source->dt==_number) 
@@ -173,7 +174,7 @@ int C_AssignToVar(TreeElement* target, expression_block* source){
             return 1;
         }else
         if (source->dt==_number){ 
-            //ConvertToInt(source);<--------------------------------------------------------------LK
+            convert_to_int(source);//<_----------------------------LK
             return 1;
         }else
             return 0;
@@ -198,7 +199,7 @@ int IsEndSymbol(token *nextToken){
 }
 
 //Should work
-int ConvertToBlock(expression_block *block, token* nextToken){
+int ConvertToBlock(expression_block *block, token* nextToken, int *termNumber){
     if (nextToken->type==_misc){
         if (nextToken->data.msc == _bracketL){
             block->em=_lbr; block->blockType=_misc_expr; return 0;
@@ -214,25 +215,24 @@ int ConvertToBlock(expression_block *block, token* nextToken){
         block->blockType=_operand_expr;
         block->operType=_variable_oper;
         block->TSPointer=TS_LookVariable(ts,nextToken->data.str);
-        block->str=nextToken->data.str;
         if(block->TSPointer == NULL)return UNKNOWN_IDENTIF;
         block->dt = ((variable*)(block->TSPointer->data))->type;
+        block->str=block->TSPointer->name;
     }else
     if (nextToken->type==_const){
         block->blockType=_operand_expr;
         block->operType=_constant_oper;
         block->dt=nextToken->data.type;
-        //_integer,_number,_string
-        if (block->dt==_integer)
-            block->_integer=nextToken->data._integer;
-        else if (block->dt==_number)
-            block->_double=nextToken->data._double;
-        else if (block->dt==_string)
-            block->str=nextToken->data.str;
+        block->_double=exprCounter;
+        block->_integer=*termNumber;
+        (*termNumber)++;
     }else
     if (nextToken->type==_keyword && nextToken->data.kw==_nil){
         block->blockType=_operand_expr;
         block->operType=_constant_oper;
+        block->_double=exprCounter;
+        block->_integer=*termNumber;
+        (*termNumber)++;
         block->dt=_nan;
     }
     return 0;
@@ -244,6 +244,7 @@ expression_block* FillBeginMark(){
     if (block==NULL)return block;
     block->blockType=_misc_expr;
     block->em=_bgnMark;
+    block->_double=exprCounter;
     return block;
 }
 
@@ -253,6 +254,7 @@ expression_block* FillEndMark(){
     if (block==NULL)return block;
     block->blockType=_misc_expr;
     block->em=_endMark;
+    block->_double=exprCounter;
     return block;
 }
 
@@ -262,6 +264,7 @@ expression_block* FillErrorMark(){
     if (block==NULL)return block;
     block->blockType=_operand_expr;
     block->operType=_std_error;
+    block->_double=exprCounter;
     return block;
 }
 
@@ -291,8 +294,9 @@ int TypeCheck(expression_block* operand1,expression_block* sign, expression_bloc
     }else if (sign-> blockType==_operator_expr && (sign->oper==_Eq || sign->oper==_nEq || sign->oper==_less || sign->oper==_lessEq || sign->oper==_great || sign->oper==_greatEq)){
         if (operand1->blockType==_operand_expr && operand2->blockType==_operand_expr){
             if (operand1->dt==_integer && operand2->dt== _integer)return 1;
-            else if ((operand1->dt==_number && operand2->dt == _integer) || (operand1->dt==_integer && operand2->dt == _number)) return 0; //TODO -- NOT SURE ABOUT THIS ONE
-            else if (operand1->dt == _number && operand2->dt == _number) return FLOAT_INT_COMPARISM; //DAJ SEM MOZNO ROVNO VYPIS
+            else if (operand1->dt==_number && operand2->dt == _integer){convert_to_float(operand2); return 1;}
+            else if (operand1->dt==_integer && operand2->dt == _number) {convert_to_float(operand1); return 1;} //TODO -- NOT SURE ABOUT THIS ONE
+            else if (operand1->dt == _number && operand2->dt == _number) return 1; //DAJ SEM MOZNO ROVNO VYPIS
             else if (operand1->dt==_string && operand2->dt == _string) return 1;
             else if (operand1->dt==_bool && operand2->dt == _bool) return 1;
             else if (operand1->dt==_nan || operand2->dt==_nan) return 1;
@@ -301,8 +305,8 @@ int TypeCheck(expression_block* operand1,expression_block* sign, expression_bloc
             return 0;  
     }else if (sign->blockType==_operator_expr){
         if(operand1->dt == _integer && operand2->dt==_integer)return 1;
-        else if(operand1->dt == _integer && operand2->dt==_number) {/*ConvertToFloat(operand1);*/ return 1;} //<----------------------------------------------------------------------------------------------- JUROVE FUNKCIE
-        else if(operand1->dt == _number && operand2->dt ==_integer) {/*ConvertToFloat(operand2);*/ return 1;}
+        else if(operand1->dt == _integer && operand2->dt==_number) {convert_to_float(operand1); return 1;} //<----------------------------------------------------------------------------------------------- JUROVE FUNKCIE
+        else if(operand1->dt == _number && operand2->dt ==_integer) {convert_to_float(operand2); return 1;}
         else if(operand1->dt == _number && operand2->dt == _number) return 1;
         else return 0;
     }
@@ -328,7 +332,7 @@ int GetClosestTerminal(BubbleStack_t *stack, expression_block **block){
 }
 
 //DNT
-int TAB_Shift(BubbleStack_t *stack,token *nextToken){
+int TAB_Shift(BubbleStack_t *stack,token *nextToken, int *termNumber){
     expression_block *block;
     if(nextToken->type==_identifier || nextToken->type==_const || (nextToken->type == _misc && nextToken->data.msc == _bracketL)){
         block = FillBeginMark();
@@ -360,7 +364,7 @@ int TAB_Shift(BubbleStack_t *stack,token *nextToken){
     }
     block=malloc(sizeof(expression_block));
     if(block==NULL)return MALLOC_ERR_CODE;
-    int test = ConvertToBlock(block,nextToken);
+    int test = ConvertToBlock(block,nextToken,termNumber);
     if (test != 0) return test;
     NEXT;
     BS_Push(stack,block);
@@ -403,8 +407,12 @@ int TAB_Terminalize(BubbleStack_t *stack,token *nextToken,int* termNumber){
         newTerm->operType=_not_terminal_oper;
         newTerm->dt=operand2->dt;
         newTerm->_integer=*termNumber;
+        newTerm->_double=exprCounter;
         (*termNumber)++;
-        //VarToTermAssign(newTerm,operand2); //<------------------------------------------------------------ JUROVA FUNKCIA
+
+        //DebbugPrintExpress(newTerm); DebbugPrintExpress(operand2);
+        //var_to_term_assign(newTerm,operand2);//<-----------------------------------------------------------LK FIXME
+        
         BS_Push(stack,newTerm);
         free(operand2);
         if(stack_err_flag==1)return MALLOC_ERR_CODE;
@@ -415,15 +423,18 @@ int TAB_Terminalize(BubbleStack_t *stack,token *nextToken,int* termNumber){
     //Unary Operand
     if (operand1->blockType==_misc_expr && operand1->em==_bgnMark){
         free(operand1);
-        if(TypeCheck(operand2,sign,NULL)==0){free(operand2);free(sign);return INVALID_OPERATION;}
+        if(TypeCheck(operand2,sign,NULL)==0){free(operand2);free(sign); RaiseError(6); return INVALID_OPERATION;}
         expression_block *newTerm = malloc(sizeof(expression_block));
         if(newTerm==NULL){free(operand2);free(sign);return INVALID_OPERATION;}
         newTerm->blockType=_operand_expr;
         newTerm->operType=_not_terminal_oper;
         newTerm->dt=_integer;
         newTerm->_integer=*termNumber;
+        newTerm->_double=exprCounter;
         (*termNumber)++;
-        //UnaryOperator(newTerm,operand2); //<----------------------------------------------------------------------- JUROVA FUNKCIA
+
+        unary_operator(newTerm,operand2);//<---------------------------------------------------------LK
+        
         BS_Push(stack,newTerm);
         free(operand2);
         free(sign);
@@ -435,17 +446,18 @@ int TAB_Terminalize(BubbleStack_t *stack,token *nextToken,int* termNumber){
     //diary operand *duary *bilingual *binary
     if(bumper->blockType==_misc_expr && bumper->em == _bgnMark){
         free(bumper);
-        if (TypeCheck(operand1,sign,operand2)==0){free(operand1);free(operand2);free(sign);return INVALID_EXPRESSION_CONST_CODE ;}
+        if (TypeCheck(operand1,sign,operand2)==0){free(operand1);free(operand2);free(sign); RaiseError(6); return INVALID_EXPRESSION_CONST_CODE ;}
         expression_block *newTerm = malloc(sizeof(expression_block));
         if(newTerm==NULL){free(operand1);free(operand2);free(sign);return MALLOC_ERR_CODE;}
         newTerm->blockType=_operand_expr;
-        newTerm->operType=_not_terminal_oper;
-        
+        newTerm->operType=_not_terminal_oper;      
         newTerm->dt=ResultData(operand1,operand2,sign);
         newTerm->_integer=*termNumber;
+        newTerm->_double=exprCounter;
         (*termNumber)++;
 
-        //OperationQuickAction(newTerm,operand1,sign,operand2);<--------------------------------------------------------Jurov funkca
+        operation_quick_action(newTerm,operand1,operand2,sign);
+
         BS_Push(stack,newTerm);
         free(operand1);
         free(operand2);
@@ -624,10 +636,9 @@ expression_block* SolveCycle(BubbleStack_t* stack,token *nextToken,int *termNumb
     actions curAction = ChooseAction(stack,nextToken);
     int control;
     expression_block* err=FillErrorMark();
-
     while (curAction!=_tab_end){
         if(curAction==_tab_shift){
-            control=TAB_Shift(stack,nextToken);
+            control=TAB_Shift(stack,nextToken,termNumber);
         }else if (curAction==_tab_terminalize){
             control=TAB_Terminalize(stack,nextToken,termNumber);
         }else if (curAction == _tab_equals){
@@ -652,7 +663,7 @@ expression_block* SolveCycle(BubbleStack_t* stack,token *nextToken,int *termNumb
 }
 
 expression_block* CallTheCommander(token *nextToken){
-    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Add undefined and unknown var support
+    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Add undefined and unknown var support and also the floats
     expression_block *block = NULL;
     BubbleStack_t stack;
     int termNumber = 0;

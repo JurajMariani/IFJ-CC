@@ -185,18 +185,17 @@ int F_Prog(token* nextToken){
         //test = workNotTerminal(N_ParamsR,nextToken);
         test = F_ParamsR(nextToken, newStr);
         if (test != 0) return test;
-        // TreeElement* function = TS_LookFunction(ts,name_func);   <- uncomment when CodeGen ready
-        //G_function_bgn(function);                                 <- uncomment when CodeGen ready 
         return 0;
         
     }
     else if(nextToken->type ==_keyword && nextToken->data.kw == _function){
         param_cter = -1;
         NEXT;
+        
         if (!IFIdentif){INVALID_TOKEN}
         TreeElement *oldFunc = TS_LookFunction(ts,nextToken->data.str);
         if (oldFunc!=NULL && ((user_func*)oldFunc->data)->vDefined==1) return REDECLARATION_OF_FUNCTION;
-        else if (oldFunc!=NULL && ((user_func*)oldFunc->data)->vDefined==1){
+        else if (oldFunc!=NULL && ((user_func*)oldFunc->data)->vDefined==0){
             printf("pls");
         }////////////////////////////////////////////////////////////////////////////////////////////TODO
         user_func* newData = CreateFunctionData();
@@ -217,13 +216,12 @@ int F_Prog(token* nextToken){
         //test = workNotTerminal(N_ParamsR,nextToken);
         test = F_ParamsR(nextToken, name_func);
         if (test!= 0) return test;
-        
-        test = F_StList(nextToken);
+        TreeElement* function = TS_LookFunction(ts,newStr);//   <- uncomment when CodeGen ready
+        G_function_bgn(function);
+        test = F_StList(nextToken,TS_LookFunction(ts,newStr));
         if (test!= 0) return test;
         if (!IFKwEnd){INVALID_TOKEN}
-        // TreeElement* function = TS_LookFunction(ts,name_func);   <- uncomment when CodeGen ready
-        //G_function_bgn(function);
-        newData->vDefined=1;                                 //<- uncomment when CodeGen ready 
+        newData->vDefined=1;                              
         NEXT;
         return 0;
 
@@ -437,19 +435,19 @@ int F_Type(token* nextToken, dataType* array)
 
 }
 
-int F_StList(token* nextToken)
+int F_StList(token* nextToken,TreeElement* curFunc)
 {
     if ( IFKwEnd || IFKwElse )
         return 0;
     else
     {
         if ( IFIdentif || IFKwLocal || IFKwWhile || IFKwIf || IFKwReturn )
-        { 
+        {   
             int output=0;
-            output = F_Statement(nextToken);
+            output = F_Statement(nextToken,curFunc);
             if (output == MALLOC_ERR_CODE)
                 exit(99);
-            output=F_StList(nextToken);
+            output=F_StList(nextToken,curFunc);
             if (output == MALLOC_ERR_CODE)
                 exit(99);
             else return 0;
@@ -458,7 +456,7 @@ int F_StList(token* nextToken)
     INVALID_TOKEN
 }
 
-int F_Statement(token* nextToken){
+int F_Statement(token* nextToken, TreeElement* curFunc){
     if(IFKwWhile){
         while_counter+=1;
         NEXT;
@@ -474,7 +472,7 @@ int F_Statement(token* nextToken){
         free(ret);
         if(!IFKwDo){INVALID_TOKEN}
         NEXT;
-        int test = F_StList(nextToken);
+        int test = F_StList(nextToken,curFunc);
         if(test!=0)return test;
         if(!IFKwEnd){INVALID_TOKEN}
         //G_WhileEND();<------------------------------------------------------------------------LF
@@ -487,18 +485,18 @@ int F_Statement(token* nextToken){
         expression_block *ret=F_Expression(nextToken);
         if (ret == NULL){ return MALLOC_ERR_CODE;}
         if(ret->operType==_std_error)generate_code=0;
-        //G_IfBGN(ret);
+        G_IfBGN(ret);//<---------------------------------------------LF
         free(ret);
         NEXT;
-        int help = F_StList(nextToken);
+        int help = F_StList(nextToken,curFunc);
         if(help!=0)return help;
         if (IFKwElse){
-            help = F_Else(nextToken);
+            help = F_Else(nextToken,curFunc);
             if(help!=0)return help;
         }else{
-            //G_IfELSE();<----------------------------------------------------------LF
+            G_IfELSE(); //<---------------------------------------------------------LF
         }
-        //G_IfEND();<----------------------------------------------------------LF
+        G_IfEND(); //<----------------------------------------------------------LF
         if(!IFKwEnd){INVALID_TOKEN;}
         NEXT;
         return 0;
@@ -528,13 +526,15 @@ int F_Statement(token* nextToken){
         }
         return 0;
     }else if(IFKwReturn){
-
         NEXT;
         BubbleStack_t returnStack;
         BS_Init(&returnStack);
         int help=F_Exprb(nextToken,&returnStack);
         if(help!=0){BS_Dispose(&returnStack); return help;}
         help = F_SExpr(nextToken,&returnStack);
+        if(help!=0){BS_Dispose(&returnStack);return help;}
+        help = ReturnsCheck(curFunc,&returnStack);
+        printf("\nHelp %d Help\n\n",help);
         if(help!=0){BS_Dispose(&returnStack);return help;}
         //void G_RETUR_TERM(BubbleStack_t *)<----------Dole je prva polozka--------------------------------------------------------------------nova lukasova
         BS_Dispose(&returnStack);
@@ -548,11 +548,12 @@ int F_Statement(token* nextToken){
         BubbleStack_t returnStack;
         BS_Init(&paramStack);
         BS_Init(&returnStack);
+        
         int help = F_SentPar(nextToken,&paramStack);
         if (help!=0){BS_Dispose(&paramStack); BS_Dispose(&returnStack); return help;}
         if (!IFRightBracket){BS_Dispose(&paramStack); BS_Dispose(&returnStack); return help;}
         NEXT;
-        //G_CallFunc(TreeElement* func,&paramStack,&returnStack );<---------------------------------------------------------_Lukasova funkci
+        G_CallFunc(func,&paramStack,&returnStack );//<---------------------------------------------------------_Lukasova funkci
         BS_Dispose(&paramStack);
         BS_Dispose(&returnStack);
         return 0;
@@ -571,11 +572,11 @@ int F_Statement(token* nextToken){
         if(help==MALLOC_ERR_CODE){VL_Dispose(vl); BS_Dispose(&returnStack); return MALLOC_ERR_CODE;}
         help=F_SExpr(nextToken, &returnStack);
         if(help==MALLOC_ERR_CODE){VL_Dispose(vl); BS_Dispose(&returnStack); return MALLOC_ERR_CODE;}
-
         help = SemanticCheck(vl,&returnStack);
         if(help)
-            printf("placeHolder");
-            //G_AssignToVars(vl,&returnStack);<----------------------------------------------------------------------LK
+            G_AssignToVars(vl,&returnStack);//<----------------------------------------------------------------------LK
+        else
+            RaiseError(4);
         BS_Dispose(&returnStack);
         VL_Dispose(vl);
         return 0;
@@ -584,31 +585,30 @@ int F_Statement(token* nextToken){
     INVALID_TOKEN
 }
 
-int F_Else(token* nextToken){
+int F_Else(token* nextToken,TreeElement* curFunc){
     NEXT;
-    int help = F_StList(nextToken);
+    int help = F_StList(nextToken,curFunc);
     return help;
 }
 
 int F_Exprb(token* nextToken,BubbleStack_t *stack){
     if(IFIdentif && TS_LookFunction(ts,nextToken->data.str)!= NULL){
-
         TreeElement* func = TS_LookFunction(ts,nextToken->data.str);
         NEXT;
         if(!IFLeftBracket){BS_Dispose(stack); INVALID_TOKEN;}
         NEXT;
         int help = F_SentPar(nextToken,stack);
         if (help!=0){BS_Dispose(stack); return help;}
-        if(!IFRightBracket){BS_Dispose(stack); INVALID_TOKEN;}
-        NEXT;
         BubbleStack_t mockStack;
         BS_Init(&mockStack);
         
-        //help = G_CALLFUNCTION(func,stack,&mockStack);<--------------------------------------------------------------LK
+        //help = G_CallFunc(func, stack, &mockStack);
+        //printf("func %d",help); DebbugPrintStack(stack); DebbugPrintStack(&mockStack); printf("\n");
+
         if(help!=0){BS_Dispose(stack); BS_Dispose(&mockStack); return help;}
-        help=ReturnsCheck(func,&mockStack);
+        //help=ReturnsCheck(func,&mockStack);
         if(help!=1){BS_Dispose(stack); BS_Dispose(&mockStack); return help;} //<--------------------------------------------------Error invalid return
-        help = MoveStack(stack,&mockStack);
+        //help = MoveStack(stack,&mockStack);
         BS_Dispose(&mockStack);
         return 0;
 
@@ -623,8 +623,6 @@ int F_Exprb(token* nextToken,BubbleStack_t *stack){
     }else if(IFIdentif){
         return UNKNOWN_IDENTIF; 
     }else{INVALID_TOKEN}
-
-    INVALID_TOKEN
 }
 
 int F_ExprAfterLoc(token* nextToken,TreeElement* targetVar){
@@ -693,6 +691,7 @@ int F_ExprAfterLoc(token* nextToken,TreeElement* targetVar){
 }
 
 expression_block* F_Expression(token* nextToken){
+    exprCounter+=1.0;
     return CallTheCommander(nextToken);
 }
 
@@ -744,6 +743,7 @@ void ashes_to_ashes_dust_to_dust()
 }
 
 int PushBuiltInFunctions(){
+    //readi
     user_func* new = CreateFunctionData();
     if(new==NULL)return MALLOC_ERR_CODE;
     new->returns = PushDataType( new->returns,_integer);
@@ -753,6 +753,81 @@ int PushBuiltInFunctions(){
     strcpy(readi,"readi");
     int help = TS_InsertFunction(ts,readi,w_func,new);
     if (help!=0){free(readi);free(new);return MALLOC_ERR_CODE;}
+    //readn
+    new = CreateFunctionData();
+    if(new==NULL)return MALLOC_ERR_CODE;
+    new->returns = PushDataType( new->returns,_number);
+    if(new->returns==NULL){free(new); return MALLOC_ERR_CODE;}
+    char *readn = malloc(sizeof(char)*6);
+    if(readn==NULL)return MALLOC_ERR_CODE;
+    strcpy(readn,"readn");
+    help = TS_InsertFunction(ts,readn,w_func,new);
+    if (help!=0){free(readn);free(new);return MALLOC_ERR_CODE;}
+    //reads
+    new = CreateFunctionData();
+    if(new==NULL)return MALLOC_ERR_CODE;
+    new->returns = PushDataType( new->returns,_string);
+    if(new->returns==NULL){free(new); return MALLOC_ERR_CODE;}
+    char *reads = malloc(sizeof(char)*6);
+    if(reads==NULL)return MALLOC_ERR_CODE;
+    strcpy(reads,"reads");
+    help = TS_InsertFunction(ts,reads,w_func,new);
+    if (help!=0){free(reads);free(new);return MALLOC_ERR_CODE;}
+    //toInt
+    new = CreateFunctionData();
+    if(new==NULL)return MALLOC_ERR_CODE;
+    new->returns = PushDataType( new->returns,_integer);
+    if(new->returns==NULL){free(new); return MALLOC_ERR_CODE;}
+    new->params = PushDataType( new->params,_number);
+    if(new->params==NULL){free(new); return MALLOC_ERR_CODE;}
+    char *tointeger = malloc(sizeof(char)*10);
+    if(tointeger==NULL)return MALLOC_ERR_CODE;
+    strcpy(tointeger,"tointeger");
+    help = TS_InsertFunction(ts,tointeger,w_func,new);
+    if (help!=0){free(tointeger);free(new);return MALLOC_ERR_CODE;}
+    //substr
+    new = CreateFunctionData();
+    if(new==NULL)return MALLOC_ERR_CODE;
+    new->returns = PushDataType( new->returns,_string);
+    if(new->returns==NULL){free(new); return MALLOC_ERR_CODE;}
+    new->params = PushDataType( new->params,_string);
+    if(new->params==NULL){free(new); return MALLOC_ERR_CODE;}
+    new->params = PushDataType( new->params,_integer);
+    if(new->params==NULL){free(new); return MALLOC_ERR_CODE;}
+    new->params = PushDataType( new->params,_number);//<----------------------------------_NOT SURE ABOUT THIS
+    if(new->params==NULL){free(new); return MALLOC_ERR_CODE;}
+    char *substr = malloc(sizeof(char)*7);
+    if(substr==NULL)return MALLOC_ERR_CODE;
+    strcpy(substr,"substr");
+    help = TS_InsertFunction(ts,substr,w_func,new);
+    if (help!=0){free(substr);free(new);return MALLOC_ERR_CODE;}
+    //ord
+    new = CreateFunctionData();
+    if(new==NULL)return MALLOC_ERR_CODE;
+    new->returns = PushDataType( new->returns,_integer);
+    if(new->returns==NULL){free(new); return MALLOC_ERR_CODE;}
+    new->params = PushDataType( new->params,_string);
+    if(new->params==NULL){free(new); return MALLOC_ERR_CODE;}
+    new->params = PushDataType( new->params,_integer);
+    if(new->params==NULL){free(new); return MALLOC_ERR_CODE;}
+    char *ord = malloc(sizeof(char)*4);
+    if(ord==NULL)return MALLOC_ERR_CODE;
+    strcpy(ord,"ord");
+    help = TS_InsertFunction(ts,ord,w_func,new);
+    if (help!=0){free(ord);free(new);return MALLOC_ERR_CODE;}
+    //chr
+    new = CreateFunctionData();
+    if(new==NULL)return MALLOC_ERR_CODE;
+    new->returns = PushDataType( new->returns,_string);
+    if(new->returns==NULL){free(new); return MALLOC_ERR_CODE;}
+    new->params = PushDataType( new->params,_integer);
+    if(new->params==NULL){free(new); return MALLOC_ERR_CODE;}
+    char *chr = malloc(sizeof(char)*4);
+    if(chr==NULL)return MALLOC_ERR_CODE;
+    strcpy(chr,"chr");
+    help = TS_InsertFunction(ts,chr,w_func,new);
+    if (help!=0){free(chr);free(new);return MALLOC_ERR_CODE;}
+    //write
     new = CreateFunctionData();
     if(new==NULL)return MALLOC_ERR_CODE;
     char *write = malloc(sizeof(char)*6);
@@ -760,7 +835,6 @@ int PushBuiltInFunctions(){
     strcpy(write,"write");
     help = TS_InsertFunction(ts,write,w_func,new);
     if (help!=0){free(write);free(new);return MALLOC_ERR_CODE;}
-
     return 0;
     //TODO - others
 }
@@ -797,12 +871,14 @@ int mainParseFunction(){
     if_counter=0;
     logic_counter=0;
     line_cnt=1;
+    exprCounter = 0.0;
     key_arr_init();
     token* nextToken = (token*) malloc(sizeof(token));
     if(nextToken==NULL)return -1;
     TS_Init(&ts);
     if(PushBuiltInFunctions()!=0){free(nextToken); return MALLOC_ERR_CODE;}
     NEXT;
+    
     if(nextToken->type==_keyword && nextToken->data.kw==_require){
         NEXT;
         if (nextToken->type!=_const||nextToken->data.type!=_string||strcmp(nextToken->data.str,"ifj21"))generate_code=0;//RaiseError()
@@ -811,6 +887,7 @@ int mainParseFunction(){
     while (!IFEof){
         int temp = F_Prog(nextToken);
         if (temp != 0){
+            printf("err");
             DebbugPrintToken(nextToken);
             NEXT;
         }

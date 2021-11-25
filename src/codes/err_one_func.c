@@ -1,4 +1,4 @@
-#include <Defs.h>
+#include "../libs/Defs.h"
 
 
 void RaiseError(int err_flag)
@@ -10,7 +10,7 @@ if (err_flag == 1)
 
 else if (err_flag == 2)
 {
-    fprintf(stderr,"SYNTAX_ANALYSIS_ERR2\n")
+    fprintf(stderr,"SYNTAX_ANALYSIS_ERR2\n");
 }
 
 

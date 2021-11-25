@@ -10,6 +10,7 @@
 int stack_err_flag;
 int lex_err_flag;
 int generate_code;
+float exprCounter;
 
 /**
  * 	CONSTANTS

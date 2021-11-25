@@ -55,11 +55,11 @@ int F_SecondParamR(token* nextToken, char* );
 
 int F_Type(token* nextToken, dataType* );
 
-int F_StList(token* nextToken);
+int F_StList(token* nextToken, TreeElement* curFunc);
 
-int F_Statement(token* nextToken);
+int F_Statement(token* nextToken, TreeElement* curFunc);
 
-int F_Else(token* nextToken);
+int F_Else(token* nextToken, TreeElement* curFunc);
 
 int F_Exprb(token* nextToken, BubbleStack_t *);
 

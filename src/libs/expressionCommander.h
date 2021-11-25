@@ -3,6 +3,7 @@
 #include "Defs.h"
 #include "TS.h"
 #include "BubbleStack.h"
+#include "Code_Assembly.h"
 #include <string.h>
 
 //TODO REMOVE THE LAST TWO IF THEY ARE NOT NEEDED
@@ -42,7 +43,7 @@ int IsEndSymbol(token *nextToken);
  * @param nextToken 
  * @return int 
  */
-int ConvertToBlock(expression_block *block, token* nextToken);
+int ConvertToBlock(expression_block *block, token* nextToken, int* termNumber);
 
 /**
  * @brief Fills with error marker used to distinguish errors from malloc errors
@@ -101,7 +102,7 @@ int GetClosestTerminal(BubbleStack_t *stack, expression_block **block);
  * @param nextToken 
  * @return int 
  */
-int TAB_Shift(BubbleStack_t *stack,token *nextToken);
+int TAB_Shift(BubbleStack_t *stack,token *nextToken,int* termNumber);
 
 /**
  * @brief Makes = operation from tab
