@@ -28,20 +28,9 @@
 
 
 /**
- * @brief global counter, counting the use of JUMP EXECUTEx; x is 0..INT_MAX
- * to add the 'x' at the back
- */
-int execute_counter;
-int if_counter;
-int while_counter;
-int logic_counter;
-
-
-/**
  * function to generate adress at the end of expression name 
  * x -> x_adress
  */
-
 char* generate_name(TreeElement* var)
 {
     char temp1[101];
