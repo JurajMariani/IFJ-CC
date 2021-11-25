@@ -10,6 +10,7 @@ char arr_keywords[ARR_LEN][10];
 
 int line_cnt;
 token result;
+int str2write;
 
 void KeyArrInit();
 void first_perimeter( char * , char ** , unsigned * );
