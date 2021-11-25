@@ -5,15 +5,6 @@
 #include "BubbleStack.h"
 #include "expressionCommander.h"
 
-/**
- * @brief global counter, counting the use of JUMP EXECUTEx; x is 0..INT_MAX
- * to add the 'x' at the back
- */
-int execute_counter;
-int if_counter;
-int while_counter;
-int logic_counter;
-
 //asi su nejake includes zbytocne, ptm skontroluj
 int G_CompareBool(expression_block *);
 int G_CompareNull(expression_block *);
@@ -37,3 +28,7 @@ void generate_header(void);
 void generate_execute_block(void);
 void G_string_correct_print(char* string);
 void G_RetrunTerm(BubbleStack_t *godzilla);
+void print_substr();
+void print_tointeger();
+void print_ord();
+void print_chr();

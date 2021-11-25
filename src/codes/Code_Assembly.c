@@ -25,6 +25,18 @@
 #define newline fprintf(stdout,"\n");
 
 
+
+
+/**
+ * @brief global counter, counting the use of JUMP EXECUTEx; x is 0..INT_MAX
+ * to add the 'x' at the back
+ */
+int execute_counter;
+int if_counter;
+int while_counter;
+int logic_counter;
+
+
 /**
  * function to generate adress at the end of expression name 
  * x -> x_adress
@@ -34,7 +46,7 @@ char* generate_name(TreeElement* var)
 {
     char temp1[101];
     strcpy(temp1, var->name);
-    char temp2[14];
+    char temp2[15];
     sprintf(temp2, "%p", var);
     unsigned len = strlen(temp1) + strlen(temp2);
     char *out = malloc(sizeof(char) * len);
@@ -64,27 +76,30 @@ char * generate_term_name(expression_block* term)
 //T_int_double
 
     char *out = malloc(sizeof(char));
-   unsigned i = 0;
-   out[i++] = 'T';
-   out[i++] = '_';
-   int pom1 = term->_integer;
-   double pom2 = term->_double;
-   char char_pom1[100];
-   char char_pom2[100];
-   sprintf(char_pom1, "%d", pom1);//gut??
-   sprintf(char_pom2, "%lf", pom2);//gut??
-   while (char_pom1[i-2] != '\0')
-   {
-       out[i] = char_pom1[i-2];
-       i++;
-   }
-   out[i] = '_';
-   while (char_pom2[i-3] != '\0')
-   {
-       out[i] = char_pom2[i-3];
-       i++;
-   }
-   return out;
+    unsigned i = 0;
+    out[i++] = 'T';
+    out[i++] = '_';
+    int pom1 = term->_integer;
+    double pom2 = term->_double;
+    char char_pom1[100];
+    char char_pom2[100];
+    sprintf(char_pom1, "%d", pom1);//gut??
+    sprintf(char_pom2, "%lf", pom2);//gut??
+    while (char_pom1[i-2] != '\0')
+    {
+        out[i] = char_pom1[i-2];
+        i++;
+    }
+    out[i] = '_';
+    while (char_pom2[i-4] != '\0')
+    {
+        if (char_pom2[i-4] == '.')
+            out[i] = '_';
+        else
+            out[i] = char_pom2[i-4];
+        i++;
+    }
+    return out;
 }
 
 
@@ -98,7 +113,10 @@ char* generate_param_name(char* name)
     int card = 0;
     int i = 0;
     while(i < name_len)
+    {
         card += name[i];
+        i++;
+    }
 
     char num[6];
     sprintf(num, "%d", card);
@@ -131,7 +149,6 @@ void generate_execute_jump(void)
     newline
     out_partial("JUMP EXECUTE");
     out_integer(execute_counter);
-    execute_counter++;
     newline
     newline
     newline
@@ -150,6 +167,13 @@ void generate_header(void)
     newline
     generate_execute_jump();
 
+    print_substr();
+    print_tointeger();
+    print_ord();
+    print_chr();
+
+    generate_execute_block();
+
 }
 
 
@@ -162,7 +186,10 @@ void generate_execute_block(void)
     newline
     newline
     newline
-    out("LABEL EXECUTE");
+    out_partial("LABEL EXECUTE");
+    out_integer(execute_counter);
+    execute_counter++;
+    newline
     newline
 }
 
@@ -202,64 +229,103 @@ void G_string_correct_print(char* string)
 int G_CallFunc(TreeElement* func, BubbleStack_t* params, BubbleStack_t* returns)
 {
     expression_block* var = NULL;
+    char* term_name = NULL;
 
-    while(!BS_IsEmpty(params))
+    if ((strcmp(func->name,"reads") == 0) || (strcmp(func->name,"readn") == 0) || (strcmp(func->name,"readi") == 0))
     {
-        var = BS_TopStack(params);
-        
-        out_partial("PUSHS ");
-        if (var->dt == _integer)
-        {
-            out_partial("int@");
-            out_integer(var->_integer);
-        }
-        if (var->dt == _number)
-        {
-            out_partial("float@");
-            out_number(var->_double);
-        }
-        if (var->dt == _string)
-        {
-            out_partial("string@");
-            G_string_correct_print(var->str);
-        }
-        if (var->dt == _nan)
-        {
-            out_partial("nil@nil");
-        }
-        newline
-        
-        free(var);
-        BS_Pop(params);
+        var = BS_TopStack(returns);
+        BS_Pop(returns);
 
-    }
-
-    newline
-    out_partial("CALL ");
-    out_partial(func->name);
-    newline
-    newline
-
-    expression_block* term = NULL;
-
-    while (!BS_IsEmpty(returns))
-    {
-        term = BS_TopStack(returns);
-
-        char* term_name = generate_term_name(term);
+        term_name = generate_term_name(var);
         if (term_name == NULL)
             return MALLOC_ERR_CODE;
-        
-        out_partial("DEFVAR TF@");
+
+        out_partial("READ TF@");
         out_partial(term_name);
-        newline
-        out_partial("POPS TF@");
-        out_partial(term_name);
+        if (strcmp(func->name,"reads") == 0)
+        {
+            out_partial(" string");
+        }
+        else
+        {
+            if (strcmp(func->name,"readn") == 0)
+            {
+                out_partial(" float");
+            }
+            else
+            {
+                if (strcmp(func->name,"readi") == 0)
+                    out_partial(" integer");
+            }
+        }
         newline
 
         free(term_name);
-        free(term);
-        BS_Pop(returns);
+        free(var);
+        
+    }
+    else
+    {
+        if (strcmp(func->name,"write") == 0)
+        {
+            while(!BS_IsEmpty(params))
+            {
+                var = BS_TopStack(params);
+                term_name = generate_term_name(var);
+
+                out_partial("WRITE TF@");
+                out_partial(term_name);
+                newline
+
+                free(term_name);
+                free(var);
+                BS_Pop(params);
+            }
+        }
+        else
+        {
+            while(!BS_IsEmpty(params))
+            {
+                var = BS_TopStack(params);
+                term_name = generate_term_name(var);
+                        
+                out_partial("PUSHS TF@");
+                out_partial(term_name);
+                newline
+                        
+                free(var);
+                BS_Pop(params);
+
+            }
+
+            newline
+            out_partial("CALL ");
+            out_partial(func->name);
+            newline
+            newline
+
+            expression_block* term = NULL;
+
+            while (!BS_IsEmpty(returns))
+            {
+                term = BS_TopStack(returns);
+
+                term_name = generate_term_name(term);
+                if (term_name == NULL)
+                    return MALLOC_ERR_CODE;
+                        
+                out_partial("DEFVAR TF@");
+                out_partial(term_name);
+                newline
+                out_partial("POPS TF@");
+                out_partial(term_name);
+                newline
+
+                free(term_name);
+                free(term);
+                BS_Pop(returns);
+            }
+        }
     }
         
     return 0;
@@ -532,6 +598,9 @@ void G_AssignToVars(TreeElement** var,BubbleStack_t* stack)//<----------------- 
 
 int G_function_bng(TreeElement* func)
 {
+    generate_execute_jump();
+
+
     out_partial("LABEL G_");
     out_partial(func->name);
     newline
@@ -878,6 +947,224 @@ void convert_to_int(expression_block* term)
     newline
 
     term->dt = _integer;
+}
+
+
+void print_substr()
+{
+    out("LABEL substr");
+    newline
+    out("PUSHFRAME");
+    out("CREATEFRAME");
+    out("DEFVAR TF@s_string");
+    out("POPS TF@s_string");
+    newline
+    out("DEFVAR TF@i_number");
+    out("POPS TF@i_number");
+    newline
+    out("DEFVAR TF@j_number");
+    out("POPS TF@j_number");
+    newline
+    out("JUMPIFEQ __SUBSTR_DPRINT_NIL__ TF@s_string nil@nil");          // JUMP LABEL __SUBSTR_DPRINT_NIL__
+    out("JUMPIFEQ __SUBSTR_DPRINT_NIL__ TF@i_number nil@nil");          // JUMP LABEL __SUBSTR_DPRINT_NIL__
+    out("JUMPIFEQ __SUBSTR_DPRINT_NIL__ TF@j_number nil@nil");          // JUMP LABEL __SUBSTR_DPRINT_NIL__
+    newline
+    out("DEFVAR TF@str_len");
+    out("STRLEN TF@str_len TF@s_string");
+    out("FLOAT2INT TF@i_number TF@i_number");
+    out("FLOAT2INT TF@j_number TF@j_number");
+    newline
+    out("DEFVAR TF@if_stmnt_1");
+    out("DEFVAR TF@if_stmnt_2");
+    newline
+    out("ADD TF@str_len TF@str_len int@1");
+    out("GT TF@if_stmnt_1 TF@i_number int@0");
+    out("LT TF@if_stmnt_2 TF@i_number TF@str_len");
+    newline
+    out("DEFVAR TF@out_string");                                        // TF@out_string <-- outup string
+    out("MOVE TF@out_string string@");
+    newline
+    out("AND TF@if_stmnt_1 TF@if_stmnt_1 TF@if_stmnt_2");
+    out("JUMPIFNEQ __SUBSTR_RET_EMPTY__ TF@if_stmnt_1 bool@true");        // JUMP LABEL __SUBSTR_RET_EMPTY__
+    newline
+    out("GT TF@if_stmnt_1 TF@j_number int@0");
+    out("LT TF@if_stmnt_2 TF@j_number TF@str_len");
+    newline
+    out("AND TF@if_stmnt_1 TF@if_stmnt_1 TF@if_stmnt_2");
+    out("JUMPIFNEQ __SUBSTR_RET_EMPTY__ TF@if_stmnt_1 bool@true");        // JUMP LABEL __SUBSTR_RET_EMPTY__
+    newline
+    out("LT TF@if_stmnt_1 TF@j_number TF@i_number");
+    out("JUMPIFNEQ __SUBSTR_RET_EMPTY__ TF@if_stmnt_1 bool@false");       // JUMP LABEL __SUBSTR_RET_EMPTY__
+    newline
+    out("DEFVAR TF@new_len");
+    out("MOVE TF@new_len TF@j_number");
+    out("SUB TF@new_len TF@new_len TF@i_number");
+    out("ADD TF@new_len TF@new_len int@1");                             // TF@new_len    <-- the output length
+    newline
+    out("DEFVAR TF@tmp_len");                                           // TF@tmp_len    <-- temporary current length (*reusable*)
+    out("MOVE TF@out_string string@a");
+    newline
+    out("LABEL __SUBSTR_WHILE__");                                      // LABEL __SUBSTR_WHILE__
+    out("STRLEN TF@tmp_len TF@out_string");
+    out("JUMPIFEQ __SUBSTR_END_WHILE__ TF@tmp_len TF@new_len");         // JUMP LABEL __SUBSTR_END_WHILE__
+    out("CONCAT TF@out_string TF@out_string string@a");
+    out("JUMP __SUBSTR_WHILE__");                                       // JUMP LABEL __SUBSTR_WHILE__
+    newline
+    newline
+    out("LABEL __SUBSTR_END_WHILE__")
+    newline
+    newline
+    out("SUB TF@i_number TF@i_number int@1");                // subtracting one from input params
+    out("SUB TF@j_number TF@j_number int@1");
+    out("DEFVAR TF@getter");
+    out("DEFVAR TF@displacement");
+    out("MOVE TF@tmp_len TF@i_number");
+    newline
+    out("LABEL __SUBSTR_WHILE_2__");                                    // LABEL __SUBSTR_WHILE_2__
+    out("GT TF@if_stmnt_1 TF@tmp_len TF@j_number");
+    out("JUMPIFEQ __SUBSTR_END_WHILE_2__ TF@if_stmnt_1 bool@true");     // JUMP LABEL __SUBSTR_END_WHILE_2__
+    out("GETCHAR TF@getter TF@s_string TF@tmp_len");
+    out("SUB TF@displacement TF@tmp_len TF@i_number");
+    out("SETCHAR TF@out_string TF@displacement TF@getter");
+    out("ADD TF@tmp_len TF@tmp_len int@1");
+    out("JUMP __SUBSTR_WHILE_2__");
+    newline
+    out("LABEL __SUBSTR_END_WHILE_2__");
+    newline
+    out("PUSHS TF@out_string");
+    newline
+    out("JUMP __END_OF_SUBSTR__");
+    newline
+    newline
+    out("LABEL __SUBSTR_DPRINT_NIL__");
+    out("DPRINT string@ERROR\\032\\0358:\\032At\\032least\\032one\\032parameter\\032is\\032of\\032type\\032nil");
+    out("EXIT int@8");
+    newline
+    newline
+    out("LABEL __SUBSTR_RET_EMPTY__");
+    out("PUSHS string@");
+    newline
+    newline
+    out("LABEL __END_OF_SUBSTR__");
+    out("POPFRAME");
+    out("RETURN");
+    newline
+    newline
+}
+
+
+void print_tointeger()
+{
+    newline
+    out("LABEL tointeger");
+    newline
+    out("PUSHFRAME");
+    out("CREATEFRAME");
+    newline
+    out("DEFVAR TF@f_number");
+    out("POPS TF@f_number");
+    newline
+    out("JUMPIFEQ __TOINTEGER_RET_NIL__ TF@f_number nil@nil");
+    newline
+    out("FLOAT2INT TF@f_number TF@f_number");
+    out("PUSHS TF@f_number");
+    out("JUMP __END_OF_TOINTEGER__");
+    newline
+    newline
+    out("LABEL __TOINTEGER_RET_NIL__");
+    out("PUSHS nil@nil");
+    newline
+    out("LABEL __END_OF_TOINTEGER__");
+    out("POPFRAME");
+    out("RETURN");
+    newline
+    newline
+}
+
+
+void print_ord()
+{
+    newline
+    out("LABEL ord");
+    newline
+    out("PUSHFRAME");
+    out("CREATEFRAME");
+    newline
+    out("DEFVAR TF@s_string");
+    out("DEFVAR TF@i_integer");
+    newline
+    out("POPS TF@s_string");
+    out("POPS TF@i_integer");
+    out("JUMPIFEQ __ORD_DPRINT_ERR__ TF@s_string nil@nil");
+    out("JUMPIFEQ __ORD_DPRINT_ERR__ TF@i_integer nil@nil");
+    newline
+    out("DEFVAR TF@str_len");
+    out("DEFVAR TF@if_stmnt");
+    out("STRLEN TF@str_len TF@s_string");
+    out("GT TF@if_stmnt TF@i_integer TF@str_len");
+    out("JUMPIFEQ __ORD_RET_NIL__ TF@if_stmnt bool@true");
+    out("LT TF@if_stmnt TF@i_integer int@1");
+    out("JUMPIFEQ __ORD_RET_NIL__ TF@if_stmnt bool@true");
+    newline
+    out("SUB TF@i_integer TF@i_integer int@1");
+    out("DEFVAR TF@out_char");
+    out("STRI2INT TF@out_char TF@s_string TF@i_integer");
+    out("PUSHS TF@out_char");
+    out("JUMP __END_OF_ORD__");
+    newline
+    out("LABEL __ORD_RET_NIL__");
+    out("PUSHS nil@nil");
+    out("JUMP __END_OF_ORD__");
+    newline
+    out("LABEL __ORD_DPRINT_ERR__");
+    out("DPRINT string@ERROR\\032\\0358:\\032At\\032least\\032one\\032parameter\\032is\\032of\\032type\\032nil");
+    out("EXIT int@8");
+    newline
+    out("LABEL __END_OF_ORD__");
+    out("POPFRAME");
+    out("RETURN");
+    newline
+    newline
+}
+
+
+void print_chr()
+{
+    newline
+    out("LABEL chr");
+    newline
+    out("PUSHFRAME");
+    out("CREATEFRAME");
+    newline
+    out("DEFVAR TF@i_integer");
+    out("POPS TF@i_integer");
+    newline
+    out("JUMPIFEQ __CHR_DPRINT_ERR__ TF@i_integer nil@nil");
+    newline
+    out("DEFVAR TF@if_stmnt");
+    out("LT TF@if_stmnt TF@i_integer int@0");
+    out("JUMPIFEQ __CHR_RET_NIL__ TF@if_stmnt bool@true")
+    out("GT TF@if_stmnt TF@i_integer int@255");
+    out("JUMPIFEQ __CHR_RET_NIL__ TF@if_stmnt bool@true");
+    newline
+    out("INT2CHAR TF@i_integer TF@i_integer");
+    out("PUSHS TF@i_integer");
+    out("JUMP __END_OF_CHR__");
+    newline
+    newline
+    out("LABEL __CHR_RET_NIL__");
+    out("PUSHS nil@nil");
+    out("JUMP __END_OF_CHR__");
+    newline
+    out("LABEL __CHR_DPRINT_ERR__");
+    out("DPRINT string@ERROR\\032\\0358:\\032At\\032least\\032one\\032parameter\\032is\\032of\\032type\\032nil");
+    out("EXIT int@8");
+    newline
+    out("LABEL __END_OF_CHR__");
+    out("POPFRAME");
+    out("RETURN");
+    newline
+    newline
 }
 
 
