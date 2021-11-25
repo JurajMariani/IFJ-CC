@@ -162,5 +162,7 @@ void DebbugPrintExpress(expression_block *block);
 
 void DebbugPrintStack(BubbleStack_t *);
 
+void RaiseError(int err_flag);
+
 #define NEXT GetNextToken(nextToken);
 #endif
