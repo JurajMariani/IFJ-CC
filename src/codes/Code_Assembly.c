@@ -378,8 +378,11 @@ int G_IfBGN(expression_block* term)
     out_partial("DEFVAR TF@______TMP______");
     out_integer(if_counter);
     newline
-    out_partial("TYPE TF@______TMP______ TF@");
+    out_partial("TYPE TF@______TMP______");
+    out_integer(if_counter);
+    out_partial(" TF@");
     out_partial(term_name);
+    newline
 
     out_partial("JUMPIFNEQ ______TMP______");
     out_integer(if_counter);
@@ -638,7 +641,7 @@ int G_function_bgn(TreeElement* func)
     generate_execute_jump();
 
 
-    out_partial("LABEL G_");
+    out_partial("LABEL ");
     out_partial(func->name);
     newline
     out("PUSHFRAME");
@@ -679,6 +682,7 @@ void G_function_end(char* func_name)
     out("RETURN");
     newline
     newline
+    generate_execute_block();
 }   
 
 
@@ -693,20 +697,35 @@ void var_to_term_assign(expression_block* target, expression_block* input)
     char* target_term;
     char* input_varia ble;
     target_term = generate_term_name(target);
-    input_variable = generate_name(input->TSPointer);
     out_partial("DEFVAR TF@");
     out_partial(target_term);
     newline
 
     out_partial("MOVE TF@");
     out_partial(target_term);
-    out_partial(" TF@");
-    out_partial(input_variable);
+    switch(input->dt)
+    {
+        case _string:
+            out_partial(" string@");
+            out_partial(input->str);
+            break;
+        case _integer:
+            out_partial(" int@");
+            out_integer(input->_integer);
+            break;
+        case _number:
+            out_partial(" number@");
+            out_number(input->_double);
+            break;
+        case _nan:
+            out_partial(" nil@nil");
+            break;
+        default:
+            break;
+    }
     newline
 
     free(target_term);
-    free(input_variable);
-    
 }
 
 

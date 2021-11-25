@@ -33,6 +33,7 @@ void operation_quick_action(expression_block* target, expression_block *operand1
 void convert_to_float(expression_block *term);
 void convert_to_int(expression_block *term);
 int G_function_bgn(TreeElement* func);
+void G_function_end(char* func);
 int G_CallFunc(TreeElement* func, BubbleStack_t *params, BubbleStack_t* returns);
 void generate_execute_jump(void);
 void generate_header(void);
