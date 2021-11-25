@@ -6,6 +6,7 @@
 #include "BubbleStack.h"
 #include "expressionCommander.h"
 #include "analysis.h"
+#include "Code_Assembly.h"
 #include <string.h>
 
 #define DONE 2 //<-- NOt sure if this should be used

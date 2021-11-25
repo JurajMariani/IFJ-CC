@@ -765,6 +765,26 @@ int PushBuiltInFunctions(){
     //TODO - others
 }
 
+void key_arr_init(){
+    strcpy(arr_keywords[0],"do");
+    strcpy(arr_keywords[1],"else");
+    strcpy(arr_keywords[2],"end");
+    strcpy(arr_keywords[3],"function");
+    strcpy(arr_keywords[4],"global");
+    strcpy(arr_keywords[5],"if");
+    strcpy(arr_keywords[6],"local");
+    strcpy(arr_keywords[7],"nil");
+    strcpy(arr_keywords[8],"read");
+    strcpy(arr_keywords[9],"require");
+    strcpy(arr_keywords[10],"return");
+    strcpy(arr_keywords[11],"then");
+    strcpy(arr_keywords[12],"while");
+    strcpy(arr_keywords[13],"write");
+    strcpy(arr_keywords[14],"integer");
+    strcpy(arr_keywords[15],"number");
+    strcpy(arr_keywords[16],"string");            
+}
+
 int flag = 0;
 int mainParseFunction(){
 
