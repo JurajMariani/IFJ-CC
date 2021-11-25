@@ -65,12 +65,12 @@ int SemanticCheck(TreeElement** vl,BubbleStack_t *stack){
     if(helper.BS_Element==NULL)return MALLOC_ERR_CODE; 
     int bad = 0;
     int length=0;
-    while (vl[length]!=NULL){length++;}
+    while (vl[length]!=NULL){length+=1;}
     for(int i=0;i<length;i++){
         if(BS_IsEmpty(stack)){break;}
         BS_Push(&helper,BS_TopStack(stack));
         BS_Pop(stack);
-        variable* temp = (variable*)vl[length]->data;
+        variable* temp = (variable*)vl[i]->data;
         if(BS_TopStack(&helper)->dt!= temp->type){
             if(BS_TopStack(&helper)->dt==_integer && temp->type==_number)printf("plch");//ConvertToFloat(BS_TopStack(&helper));
             else if(BS_TopStack(&helper)->dt==_number && temp->type==_integer) printf("plch");//ConvertToInt(BS_TopStack(&helper));
@@ -84,7 +84,7 @@ int SemanticCheck(TreeElement** vl,BubbleStack_t *stack){
     while(!BS_IsEmpty(&helper)){BS_Push(stack,BS_TopStack(&helper));BS_Pop(&helper);}
 
     //if(result)PrinttError
-
+    
     BS_Dispose(&helper);
     if(bad)
         return 0;
@@ -189,6 +189,8 @@ int IsEndSymbol(token *nextToken){
     (nextToken ->type == _keyword && nextToken->data.kw == _if)||
     (nextToken ->type == _keyword && nextToken->data.kw == _local)||
     (nextToken ->type == _keyword && nextToken->data.kw == _then)||
+    (nextToken ->type == _keyword && nextToken->data.kw == _do)||
+    (nextToken ->type == _misc && nextToken->data.msc == _komma)||
     (nextToken ->type == _identifier && TS_LookFunction(ts,nextToken->data.str)!=0)||
     (nextToken ->type == _misc && nextToken->data.msc == _EOF))
     return 1;
@@ -594,8 +596,8 @@ actions ChooseAction(BubbleStack_t *stack,token* nextToken){
         }
         else if (nextToken->type ==_identifier)
             return _tab_end;    //IT SHOULD END HERE, NOT SURE IF THIS IS ENOUGH
-        else
-            return _tab_error;
+        else{
+            return _tab_error;}
     }else
     if (block->blockType == _misc_expr && block->em== _endMark){
         if (nextToken->type == _operator)
@@ -610,6 +612,8 @@ actions ChooseAction(BubbleStack_t *stack,token* nextToken){
             return _tab_shift;
         else if(IsEndSymbol(nextToken))
             return _tab_end; // TODO AGAIN NOT SURE ABOUT THIS
+        else if (nextToken->type == _misc && nextToken->data.msc == _bracketR)
+            return _tab_end;
         else
             return _tab_error;
     }else
@@ -619,11 +623,9 @@ actions ChooseAction(BubbleStack_t *stack,token* nextToken){
 expression_block* SolveCycle(BubbleStack_t* stack,token *nextToken,int *termNumber){
     actions curAction = ChooseAction(stack,nextToken);
     int control;
-
     expression_block* err=FillErrorMark();
 
     while (curAction!=_tab_end){
-        DebbugPrintStack(stack);
         if(curAction==_tab_shift){
             control=TAB_Shift(stack,nextToken);
         }else if (curAction==_tab_terminalize){
@@ -633,15 +635,14 @@ expression_block* SolveCycle(BubbleStack_t* stack,token *nextToken,int *termNumb
         }else return err;
         if(control!=0)break;
         curAction=ChooseAction(stack,nextToken);
+        if(curAction==_tab_error){control=INVALID_EXPRESSION_CONST_CODE;break;}
     }
     if (control==MALLOC_ERR_CODE){free(err); return NULL;}
     else if(control==INVALID_EXPRESSION_CONST_CODE){return err;}
-    DebbugPrintStack(stack);
     while(stack->BS_TopIndex!=1){
         control=TAB_Terminalize(stack,nextToken,termNumber);
         if (control==MALLOC_ERR_CODE){free(err); return NULL;}
         else if(control==INVALID_EXPRESSION_CONST_CODE){return err;}
-        DebbugPrintStack(stack);
     }
     expression_block* result=NULL;
     result=BS_TopStack(stack);

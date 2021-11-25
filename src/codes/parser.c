@@ -157,8 +157,7 @@ variable* CreateVariableData(dataType newType){
 }
 
 //DNT
-int F_Prog(token* nextToken){
-    printf("F_Prog");DebbugPrintToken(nextToken);                                     
+int F_Prog(token* nextToken){                                   
     int test;
     if (nextToken->type==_keyword && nextToken->data.kw==_global){
         param_cter = -1;
@@ -166,9 +165,11 @@ int F_Prog(token* nextToken){
         if (!IFIdentif){INVALID_TOKEN}
         if (TS_LookFunction(ts,nextToken->data.str)!=NULL) return REDECLARATION_OF_FUNCTION;
         user_func* newData = CreateFunctionData();
-        if (newData==NULL)return MALLOC_ERR_CODE;
-        if(TS_InsertFunction(ts,nextToken->data.str,w_func,newData)==MALLOC_ERR_CODE)return MALLOC_ERR_CODE;
-        char* name_func = nextToken->data.str;
+        char *newStr = malloc(sizeof(char)*strlen(nextToken->data.str));
+        if(newStr==NULL)return MALLOC_ERR_CODE;
+        strcpy(newStr,nextToken->data.str);
+        if (newData==NULL){free(newStr); return MALLOC_ERR_CODE;}
+        if(TS_InsertFunction(ts,newStr,w_func,newData)==MALLOC_ERR_CODE)return MALLOC_ERR_CODE;
         NEXT;
         if (!IFDoubleKomma){INVALID_TOKEN}
         NEXT;
@@ -176,13 +177,13 @@ int F_Prog(token* nextToken){
         NEXT;
         if (!IFLeftBracket){INVALID_TOKEN}
         NEXT;
-        test = F_Params(nextToken, name_func);
+        test = F_Params(nextToken, newStr);
         //test = workNotTerminal(N_Params,nextToken);
         if (test!=0)return test;
         if (!IFRightBracket){INVALID_TOKEN}
         NEXT;
         //test = workNotTerminal(N_ParamsR,nextToken);
-        test = F_ParamsR(nextToken, name_func);
+        test = F_ParamsR(nextToken, newStr);
         if (test != 0) return test;
         // TreeElement* function = TS_LookFunction(ts,name_func);   <- uncomment when CodeGen ready
         //G_function_bgn(function);                                 <- uncomment when CodeGen ready 
@@ -193,10 +194,17 @@ int F_Prog(token* nextToken){
         param_cter = -1;
         NEXT;
         if (!IFIdentif){INVALID_TOKEN}
-        if (TS_LookFunction(ts,nextToken->data.str)!=NULL) return REDECLARATION_OF_FUNCTION;
+        TreeElement *oldFunc = TS_LookFunction(ts,nextToken->data.str);
+        if (oldFunc!=NULL && ((user_func*)oldFunc->data)->vDefined==1) return REDECLARATION_OF_FUNCTION;
+        else if (oldFunc!=NULL && ((user_func*)oldFunc->data)->vDefined==1){
+            printf("pls");
+        }////////////////////////////////////////////////////////////////////////////////////////////TODO
         user_func* newData = CreateFunctionData();
         if (newData==NULL) return MALLOC_ERR_CODE;
-        if(TS_InsertFunction(ts,nextToken->data.str,w_func,newData)==MALLOC_ERR_CODE) return MALLOC_ERR_CODE;
+        char *newStr = malloc(sizeof(char)*strlen(nextToken->data.str));
+        if(newStr==NULL){free(newData);return MALLOC_ERR_CODE;}
+        strcpy(newStr,nextToken->data.str);
+        if(TS_InsertFunction(ts,newStr,w_func,newData)==MALLOC_ERR_CODE) return MALLOC_ERR_CODE;
         char* name_func = nextToken->data.str;
         NEXT;
         if (!IFLeftBracket){INVALID_TOKEN}
@@ -214,19 +222,21 @@ int F_Prog(token* nextToken){
         if (test!= 0) return test;
         if (!IFKwEnd){INVALID_TOKEN}
         // TreeElement* function = TS_LookFunction(ts,name_func);   <- uncomment when CodeGen ready
-        //G_function_bgn(function);                                 <- uncomment when CodeGen ready 
+        //G_function_bgn(function);
+        newData->vDefined=1;                                 //<- uncomment when CodeGen ready 
         NEXT;
         return 0;
 
     }
     else 
-        if((nextToken->type == _identifier && TS_LookFunction(ts,nextToken->data.str)!=NULL)||(nextToken->type == _identifier && TS_LookVariable(ts,nextToken->data.str)!=NULL)||IFKwWhile||IFKwIf)
+        if((nextToken->type == _identifier && TS_LookFunction(ts,nextToken->data.str)!=NULL))
         {
-            test = F_Statement(nextToken);
-            if(test!=0)
-            {
-                return test;
-            }
+            TreeElement* func = TS_LookFunction(ts,nextToken->data.str);
+            NEXT;
+            if(!IFLeftBracket){INVALID_TOKEN;}
+            NEXT;
+            if(!IFRightBracket){INVALID_TOKEN;}
+            NEXT;
             // Fill params & returns                                    <- TODO + uncomment when CodeGent ready
             // G_CallFunc(nextToken->data.str, #params#, #returns#);    <- TODO + uncomment when CodeGent ready
         }
@@ -242,8 +252,7 @@ int F_Prog(token* nextToken){
 
 
 int F_Params(token* nextToken, char* func_name)
-{
-    printf("F_Params");  
+{ 
     int output = 0;
     char** test;
 
@@ -317,7 +326,6 @@ int F_Params(token* nextToken, char* func_name)
 
 int F_ParamsR(token *nextToken, char* name_func)
 {
-    printf("F_ParamsR"); 
     int output = 0;
     if ( IFDoubleKomma )
     {
@@ -348,8 +356,7 @@ int F_ParamsR(token *nextToken, char* name_func)
 }
 
 int F_SecondParam(token* nextToken, char* name_func)
-{
-    printf("F_SecondParam"); 
+{ 
     if ( IfKomma )
     {
         NEXT
@@ -368,7 +375,6 @@ int F_SecondParam(token* nextToken, char* name_func)
 
 int F_SecondParamR(token* nextToken, char* name_func)
 {
-    printf("F_SecondParamR"); 
     int output = 0;
 
     if ( IfKomma )
@@ -405,7 +411,6 @@ int F_SecondParamR(token* nextToken, char* name_func)
 
 int F_Type(token* nextToken, dataType* array)
 {
-    printf("F_Type"); 
     if ( IFKwInteger || IFKwString || IFKwNumber || IFKwNil )
     {
 
@@ -434,12 +439,11 @@ int F_Type(token* nextToken, dataType* array)
 
 int F_StList(token* nextToken)
 {
-    printf("F_StList"); DebbugPrintToken(nextToken);
-    if ( IFKwEnd )
+    if ( IFKwEnd || IFKwElse )
         return 0;
     else
     {
-        if ( IFIdentif || IFKwLocal || IFKwWhile || IFKwIf || IFKwElse || IFKwReturn )
+        if ( IFIdentif || IFKwLocal || IFKwWhile || IFKwIf || IFKwReturn )
         { 
             int output=0;
             output = F_Statement(nextToken);
@@ -455,9 +459,8 @@ int F_StList(token* nextToken)
 }
 
 int F_Statement(token* nextToken){
-    printf("F_Statement"); 
     if(IFKwWhile){
-
+        while_counter+=1;
         NEXT;
         //G_WhileBGN();<---------------------------------------------------------------------LF
         expression_block *ret=F_Expression(nextToken);
@@ -479,22 +482,26 @@ int F_Statement(token* nextToken){
         return 0;
 
     }else if(IFKwIf){
-        
+        if_counter+=1;
         NEXT;
         expression_block *ret=F_Expression(nextToken);
         if (ret == NULL){ return MALLOC_ERR_CODE;}
         if(ret->operType==_std_error)generate_code=0;
         //G_IfBGN(ret);
         free(ret);
+        NEXT;
+        int help = F_StList(nextToken);
+        if(help!=0)return help;
         if (IFKwElse){
-            int help = F_Else(nextToken);
+            help = F_Else(nextToken);
             if(help!=0)return help;
         }else{
             //G_IfELSE();<----------------------------------------------------------LF
         }
-        if (IFKwEnd){
-            //G_IfEND();<----------------------------------------------------------LF
-        }else{INVALID_TOKEN}
+        //G_IfEND();<----------------------------------------------------------LF
+        if(!IFKwEnd){INVALID_TOKEN;}
+        NEXT;
+        return 0;
 
     }else if(IFKwLocal){
         int help;
@@ -543,7 +550,6 @@ int F_Statement(token* nextToken){
         BS_Init(&returnStack);
         int help = F_SentPar(nextToken,&paramStack);
         if (help!=0){BS_Dispose(&paramStack); BS_Dispose(&returnStack); return help;}
-
         if (!IFRightBracket){BS_Dispose(&paramStack); BS_Dispose(&returnStack); return help;}
         NEXT;
         //G_CallFunc(TreeElement* func,&paramStack,&returnStack );<---------------------------------------------------------_Lukasova funkci
@@ -570,24 +576,21 @@ int F_Statement(token* nextToken){
         if(help)
             printf("placeHolder");
             //G_AssignToVars(vl,&returnStack);<----------------------------------------------------------------------LK
-
         BS_Dispose(&returnStack);
         VL_Dispose(vl);
-
+        return 0;
     }else{INVALID_TOKEN}
 
     INVALID_TOKEN
 }
 
 int F_Else(token* nextToken){
-    printf("F_Else");
     NEXT;
     int help = F_StList(nextToken);
     return help;
 }
 
 int F_Exprb(token* nextToken,BubbleStack_t *stack){
-    printf("F_Exbr");
     if(IFIdentif && TS_LookFunction(ts,nextToken->data.str)!= NULL){
 
         TreeElement* func = TS_LookFunction(ts,nextToken->data.str);
@@ -625,7 +628,6 @@ int F_Exprb(token* nextToken,BubbleStack_t *stack){
 }
 
 int F_ExprAfterLoc(token* nextToken,TreeElement* targetVar){
-    printf("F_ExprAfterLoc");
     if (IFKwAssign){
         NEXT;
         //int returnVal;
@@ -691,12 +693,10 @@ int F_ExprAfterLoc(token* nextToken,TreeElement* targetVar){
 }
 
 expression_block* F_Expression(token* nextToken){
-    printf("F_Expression");
     return CallTheCommander(nextToken);
 }
 
 int F_SExpr(token* nextToken, BubbleStack_t * stack){
-    printf("F_SExpr");
     if(nextToken->type==_misc && nextToken->data.msc==_komma){
         NEXT;
         int test = F_Exprb(nextToken,stack);
@@ -709,23 +709,22 @@ int F_SExpr(token* nextToken, BubbleStack_t * stack){
 }
 
 int F_SentPar(token* nextToken,BubbleStack_t *stack){
-    printf("F_SentPar");
-    if(IFRightBracket)return 0;
+    if(IFRightBracket){NEXT; return 0;}
     int help=F_Exprb(nextToken,stack);
     if(help==MALLOC_ERR_CODE){BS_Dispose(stack); return MALLOC_ERR_CODE;}
     return F_SPar(nextToken,stack);
 }
 
 int F_SPar(token* nextToken, BubbleStack_t *stack){
-    printf("F_SPar");
-    if(IFRightBracket)return 0;
+    if(IFRightBracket){return 0;}
+    if(!IfKomma){ return INVALID_TOKEN;}
+    NEXT;
     int help=F_Exprb(nextToken,stack);
     if(help==MALLOC_ERR_CODE){BS_Dispose(stack); return MALLOC_ERR_CODE;}
     return F_SPar(nextToken,stack);
 }
 
 int F_SVar(token* nextToken,TreeElement ***vl){
-    printf("F_SVar");
     NEXT;
     if(IfKomma){
         NEXT;
@@ -773,6 +772,10 @@ int mainParseFunction(){
     generate_code = 1;
     stack_err_flag=0;
     lex_err_flag=0;
+    execute_counter=0;
+    while_counter=0;
+    if_counter=0;
+    logic_counter=0;
     line_cnt=1;
     key_arr_init();
     token* nextToken = (token*) malloc(sizeof(token));
@@ -788,23 +791,8 @@ int mainParseFunction(){
     while (!IFEof){
         int temp = F_Prog(nextToken);
         if (temp != 0){
-            flag = 1;
-            if (temp == MALLOC_ERR_CODE){ 
-               // mallocErr=1;
-                exit(99);
-            }else{
-                                                                                //Also not sure if this works                                        //DO SOMETHING SIMMILIAR IN ST_LISTE
-                while(!((nextToken->type == _identifier && TS_LookFunction(ts,nextToken->data.str)!=NULL)||
-                        (nextToken->type == _identifier && TS_LookVariable(ts,nextToken->data.str)!=NULL)||
-                        (IFKwWhile)||
-                        (IFKwIf)||
-                        (IFKwGlobal)||
-                        (IFKwFunction))){
-                    NEXT;
-                    if (IFEof)break;
-                }
-            }
-
+            DebbugPrintToken(nextToken);
+            NEXT;
         }
     }
     FreeTheseBees(ts);

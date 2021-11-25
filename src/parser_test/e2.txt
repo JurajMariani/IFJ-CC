@@ -1,0 +1,13 @@
+function start()
+    write("Moj genialny CenoZa m^2KobercoDoIzbyRatac!")
+    local x_len : number local y_len : number local prize : number
+    write("zadaj x, potom y a potom cenu za 1m^2 koberca")
+    x_len = readn() y_len = readn() prize = readn()
+    local res : number
+    if x_len < 0then write("Si kokot, nevies citat?") return
+    else end
+    if y_len < 0 then write("Jaj, ncmnt .... shm") return else end res = x_len + y_len
+    res = res * prize write("Zaplatis tolkoto peniazkov", res)
+    return
+end
+start()
