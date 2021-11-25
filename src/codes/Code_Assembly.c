@@ -568,6 +568,9 @@ void G_RetrunTerm(BubbleStack_t *godzilla)
     out("RETURN");
     newline
     newline
+
+    generate_execute_block();
+    newline
 }
 
 
