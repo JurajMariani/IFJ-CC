@@ -3,13 +3,13 @@
 #include <stdio.h>
 #include "../libs/analysis.h"
 
-
 void GetNextToken(token *tokenOut)
 {
     if(tokenOut->type == _misc)
     {
         if(tokenOut->data.msc == _EOF) 
         {
+            free(result.data.str);
             fprintf(stderr,"\nIt's already end of file\n\n");
             return;
         }
@@ -27,6 +27,7 @@ void GetNextToken(token *tokenOut)
 
     lex_err_flag = 0;
     unsigned output_length = 0;
+    str2write = 0;
       
     char input_c = fgetc(stdin);
 
@@ -206,8 +207,8 @@ void GetNextToken(token *tokenOut)
 
     if(lex_err_flag == -1)
     {
-       free(output);
-       return; 
+        free(output);
+        return; 
     }
     else if(lex_err_flag == 2)
     {
@@ -216,7 +217,15 @@ void GetNextToken(token *tokenOut)
         return;
     }
 
+    if(str2write)
+    {
+        free(result.data.str);
+        result.data.str = malloc(strlen(output)*sizeof(char));
+        strcpy(result.data.str, output);
+    }
+
     free(output);
+
     tokenOut->type = result.type;
     tokenOut->data.kw = result.data.kw;
     tokenOut->data.msc = result.data.msc;
@@ -225,7 +234,7 @@ void GetNextToken(token *tokenOut)
     tokenOut->data.type = result.data.type;
     tokenOut->data._double = result.data._double;
     tokenOut->data._integer = result.data._integer;
-
+    
     return;
 }
 
@@ -274,8 +283,7 @@ void first_perimeter(char *state, char **output, unsigned *output_length)
             result.type = _identifier;
             result.data.type = _string;
 
-            result.data.str = malloc(strlen((*output))*sizeof(char));
-            strcpy(result.data.str, (*output));
+            str2write = 1;
         }
          
         return;
@@ -570,7 +578,7 @@ void first_perimeter(char *state, char **output, unsigned *output_length)
     if (!strcmp(state, "komma"))
     {
         result.type = _misc;
-        result.data.oper = _komma;
+        result.data.msc = _komma;
         return;
     }
 }
@@ -746,8 +754,7 @@ void second_perimeter(char *state, char **output, unsigned *output_length)
             result.type = _const;
             result.data.type = _string;
 
-            result.data.str = malloc(strlen((*output))*sizeof(char));
-            strcpy(result.data.str, (*output));
+            str2write = 1;
             return;
         }
     }
