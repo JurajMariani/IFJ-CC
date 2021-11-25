@@ -223,6 +223,7 @@ int F_Prog(token* nextToken){
         if (!IFKwEnd){INVALID_TOKEN}
         newData->vDefined=1;                              
         NEXT;
+        G_function_end(function->name);
         return 0;
 
     }
@@ -235,8 +236,15 @@ int F_Prog(token* nextToken){
             NEXT;
             if(!IFRightBracket){INVALID_TOKEN;}
             NEXT;
+            BubbleStack_t mockStack1,mockStack2;
+            BS_Init(&mockStack1); if (stack_err_flag!=0){return MALLOC_ERR_CODE;} 
+            BS_Init(&mockStack2); if(stack_err_flag!=0){BS_Dispose(&mockStack1); return MALLOC_ERR_CODE;}
+            //dataType* rets = ((user_func*)(func->data))->returns;
+            //printf("%d",rets[0]);
             // Fill params & returns                                    <- TODO + uncomment when CodeGent ready
-            // G_CallFunc(nextToken->data.str, #params#, #returns#);    <- TODO + uncomment when CodeGent ready
+             G_CallFunc(func, &mockStack1,&mockStack2 );//    <- TODO + uncomment when CodeGent ready
+             BS_Dispose(&mockStack1);
+             BS_Dispose(&mockStack2);
         }
         else 
             if(IFEof)
@@ -465,9 +473,9 @@ int F_Statement(token* nextToken, TreeElement* curFunc){
         if(ret == NULL) return MALLOC_ERR_CODE;
         else if (ret->operType==_std_error)generate_code=0;
         else if (ret->dt==_bool){
-            //G_CompareBool(ret);<------------------------------------------------------------LF
+            G_CompareBool(ret);//<------------------------------------------------------------LF
         }else{
-            //G_CompareNull(ret);<--------------------------------------------------------------LF
+            G_CompareNull(ret);//<--------------------------------------------------------------LF
         }
         free(ret);
         if(!IFKwDo){INVALID_TOKEN}
@@ -475,7 +483,7 @@ int F_Statement(token* nextToken, TreeElement* curFunc){
         int test = F_StList(nextToken,curFunc);
         if(test!=0)return test;
         if(!IFKwEnd){INVALID_TOKEN}
-        //G_WhileEND();<------------------------------------------------------------------------LF
+        G_WhileEND();//<------------------------------------------------------------------------LF
         NEXT;
         return 0;
 
@@ -572,6 +580,7 @@ int F_Statement(token* nextToken, TreeElement* curFunc){
         if(help==MALLOC_ERR_CODE){VL_Dispose(vl); BS_Dispose(&returnStack); return MALLOC_ERR_CODE;}
         help=F_SExpr(nextToken, &returnStack);
         if(help==MALLOC_ERR_CODE){VL_Dispose(vl); BS_Dispose(&returnStack); return MALLOC_ERR_CODE;}
+        //fprintf(stderr,"HEJ ");
         help = SemanticCheck(vl,&returnStack);
         if(help)
             G_AssignToVars(vl,&returnStack);//<----------------------------------------------------------------------LK
@@ -602,13 +611,13 @@ int F_Exprb(token* nextToken,BubbleStack_t *stack){
         BubbleStack_t mockStack;
         BS_Init(&mockStack);
         
-        //help = G_CallFunc(func, stack, &mockStack);
+        help = G_CallFunc(func, stack, &mockStack);
         //printf("func %d",help); DebbugPrintStack(stack); DebbugPrintStack(&mockStack); printf("\n");
 
         if(help!=0){BS_Dispose(stack); BS_Dispose(&mockStack); return help;}
         //help=ReturnsCheck(func,&mockStack);
         if(help!=1){BS_Dispose(stack); BS_Dispose(&mockStack); return help;} //<--------------------------------------------------Error invalid return
-        //help = MoveStack(stack,&mockStack);
+        help = MoveStack(stack,&mockStack);
         BS_Dispose(&mockStack);
         return 0;
 
@@ -650,7 +659,8 @@ int F_ExprAfterLoc(token* nextToken,TreeElement* targetVar){
                 BubbleStack_t mockStack;
                 BS_Init(&mockStack);
                 help = 0;
-                 //help = G_CALLFUNCTION(func,stack,&mockStack);<--------------------------------------------------------------LK
+                 //<--------------------------------------------------------------LK
+                help = G_CallFunc(func,&stack,&mockStack);
                 if(help!=0){BS_Dispose(&mockStack);BS_Dispose(&stack);return help;}
                 if(SemanticCheck(vl,&mockStack)!=1)if(help!=0){BS_Dispose(&mockStack);BS_Dispose(&stack);return help;}
                 BS_Dispose(&mockStack);
@@ -676,6 +686,7 @@ int F_ExprAfterLoc(token* nextToken,TreeElement* targetVar){
                 else if(IsErrMark){ INVALID_EXPRESSION}
                 else if (C_AssignToVar(targetVar,block)){
                     //G_AssignToVar(block,targetVar); <------------------------------------------------------------Lukasova funkcia
+                    G_AssignToVar(targetVar,block);
                     ((variable*)targetVar->data)->vDefined=1;
                     return 0;
                 }else{
@@ -873,6 +884,7 @@ int mainParseFunction(){
     line_cnt=1;
     exprCounter = 0.0;
     key_arr_init();
+    generate_header();
     token* nextToken = (token*) malloc(sizeof(token));
     if(nextToken==NULL)return -1;
     TS_Init(&ts);

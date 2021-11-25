@@ -223,9 +223,12 @@ int ConvertToBlock(expression_block *block, token* nextToken, int *termNumber){
         block->blockType=_operand_expr;
         block->operType=_constant_oper;
         block->dt=nextToken->data.type;
-        block->_double=exprCounter;
-        block->_integer=*termNumber;
-        (*termNumber)++;
+        block->_double=nextToken->data._double;
+        block->_integer=nextToken->data._integer;
+        if(block->dt==_string){
+            block->str=malloc(sizeof(char)*strlen(nextToken->data.str));
+            strcpy(block->str,nextToken->data.str);
+        }
     }else
     if (nextToken->type==_keyword && nextToken->data.kw==_nil){
         block->blockType=_operand_expr;
@@ -408,11 +411,12 @@ int TAB_Terminalize(BubbleStack_t *stack,token *nextToken,int* termNumber){
         newTerm->dt=operand2->dt;
         newTerm->_integer=*termNumber;
         newTerm->_double=exprCounter;
+        newTerm->TSPointer=operand2->TSPointer;
+        newTerm->str=operand2->str;
         (*termNumber)++;
 
-        //DebbugPrintExpress(newTerm); DebbugPrintExpress(operand2);
-        //var_to_term_assign(newTerm,operand2);//<-----------------------------------------------------------LK FIXME
-        
+        var_to_term_assign(newTerm,operand2);//<-----------------------------------------------------------LK FIXME
+        if(operand2->dt==_string)free(operand2->str);
         BS_Push(stack,newTerm);
         free(operand2);
         if(stack_err_flag==1)return MALLOC_ERR_CODE;

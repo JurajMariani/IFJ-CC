@@ -208,9 +208,10 @@ void G_string_correct_print(char* string)
         }
         else
         {
-            out_partial("\0");
+            out_partial("\\0");
             out_integer(string[i]);
         }
+        i++;
     }
 }
 
@@ -264,6 +265,10 @@ int G_CallFunc(TreeElement* func, BubbleStack_t* params, BubbleStack_t* returns)
         term_name = generate_term_name(var);
         if (term_name == NULL)
             return MALLOC_ERR_CODE;
+
+        out_partial("DEFVAR TF@");
+        out_partial(term_name);
+        newline
 
         out_partial("READ TF@");
         out_partial(term_name);
@@ -336,7 +341,7 @@ int G_CallFunc(TreeElement* func, BubbleStack_t* params, BubbleStack_t* returns)
 
 
             int control = 0;
-            while( control <= n)
+            while( control < n)
             {
                 term = NULL;
                 term = generate_exp_block(rets, i, n);
@@ -695,7 +700,7 @@ void G_function_end(char* func_name)
 void var_to_term_assign(expression_block* target, expression_block* input)
 {
     char* target_term;
-    char* input_varia ble;
+    char* input_variable;(void)input_variable;
     target_term = generate_term_name(target);
     out_partial("DEFVAR TF@");
     out_partial(target_term);
@@ -707,14 +712,14 @@ void var_to_term_assign(expression_block* target, expression_block* input)
     {
         case _string:
             out_partial(" string@");
-            out_partial(input->str);
+            G_string_correct_print(input->str);
             break;
         case _integer:
             out_partial(" int@");
             out_integer(input->_integer);
             break;
         case _number:
-            out_partial(" number@");
+            out_partial(" float@");
             out_number(input->_double);
             break;
         case _nan:

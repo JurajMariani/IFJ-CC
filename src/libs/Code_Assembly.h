@@ -39,7 +39,7 @@ void generate_execute_jump(void);
 void generate_header(void);
 void generate_execute_block(void);
 void G_string_correct_print(char* string);
-void G_RetrunTerm(BubbleStack_t *godzilla);
+void G_RetrunTerm(BubbleStack_t *godzilla,char*);
 int G_FillWithNil(expression_block* term);
 void print_substr();
 void print_tointeger();
