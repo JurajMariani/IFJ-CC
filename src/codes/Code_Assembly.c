@@ -550,7 +550,7 @@ void G_WhileEND()
     newline
 }
 
-void G_RetrunTerm(BubbleStack_t *godzilla)
+void G_RetrunTerm(BubbleStack_t *godzilla, char* func_name)
 {
     expression_block* kingkong = NULL;
     while(godzilla != NULL)
@@ -564,12 +564,10 @@ void G_RetrunTerm(BubbleStack_t *godzilla)
         free(kingkong);
         free(minidzilla);
     }
-    out("POPFRAME");
-    out("RETURN");
+    out_partial("JUMP __END_OF_");
+    out_partial(func_name);
+    out_partial("__");
     newline
-    newline
-
-    generate_execute_block();
     newline
 }
 
@@ -669,6 +667,21 @@ int G_function_bgn(TreeElement* func)
 }
 
 
+void G_function_end(char* func_name)
+{
+    newline
+    newline
+    out_partial("LABEL __END_OF_");
+    out_partial(func_name);
+    out_partial("__");
+    newline
+    out("POPFRAME");
+    out("RETURN");
+    newline
+    newline
+}   
+
+
 /**
  * @brief 
  * 
@@ -678,7 +691,7 @@ int G_function_bgn(TreeElement* func)
 void var_to_term_assign(expression_block* target, expression_block* input)
 {
     char* target_term;
-    char* input_variable;
+    char* input_varia ble;
     target_term = generate_term_name(target);
     input_variable = generate_name(input->TSPointer);
     out_partial("DEFVAR TF@");
