@@ -157,9 +157,17 @@ void generate_header(void)
     generate_execute_jump();
 
     print_substr();
+    newline
+    newline
     print_tointeger();
+    newline
+    newline
     print_ord();
+    newline
+    newline
     print_chr();
+    newline
+    newline
 
     generate_execute_block();
 
@@ -207,6 +215,22 @@ void G_string_correct_print(char* string)
 }
 
 
+expression_block* generate_exp_block(dataType* returning, int param_num, int param_max)
+{
+    expression_block* ret = (expression_block*) malloc(sizeof(expression_block));
+    if (ret == NULL)
+        return NULL;
+    ret->_double = exprCounter;
+    exprCounter++;
+    ret->operType = _not_terminal_oper;
+    ret->blockType = _operand_expr;
+    ret->dt = returning[param_num];
+    ret->_integer = 1 - param_max;
+
+    return ret;
+}
+
+
 /**
  * @brief 
  * 
@@ -220,10 +244,22 @@ int G_CallFunc(TreeElement* func, BubbleStack_t* params, BubbleStack_t* returns)
     expression_block* var = NULL;
     char* term_name = NULL;
 
+    dataType* rets = ((user_func*)(func->data))->returns;
+
+    int n = 0;
+    int i = 0;
+    while(rets[n] != _ender)
+    {
+        n++;
+    }
+
     if ((strcmp(func->name,"reads") == 0) || (strcmp(func->name,"readn") == 0) || (strcmp(func->name,"readi") == 0))
     {
-        var = BS_TopStack(returns);
-        BS_Pop(returns);
+        var = NULL;
+        var = generate_exp_block(rets, i, n);
+        i++;
+        if (var == NULL)
+            return MALLOC_ERR_CODE;
 
         term_name = generate_term_name(var);
         if (term_name == NULL)
@@ -250,7 +286,7 @@ int G_CallFunc(TreeElement* func, BubbleStack_t* params, BubbleStack_t* returns)
         newline
 
         free(term_name);
-        free(var);
+        BS_Push(returns, var);
         
     }
     else
@@ -277,12 +313,15 @@ int G_CallFunc(TreeElement* func, BubbleStack_t* params, BubbleStack_t* returns)
             {
                 var = BS_TopStack(params);
                 term_name = generate_term_name(var);
+                if (term_name == NULL)
+                    return MALLOC_ERR_CODE;
                         
                 out_partial("PUSHS TF@");
                 out_partial(term_name);
                 newline
                         
                 free(var);
+                term_name = NULL;
                 BS_Pop(params);
 
             }
@@ -295,14 +334,19 @@ int G_CallFunc(TreeElement* func, BubbleStack_t* params, BubbleStack_t* returns)
 
             expression_block* term = NULL;
 
-            while (!BS_IsEmpty(returns))
-            {
-                term = BS_TopStack(returns);
 
+            int control = 0;
+            while( control <= n)
+            {
+                term = NULL;
+                term = generate_exp_block(rets, i, n);
+                if (term == NULL)
+                    return MALLOC_ERR_CODE;
+                
                 term_name = generate_term_name(term);
                 if (term_name == NULL)
                     return MALLOC_ERR_CODE;
-                        
+                
                 out_partial("DEFVAR TF@");
                 out_partial(term_name);
                 newline
@@ -311,8 +355,7 @@ int G_CallFunc(TreeElement* func, BubbleStack_t* params, BubbleStack_t* returns)
                 newline
 
                 free(term_name);
-                free(term);
-                BS_Pop(returns);
+                BS_Push(returns, term);
             }
         }
     }
@@ -509,18 +552,22 @@ void G_WhileEND()
 
 void G_RetrunTerm(BubbleStack_t *godzilla)
 {
-expression_block* kingkong = NULL;
-while(godzilla != NULL)
-{
-    BS_TopStack(godzilla);
-    BS_Pop(godzilla);
-    char* minidzilla = generate_term_name(kingkong);
-    out_partial("PUSHS TF@");
-    out_partial(minidzilla);
+    expression_block* kingkong = NULL;
+    while(godzilla != NULL)
+    {
+        BS_TopStack(godzilla);
+        BS_Pop(godzilla);
+        char* minidzilla = generate_term_name(kingkong);
+        out_partial("PUSHS TF@");
+        out_partial(minidzilla);
+        newline
+        free(kingkong);
+        free(minidzilla);
+    }
+    out("POPFRAME");
+    out("RETURN");
     newline
-    free(kingkong);
-}
-out("RETURN");
+    newline
 }
 
 
@@ -669,6 +716,28 @@ void unary_operator(expression_block* target, expression_block* input)
 
     free(pom_target);
     free(pom_input);
+}
+
+
+
+/**
+ * @brief 
+ * 
+ * @param term 
+ * @return int 
+ */
+int G_FillWithNil(expression_block* term)
+{
+    char* term_name = generate_term_name(term);
+    if (term_name == NULL)
+        return MALLOC_ERR_CODE;
+
+    out_partial("MOVE TF@");
+    out_partial(term_name);
+    out(" nil@nil");
+
+    free(term_name);
+    return 0;
 }
 
 
