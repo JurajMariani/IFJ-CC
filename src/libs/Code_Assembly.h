@@ -45,3 +45,4 @@ void print_substr();
 void print_tointeger();
 void print_ord();
 void print_chr();
+void def_var(TreeElement *);

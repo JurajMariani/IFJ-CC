@@ -52,6 +52,7 @@ char* generate_name(TreeElement* var)
         out[strlen(temp1)+i+1] = temp2[i];
         i++;
     }
+    out[i]='\0';
     return (out);
 }
 
@@ -231,6 +232,13 @@ expression_block* generate_exp_block(dataType* returning, int param_num, int par
     return ret;
 }
 
+void def_var(TreeElement* new_var)
+{
+    char* name = generate_name(new_var);
+    out_partial("DEFVAR TF@");
+    out_partial(name);
+    newline
+}
 
 /**
  * @brief 
@@ -617,6 +625,9 @@ void G_AssignToVars(TreeElement** var,BubbleStack_t* stack)//<----------------- 
     expression_block* temp_expbl;
     TreeElement* temp_treeelem;
 
+    //fprintf(stderr,"%p",*var);
+    //fprintf(stderr,"%p\n",BS_TopStack(stack));
+
     while (!BS_IsEmpty(stack))
     {
         temp_expbl = BS_TopStack(stack);
@@ -700,7 +711,7 @@ void G_function_end(char* func_name)
 void var_to_term_assign(expression_block* target, expression_block* input)
 {
     char* target_term;
-    char* input_variable;(void)input_variable;
+    char* input_variable;
     target_term = generate_term_name(target);
     out_partial("DEFVAR TF@");
     out_partial(target_term);
@@ -708,25 +719,32 @@ void var_to_term_assign(expression_block* target, expression_block* input)
 
     out_partial("MOVE TF@");
     out_partial(target_term);
-    switch(input->dt)
-    {
-        case _string:
-            out_partial(" string@");
-            G_string_correct_print(input->str);
-            break;
-        case _integer:
-            out_partial(" int@");
-            out_integer(input->_integer);
-            break;
-        case _number:
-            out_partial(" float@");
-            out_number(input->_double);
-            break;
-        case _nan:
-            out_partial(" nil@nil");
-            break;
-        default:
-            break;
+    if(input->operType!=_variable_oper){
+        switch(input->dt)
+        {
+            case _string:
+                out_partial(" string@");
+                G_string_correct_print(input->str);
+                break;
+            case _integer:
+                out_partial(" int@");
+                out_integer(input->_integer);
+                break;
+            case _number:
+                out_partial(" float@");
+                out_number(input->_double);
+                break;
+            case _nan:
+                out_partial(" nil@nil");
+                break;
+            default:
+                break;
+        }
+    }else{
+        //fprintf(stderr,"vec"); fflush(stderr);
+        input_variable=generate_name(input->TSPointer);
+        out_partial(" TF@");
+        out_partial(input_variable);
     }
     newline
 

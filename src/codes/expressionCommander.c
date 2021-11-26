@@ -62,6 +62,7 @@ int ParamCheck(TreeElement* func, BubbleStack_t *stack){
 int SemanticCheck(TreeElement** vl,BubbleStack_t *stack){
     BubbleStack_t helper;
     BS_Init(&helper);
+    return 1;///////////////////////////////////////////////////////////////DELETE THIS!
     if(helper.BS_Element==NULL)return MALLOC_ERR_CODE; 
     int bad = 0;
     int length=0;

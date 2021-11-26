@@ -10,7 +10,7 @@ void GetNextToken(token *tokenOut)
         if(tokenOut->data.msc == _EOF) 
         {
             free(result.data.str);
-            fprintf(stderr,"\nIt's already end of file\n\n");
+            //fprintf(stderr,"\nIt's already end of file\n\n");
             return;
         }
     }

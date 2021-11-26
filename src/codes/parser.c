@@ -498,11 +498,10 @@ int F_Statement(token* nextToken, TreeElement* curFunc){
         NEXT;
         int help = F_StList(nextToken,curFunc);
         if(help!=0)return help;
+        G_IfELSE();
         if (IFKwElse){
             help = F_Else(nextToken,curFunc);
             if(help!=0)return help;
-        }else{
-            G_IfELSE(); //<---------------------------------------------------------LF
         }
         G_IfEND(); //<----------------------------------------------------------LF
         if(!IFKwEnd){INVALID_TOKEN;}
@@ -527,6 +526,7 @@ int F_Statement(token* nextToken, TreeElement* curFunc){
         if(newData==NULL){free(newVarName); return MALLOC_ERR_CODE;}
         test = TS_InsertVariable(ts,newVarName,w_var,newData);
         if (test == MALLOC_ERR_CODE) {free(newVarName); return MALLOC_ERR_CODE;}
+        def_var(TS_LookVariable(ts,newVarName));
         NEXT;
         if (IFKwAssign){
             help = F_ExprAfterLoc(nextToken,TS_LookVariable(ts,newVarName));
@@ -554,14 +554,21 @@ int F_Statement(token* nextToken, TreeElement* curFunc){
         NEXT;
         BubbleStack_t paramStack;
         BubbleStack_t returnStack;
+        BubbleStack_t helperS;
         BS_Init(&paramStack);
         BS_Init(&returnStack);
-        
+        BS_Init(&helperS);
         int help = F_SentPar(nextToken,&paramStack);
-        if (help!=0){BS_Dispose(&paramStack); BS_Dispose(&returnStack); return help;}
-        if (!IFRightBracket){BS_Dispose(&paramStack); BS_Dispose(&returnStack); return help;}
+        if (help!=0){BS_Dispose(&paramStack); BS_Dispose(&returnStack); BS_Dispose(&helperS); return help;}
+        if (!IFRightBracket){BS_Dispose(&paramStack); BS_Dispose(&returnStack);BS_Dispose(&helperS); return help;}
         NEXT;
-        G_CallFunc(func,&paramStack,&returnStack );//<---------------------------------------------------------_Lukasova funkci
+        while (!BS_IsEmpty(&paramStack))
+        {
+            BS_Push(&helperS,BS_TopStack(&paramStack));
+            BS_Pop(&paramStack);
+        }
+        G_CallFunc(func,&helperS,&returnStack );//<---------------------------------------------------------_Lukasova funkci
+        BS_Dispose(&helperS);
         BS_Dispose(&paramStack);
         BS_Dispose(&returnStack);
         return 0;
@@ -613,10 +620,11 @@ int F_Exprb(token* nextToken,BubbleStack_t *stack){
         
         help = G_CallFunc(func, stack, &mockStack);
         //printf("func %d",help); DebbugPrintStack(stack); DebbugPrintStack(&mockStack); printf("\n");
-
+        //fprintf(stderr,"%d",BS_IsEmpty(&mockStack));
         if(help!=0){BS_Dispose(stack); BS_Dispose(&mockStack); return help;}
         //help=ReturnsCheck(func,&mockStack);
-        if(help!=1){BS_Dispose(stack); BS_Dispose(&mockStack); return help;} //<--------------------------------------------------Error invalid return
+        //if(help!=1){BS_Dispose(stack); BS_Dispose(&mockStack); return help;} //<--------------------------------------------------Error invalid return
+        //DebbugPrintStack(&mockStack);
         help = MoveStack(stack,&mockStack);
         BS_Dispose(&mockStack);
         return 0;
