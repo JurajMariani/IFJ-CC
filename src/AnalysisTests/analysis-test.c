@@ -30,13 +30,15 @@ int main()
         exit(0);
     }
 
-    int line_cnt = 0;
+    int line_cnt = 1;
     GetNextToken(&write_token);
     fprintf(fout, "LINE | TOKEN \n");
     fprintf(fout, "-----------------------------\n");
+    
     while(write_token.data.msc != _EOF)
     {
-        line_cnt = GetLineNumber() + 1;
+        fopen("analysis-output.out","a");
+        line_cnt = GetLineNumber();
         switch(write_token.type)
         {
             case 0:
@@ -85,10 +87,10 @@ int main()
             }
             default: break;
         }
+        fclose(fout);
         EmptyToken(&write_token);
         GetNextToken(&write_token);
     }
-
-    fclose(fout);
     exit(0);
+    
 }
