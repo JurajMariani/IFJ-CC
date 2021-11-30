@@ -8,6 +8,7 @@
 #define ARR_LEN 17
 char arr_keywords[ARR_LEN][10];
 
+int lex_err_flag;
 int line_cnt;
 token result;
 int str2write;

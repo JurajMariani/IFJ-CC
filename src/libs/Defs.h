@@ -8,7 +8,6 @@
  * @brief Global flag, when an error occures, this variable will be set to a non-zero value
  */
 int stack_err_flag;
-int lex_err_flag;
 int generate_code;
 float exprCounter;
 
