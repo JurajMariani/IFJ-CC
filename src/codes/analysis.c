@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "../libs/analysis.h"
+#include "TS.c"
+#include "err_one_func.c"
 
 void GetNextToken(token *tokenOut)
 {
@@ -18,7 +20,7 @@ void GetNextToken(token *tokenOut)
     char *output = (char*) malloc(STR_SIZE * sizeof(char));
     if(output == NULL)
     {
-        TS_COLLAPSE(*ts);
+        TS_COLLAPSE(&ts);
         RaiseError(99);
         exit(99);
     }
@@ -188,6 +190,7 @@ void GetNextToken(token *tokenOut)
 
         default:
         {
+            TS_COLLAPSE(&ts);
             RaiseError(1);
             exit(1);
         }
@@ -209,7 +212,7 @@ void GetNextToken(token *tokenOut)
     if(lex_err_flag)
     {
         free(output);
-        TS_COLLAPSE(*ts);
+        TS_COLLAPSE(&ts);
         RaiseError(99);
         exit(99);
     }
