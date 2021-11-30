@@ -509,15 +509,15 @@ void first_perimeter(char *state, char **output, unsigned *output_length)
        
         while(input_c != '"')
         {
+            
             if(input_c < 32)
             {
-                lex_err_flag = INVALID_TOKEN_CONST_CODE;
-                return;
-            }
-
-            if(input_c == 10 || input_c == EOF) 
-            {
-                line_cnt++;
+                if(input_c == '\n' || input_c == EOF) 
+                {
+                    line_cnt++;
+                    lex_err_flag = INVALID_TOKEN_CONST_CODE;
+                    return;
+                }
                 lex_err_flag = INVALID_TOKEN_CONST_CODE;
                 return;
             }
@@ -695,7 +695,7 @@ void second_perimeter(char *state, char **output, unsigned *output_length)
 
         if(input_c == '\n') 
         {
-            ungetc(input_c, stdin);
+            line_cnt++;
             strcpy(state, "start");
             return;
         }
@@ -927,7 +927,7 @@ int Is_Keyword(char **output)
         i++;
     }
     
-    if(i == ARR_LEN) return -1;
+    if(i == ARR_LEN-1) return -1;
     if (!strcmp((*output), arr_keywords[i])) return i;
 
     return -2;
