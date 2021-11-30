@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "../libs/Defs.h"
+#include "../libs/analysis.h"
 #include <unistd.h>
 #include <fcntl.h>
 
@@ -30,7 +31,7 @@ int main()
         exit(0);
     }
 
-    int line_cnt = 1;
+    line_cnt = 1;
     GetNextToken(&write_token);
     fprintf(fout, "LINE | TOKEN \n");
     fprintf(fout, "-----------------------------\n");
