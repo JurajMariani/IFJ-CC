@@ -18,14 +18,15 @@ void GetNextToken(token *tokenOut)
     char *output = (char*) malloc(STR_SIZE * sizeof(char));
     if(output == NULL)
     {
-        lex_err_flag = MALLOC_ERR_CODE;
-        return;
+        TS_COLLAPSE(*ts);
+        RaiseError(99);
+        exit(99);
     }
 
     char state[20];
     strcpy(state, "start");
-
     lex_err_flag = 0;
+
     unsigned output_length = 0;
     str2write = 0;
       
@@ -187,8 +188,8 @@ void GetNextToken(token *tokenOut)
 
         default:
         {
-            lex_err_flag = 2;
-            return;
+            RaiseError(1);
+            exit(1);
         }
     }
     
@@ -205,16 +206,12 @@ void GetNextToken(token *tokenOut)
         return;
     }
 
-    if(lex_err_flag == -1)
+    if(lex_err_flag)
     {
         free(output);
-        return; 
-    }
-    else if(lex_err_flag == 2)
-    {
-        free(output);
-        GetNextToken(tokenOut);
-        return;
+        TS_COLLAPSE(*ts);
+        RaiseError(99);
+        exit(99);
     }
 
     if(str2write)
