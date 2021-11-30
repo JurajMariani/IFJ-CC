@@ -927,7 +927,7 @@ int Is_Keyword(char **output)
         i++;
     }
     
-    if(i == ARR_LEN-1) return -1;
+    if(i == ARR_LEN) return -1;
     if (!strcmp((*output), arr_keywords[i])) return i;
 
     return -2;
