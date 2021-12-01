@@ -352,7 +352,7 @@ int G_CallFunc(TreeElement* func, BubbleStack_t* params, BubbleStack_t* returns)
             while( control < n)
             {
                 term = NULL;
-                term = generate_exp_block(rets, i, n);
+                term = generate_exp_block(rets, control, n);
                 if (term == NULL)
                     return MALLOC_ERR_CODE;
                 
@@ -366,7 +366,7 @@ int G_CallFunc(TreeElement* func, BubbleStack_t* params, BubbleStack_t* returns)
                 out_partial("POPS TF@");
                 out_partial(term_name);
                 newline
-
+                control++;
                 free(term_name);
                 BS_Push(returns, term);
             }

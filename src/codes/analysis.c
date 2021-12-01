@@ -2,8 +2,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "../libs/analysis.h"
-#include "TS.c"
-#include "err_one_func.c"
 
 void GetNextToken(token *tokenOut)
 {

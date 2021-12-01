@@ -2,14 +2,15 @@
 require "ifj21"
 function main() -- uzivatelska funkce bez parametru
   local a : integer
+  local b:integer
   local vysl : integer = 1
   write("Zadejte cislo pro vypocet faktorialu\n")
-  a = readi()
+  a,b = readi(),readi()
   if a == nil then
       write("a je nil\n") return
   else
   end
-  if a < 10 then
+  if a + 1 < 10 then
     write("Faktorial nelze spocitat\n")
   else
     vysl = 1

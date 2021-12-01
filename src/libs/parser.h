@@ -39,41 +39,45 @@ void GiveMeAnError(int errCode);
 
 int PushBuiltInFunctions();
 
+void initGlobals();
+
 variable* CreateVariableData(dataType newType);
 
 user_func* CreateFunctionData();
 
-int F_Prog(token* nextToken);
+void F_Prog(token* nextToken);
 
-int F_Params(token* nextToken, char* );
+void F_Params(token* nextToken, char* );
 
-int F_ParamsR(token *nextToken, char* );
+void F_ParamsR(token *nextToken, char* );
 
-int F_SecondParam(token* nextToken, char* );
+void F_SecondParam(token* nextToken, char* );
 
-int F_SecondParamR(token* nextToken, char* );
+void F_SecondParamR(token* nextToken, char* );
 
-int F_Type(token* nextToken, dataType* );
+void F_Type(token* nextToken, dataType* );
 
-int F_StList(token* nextToken, TreeElement* curFunc);
+void F_StList(token* nextToken, TreeElement* curFunc);
 
-int F_Statement(token* nextToken, TreeElement* curFunc);
+void F_Statement(token* nextToken, TreeElement* curFunc);
 
-int F_Else(token* nextToken, TreeElement* curFunc);
+void F_Else(token* nextToken, TreeElement* curFunc);
 
-int F_Exprb(token* nextToken, BubbleStack_t *);
+void Returner(token* nextToken,BubbleStack_t *returnStack);
 
-int F_ExprAfterLoc(token* nextToken, TreeElement*);
+void F_Exprb(token* nextToken, BubbleStack_t *);
+
+void F_ExprAfterLoc(token* nextToken, TreeElement*);
 
 expression_block* F_Expression(token* nextToken);
 
-int F_SentPar(token* nextToken, BubbleStack_t *);
+void F_SentPar(token* nextToken, BubbleStack_t *);
 
-int F_SPar(token* nextToken, BubbleStack_t *);
+void F_SPar(token* nextToken, BubbleStack_t *);
 
-int F_SExpr(token* nextToken, BubbleStack_t *);
+void F_SExpr(token* nextToken, BubbleStack_t *);
 
-int F_SVar(token* nextToken, TreeElement ***);
+void F_SVar(token* nextToken, TreeElement ***);
 
 //Will see if needed,mainly testing purposes
 int mainParseFunction(); 

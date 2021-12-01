@@ -3,6 +3,8 @@
 #include <string.h>
 #include "Defs.h"
 
+#include "TS.h"
+
 #define STR_SIZE 10
 
 #define ARR_LEN 17

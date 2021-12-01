@@ -3,57 +3,59 @@
 
 void RaiseError(int err_flag)
 {
-if (err_flag == 1)
-{
-    fprintf(stderr,"LEXICAL_ANALYSIS_ERR1\n");
-}
+    fprintf(stderr,"%d ",GetLineNumber());
+    if (err_flag == 1)
+    {
+        fprintf(stderr,"LEXICAL_ANALYSIS_ERR1\n");
+    }
 
-else if (err_flag == 2)
-{
-    fprintf(stderr,"SYNTAX_ANALYSIS_ERR2\n");
-}
+    else if (err_flag == 2)
+    {
+        fprintf(stderr,"SYNTAX_ANALYSIS_ERR2\n");
+    }
 
 
-else if ( err_flag == 3)
-{
-    fprintf(stderr,"SEMANTIC_PROGRAM_UNDEF_ERR3\n");
-}
+    else if ( err_flag == 3)
+    {
+        fprintf(stderr,"SEMANTIC_PROGRAM_UNDEF_ERR3\n");
+    }
 
-else if ( err_flag == 4)
-{
-    fprintf(stderr,"ASSIGN_ERR4\n");
-}
+    else if ( err_flag == 4)
+    {
+        fprintf(stderr,"ASSIGN_ERR4\n");
+    }
 
-else if ( err_flag == 5)
-{
-    fprintf(stderr,"SEMANTIC_WRONG_NUMBER_OF_PARAMS_ERR5\n");
-}
+    else if ( err_flag == 5)
+    {
+        fprintf(stderr,"SEMANTIC_WRONG_NUMBER_OF_PARAMS_ERR5\n");
+    }
 
-else if ( err_flag == 6)
-{
-    fprintf(stderr,"SEMANTIC_TYPE_COMPATIBILITY_ERR6\n");
-}
+    else if ( err_flag == 6)
+    {
+        fprintf(stderr,"SEMANTIC_TYPE_COMPATIBILITY_ERR6\n");
+    }
 
-else if ( err_flag == 7)
-{
-    fprintf(stderr,"OTHER_SEMANTIC__ERR7\n");
-}
+    else if ( err_flag == 7)
+    {
+        fprintf(stderr,"OTHER_SEMANTIC__ERR7\n");
+    }
 
-else if ( err_flag == 8)
-{
-    fprintf(stderr,"UNEXPECTED_NIL_ERR8\n");
-}
+    else if ( err_flag == 8)
+    {
+        fprintf(stderr,"UNEXPECTED_NIL_ERR8\n");
+    }
 
-else if ( err_flag == 9)
-{
-    fprintf(stderr,"DIVIDE_BY_NULL_ERR9\n");
-}
+    else if ( err_flag == 9)
+    {
+        fprintf(stderr,"DIVIDE_BY_NULL_ERR9\n");
+    }
 
-else if ( err_flag == 99)
-{
-    fprintf(stderr,"INTERNAL_ERR99\n");
-}
-else return;
+    else if ( err_flag == 99)
+    {
+        fprintf(stderr,"INTERNAL_ERR99\n");
+    }
+
+//TODO EXIT HERE!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 }
 /*
 1 - chyba v programu v rámci lexikální analýzy (chybná struktura aktuálního lexému).

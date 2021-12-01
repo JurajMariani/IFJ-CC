@@ -1,5 +1,7 @@
 #include "../libs/expressionCommander.h"
 
+#define comError(d) fprintf(stderr,"%s %d ",__func__, __LINE__); RaiseError(d); exit(d);
+
 TreeElement** VL_INIT(){
     TreeElement **vl;
     vl=malloc(sizeof(TreeElement*));
@@ -28,7 +30,7 @@ void VL_Dispose(TreeElement **vl){
 int ParamCheck(TreeElement* func, BubbleStack_t *stack){
     BubbleStack_t helper;
     BS_Init(&helper);
-    if (helper.BS_Element==NULL)return MALLOC_ERR_CODE;
+    if (helper.BS_Element==NULL){BS_Dispose(stack); comError(99)}
 
     while (!BS_IsEmpty(stack))
     {
@@ -43,8 +45,8 @@ int ParamCheck(TreeElement* func, BubbleStack_t *stack){
         if(paramPointer==_ender){BS_Dispose(stack);BS_Dispose(&helper);return 0;}
         expression_block* tmp = BS_TopStack(&helper);
         if(tmp->dt!=data->params[i]){
-            if(tmp->dt==_number && data->params[i]==_integer) printf("plc");//ConvertToFloat(tmp);
-            else if(tmp->dt==_integer && data->params[i]==_number)printf("plc");//ConvertToInt(tmp);
+            if(tmp->dt==_number && data->params[i]==_integer)convert_to_float(tmp);
+            else if(tmp->dt==_integer && data->params[i]==_number)convert_to_int(tmp);
             else bad=1;
         }
 
@@ -62,13 +64,12 @@ int ParamCheck(TreeElement* func, BubbleStack_t *stack){
 int SemanticCheck(TreeElement** vl,BubbleStack_t *stack){
     BubbleStack_t helper;
     BS_Init(&helper);
-    return 1;///////////////////////////////////////////////////////////////DELETE THIS!
-    if(helper.BS_Element==NULL)return MALLOC_ERR_CODE; 
+    if(helper.BS_Element==NULL){BS_Dispose(stack); comError(99)} 
     int bad = 0;
     int length=0;
     while (vl[length]!=NULL){length+=1;}
-    for(int i=0;i<length;i++){
-        if(BS_IsEmpty(stack)){break;}
+    for(int i=length-1;i>=0;i--){
+        if(BS_IsEmpty(stack)){BS_Dispose(stack);BS_Dispose(&helper);comError(4)}
         BS_Push(&helper,BS_TopStack(stack));
         BS_Pop(stack);
         variable* temp = (variable*)vl[i]->data;
@@ -78,14 +79,10 @@ int SemanticCheck(TreeElement** vl,BubbleStack_t *stack){
             else bad=1;
         }
     }
-    if(!BS_IsEmpty(stack)){
-        bad=1;
-        while (!BS_IsEmpty(stack)){BS_Push(&helper,BS_TopStack(stack));BS_Pop(stack);}
-    }
+    if(!BS_IsEmpty(stack)){BS_Dispose(stack);BS_Dispose(&helper);comError(4)}
+
     while(!BS_IsEmpty(&helper)){BS_Push(stack,BS_TopStack(&helper));BS_Pop(&helper);}
 
-    //if(result)PrinttError
-    
     BS_Dispose(&helper);
     if(bad)
         return 0;
@@ -97,7 +94,7 @@ int ReturnsCheck(TreeElement *func, BubbleStack_t * returnedStack){
     int bad=0;
     BubbleStack_t helperStack;
     BS_Init(&helperStack);
-    if(helperStack.BS_Element==NULL)return MALLOC_ERR_CODE;
+    if(helperStack.BS_Element==NULL){BS_Dispose(returnedStack);comError(99)}
     int lengthStack=0;
     while(!BS_IsEmpty(returnedStack)){
         BS_Push(&helperStack,BS_TopStack(returnedStack));
@@ -106,53 +103,72 @@ int ReturnsCheck(TreeElement *func, BubbleStack_t * returnedStack){
     }
     int lengthReturns=0;
     user_func* data=(user_func*)func->data;
-    while (*((data->returns) + lengthReturns*sizeof(dataType*))!=_ender)
+    printf("%s %d",func->name,data->returns[0]);
+    while (data->returns[lengthReturns]!=_ender)
     {
         lengthReturns++;
     }
     int i = 0;
-    while (lengthReturns>lengthStack)
-    {
-        expression_block* tmp = malloc(sizeof(expression_block));
-        if (tmp==NULL){BS_Dispose(returnedStack);BS_Dispose(&helperStack);return MALLOC_ERR_CODE;}
-        tmp->blockType=_operand_expr;
-        tmp->dt=data->returns[i];
-        tmp->_double = exprCounter;
-        // FillWithNill(tmp);<--------------------------------------------------------------------------------------------------------------------LK TODO
-        BS_Push(returnedStack,tmp);
-        lengthStack++;
-        i++;
-    }
-    while(!BS_IsEmpty(&helperStack)){
-        expression_block* tmp = BS_TopStack(&helperStack);
-        if(tmp->dt!=data->returns[i]){
-            if(tmp->dt==_number && data->returns[i]==_integer){printf("ConvertToInt");}//<--------------------------------------------LK
-            else if(tmp->dt==_integer && data->returns[i]==_number){printf("ConvertToFloat");}
-            else bad=1;
+    if(lengthReturns>=lengthStack){
+        while (lengthReturns>lengthStack)
+        {
+            expression_block* tmp = malloc(sizeof(expression_block));
+            if (tmp==NULL){BS_Dispose(returnedStack);BS_Dispose(&helperStack);return MALLOC_ERR_CODE;}
+            tmp->blockType=_operand_expr;
+            tmp->operType=_not_terminal_oper;
+            tmp->dt=data->returns[i];
+            tmp->_double = exprCounter;
+            G_FillWithNil(tmp);//<--------------------------------------------------------------------------------------------------------------------LK TODO
+            BS_Push(returnedStack,tmp);
+            lengthStack++;
+            i++;
         }
-        i++;
+        while(!BS_IsEmpty(&helperStack)){
+            expression_block* tmp = BS_TopStack(&helperStack);
+            if(tmp->dt!=data->returns[i]){
+                if(tmp->dt==_number && data->returns[i]==_integer){convert_to_int(tmp);}//<--------------------------------------------LK
+                else if(tmp->dt==_integer && data->returns[i]==_number){convert_to_float(tmp);}
+                else bad=1;
+            }
+            BS_Push(returnedStack,tmp);
+            BS_Pop(&helperStack);
+            i++;
+        }
+    }else{
+        while (i<lengthReturns)
+        {
+            expression_block* tmp = BS_TopStack(&helperStack);
+            if(tmp->dt!=data->returns[i]){
+                if(tmp->dt==_number && data->returns[i]==_integer){convert_to_int(tmp);}//<--------------------------------------------LK
+                else if(tmp->dt==_integer && data->returns[i]==_number){convert_to_float(tmp);}
+                else bad=1;
+            }
+            BS_Push(returnedStack,tmp);
+            i++;
+        }
     }
     BS_Dispose(&helperStack);
     if(bad)return 0;
     else return 1;
 }
 
-int MoveStack(BubbleStack_t* dest, BubbleStack_t* target){
+void MoveStack(BubbleStack_t* dest, BubbleStack_t* target){
     BubbleStack_t helper;
     BS_Init(&helper);
-    if(helper.BS_Element==NULL)return MALLOC_ERR_CODE;
+    if(helper.BS_Element==NULL){BS_Dispose(dest);BS_Dispose(target);comError(99)}
     while(!BS_IsEmpty(target)){
         BS_Push(&helper,BS_TopStack(target));
         BS_Pop(target);
     }
     while (!BS_IsEmpty(&helper))
     {
+        if(BS_IsFull(dest)){BS_Dispose(dest);BS_Dispose(target);comError(99)}
         BS_Push(dest,BS_TopStack(&helper));
         BS_Pop(&helper);
     }
 
     BS_Dispose(&helper);
-    return 0;
+    return;
 }
 
 int C_AssignToVar(TreeElement* target, expression_block* source){
@@ -262,16 +278,6 @@ expression_block* FillEndMark(){
     return block;
 }
 
-//DNT
-expression_block* FillErrorMark(){
-    expression_block* block=malloc(sizeof(expression_block));
-    if (block==NULL)return block;
-    block->blockType=_operand_expr;
-    block->operType=_std_error;
-    block->_double=exprCounter;
-    return block;
-}
-
 //Should probably work
 dataType ResultData(expression_block* operand1, expression_block* operand2, expression_block *sign){
     if (sign->oper==_less || sign->oper == _lessEq || sign->oper == _great || sign->oper == _greatEq || sign->oper == _Eq || sign->oper == _nEq) return _bool;
@@ -319,65 +325,64 @@ int TypeCheck(expression_block* operand1,expression_block* sign, expression_bloc
 }
 
 //DNT
-int GetClosestTerminal(BubbleStack_t *stack, expression_block **block){
+void GetClosestTerminal(BubbleStack_t *stack, expression_block **block){
     *block=BS_TopStack(stack);
-    if (stack_err_flag == 1) return MALLOC_ERR_CODE;
+    if (stack_err_flag == 1){BS_Dispose(stack);comError(99)}
     if ((*block)->operType != _not_terminal_oper){ 
-        return 0;
+        return;
     }else{
         expression_block *helper;
         helper = *block;
         BS_Pop(stack);
         *block=BS_TopStack(stack);
-        if (stack_err_flag == 1) return MALLOC_ERR_CODE;
+        if (stack_err_flag == 1) {BS_Dispose(stack);comError(99)}
         BS_Push(stack,helper);
     }
-    return 0;
+    return;
 }
 
 //DNT
-int TAB_Shift(BubbleStack_t *stack,token *nextToken, int *termNumber){
+void TAB_Shift(BubbleStack_t *stack,token *nextToken, int *termNumber){
     expression_block *block;
     if(nextToken->type==_identifier || nextToken->type==_const || (nextToken->type == _misc && nextToken->data.msc == _bracketL)){
         block = FillBeginMark();
-        if(block == NULL) return MALLOC_ERR_CODE;
+        if(block == NULL) {BS_Dispose(stack);comError(99)}
         BS_Push(stack,block);
-        if (stack_err_flag != 0) return MALLOC_ERR_CODE;
+        if (stack_err_flag != 0) {BS_Dispose(stack);comError(99)}
     }else
     if (nextToken->type==_operator){
         block = FillBeginMark();
-        if (block == NULL) return MALLOC_ERR_CODE;
+        if (block == NULL) {BS_Dispose(stack);comError(99)}
         if(nextToken->data.oper==_length){
             BS_Push(stack,block);
-            if(stack_err_flag!=0)return MALLOC_ERR_CODE;
+            if(stack_err_flag!=0){BS_Dispose(stack);comError(99)}
         }else{
             expression_block *helper=NULL;
             helper=BS_TopStack(stack);
             BS_Pop(stack);
             BS_Push(stack,block);
-            if (stack_err_flag != 0) return MALLOC_ERR_CODE;
+            if (stack_err_flag != 0) {BS_Dispose(stack);comError(99)}
             BS_Push(stack,helper);
-            if (stack_err_flag != 0) return MALLOC_ERR_CODE;
+            if (stack_err_flag != 0) {BS_Dispose(stack);comError(99)}
         }
     }else 
     if (nextToken->type == _keyword && nextToken->data.kw==_nil){
         block = FillBeginMark();
-        if(block == NULL) return MALLOC_ERR_CODE;
+        if(block == NULL) {BS_Dispose(stack);comError(99)}
         BS_Push(stack,block);
-        if (stack_err_flag != 0) return MALLOC_ERR_CODE;
+        if (stack_err_flag != 0) {BS_Dispose(stack);comError(99)}
     }
     block=malloc(sizeof(expression_block));
-    if(block==NULL)return MALLOC_ERR_CODE;
+    if(block==NULL){BS_Dispose(stack);comError(99)}
     int test = ConvertToBlock(block,nextToken,termNumber);
-    if (test != 0) return test;
+    if (test != 0) {BS_Dispose(stack);comError(2)}
     NEXT;
     BS_Push(stack,block);
-    if (stack_err_flag != 0) return MALLOC_ERR_CODE;
-    return 0;
+    if (stack_err_flag != 0) {BS_Dispose(stack);comError(99)}
 }
 
 //DNT
-int TAB_Equals(BubbleStack_t *stack, token *nextToken){
+void TAB_Equals(BubbleStack_t *stack, token *nextToken){
     expression_block *nt=NULL;
     expression_block *del=NULL;
     nt=BS_TopStack(stack);
@@ -389,13 +394,12 @@ int TAB_Equals(BubbleStack_t *stack, token *nextToken){
     BS_Pop(stack);
     free(del);
     BS_Push(stack,nt);
-    if (stack_err_flag != 0) return MALLOC_ERR_CODE;
+    if (stack_err_flag != 0) {BS_Dispose(stack);comError(99)}
     NEXT;
-    return 0;
 }
 
 //DNT
-int TAB_Terminalize(BubbleStack_t *stack,token *nextToken,int* termNumber){
+void TAB_Terminalize(BubbleStack_t *stack,token *nextToken,int* termNumber){
     (void)nextToken;//Remove later
     expression_block *operand1 = NULL,*operand2=NULL,*sign=NULL,*bumper=NULL;
     operand2=BS_TopStack(stack);
@@ -406,7 +410,7 @@ int TAB_Terminalize(BubbleStack_t *stack,token *nextToken,int* termNumber){
     if (sign->blockType==_misc_expr && sign->em==_bgnMark){
         free(sign);
         expression_block *newTerm = malloc(sizeof(expression_block));
-        if(newTerm==NULL){free(operand2);return INVALID_OPERATION;}
+        if(newTerm==NULL){free(operand2);BS_Dispose(stack);comError(99)}
         newTerm->blockType=_operand_expr;
         newTerm->operType=_not_terminal_oper;
         newTerm->dt=operand2->dt;
@@ -419,18 +423,18 @@ int TAB_Terminalize(BubbleStack_t *stack,token *nextToken,int* termNumber){
         var_to_term_assign(newTerm,operand2);//<-----------------------------------------------------------LK FIXME
         if(operand2->dt==_string)free(operand2->str);
         BS_Push(stack,newTerm);
+        if(stack_err_flag==1){free(operand2);BS_Dispose(stack);comError(99)}
         free(operand2);
-        if(stack_err_flag==1)return MALLOC_ERR_CODE;
-        return 0;
+        return;
     }
     operand1=BS_TopStack(stack);
     BS_Pop(stack);
     //Unary Operand
     if (operand1->blockType==_misc_expr && operand1->em==_bgnMark){
         free(operand1);
-        if(TypeCheck(operand2,sign,NULL)==0){free(operand2);free(sign); RaiseError(6); return INVALID_OPERATION;}
+        if(TypeCheck(operand2,sign,NULL)==0){free(operand2);free(sign); BS_Dispose(stack);comError(6)}
         expression_block *newTerm = malloc(sizeof(expression_block));
-        if(newTerm==NULL){free(operand2);free(sign);return INVALID_OPERATION;}
+        if(newTerm==NULL){free(operand2);free(sign);BS_Dispose(stack);comError(6)}
         newTerm->blockType=_operand_expr;
         newTerm->operType=_not_terminal_oper;
         newTerm->dt=_integer;
@@ -443,17 +447,17 @@ int TAB_Terminalize(BubbleStack_t *stack,token *nextToken,int* termNumber){
         BS_Push(stack,newTerm);
         free(operand2);
         free(sign);
-        if(stack_err_flag==1)return MALLOC_ERR_CODE;
-        return 0;
+        if(stack_err_flag==1){BS_Dispose(stack);comError(6)}
+        return;
     }
     bumper=BS_TopStack(stack);
     BS_Pop(stack);
     //diary operand *duary *bilingual *binary
     if(bumper->blockType==_misc_expr && bumper->em == _bgnMark){
         free(bumper);
-        if (TypeCheck(operand1,sign,operand2)==0){free(operand1);free(operand2);free(sign); RaiseError(6); return INVALID_EXPRESSION_CONST_CODE ;}
+        if (TypeCheck(operand1,sign,operand2)==0){free(operand1);free(operand2);free(sign); BS_Dispose(stack);comError(6)}
         expression_block *newTerm = malloc(sizeof(expression_block));
-        if(newTerm==NULL){free(operand1);free(operand2);free(sign);return MALLOC_ERR_CODE;}
+        if(newTerm==NULL){free(operand1);free(operand2);free(sign);BS_Dispose(stack);comError(99)}
         newTerm->blockType=_operand_expr;
         newTerm->operType=_not_terminal_oper;      
         newTerm->dt=ResultData(operand1,operand2,sign);
@@ -467,15 +471,15 @@ int TAB_Terminalize(BubbleStack_t *stack,token *nextToken,int* termNumber){
         free(operand1);
         free(operand2);
         free(sign);
-        if(stack_err_flag==1){free(operand1);free(operand2);free(sign);return MALLOC_ERR_CODE;}
-        return 0;
-    }else{free(bumper);free(operand1);free(operand2);free(sign);return INVALID_EXPRESSION_CONST_CODE;}
+        if(stack_err_flag==1){free(operand1);free(operand2);free(sign);BS_Dispose(stack);comError(99)}
+        return;
+    }else{free(bumper);free(operand1);free(operand2);free(sign);BS_Dispose(stack);comError(6)}
 }
 
 //DNT
 actions ChooseAction(BubbleStack_t *stack,token* nextToken){
     expression_block *block=NULL;
-    if (GetClosestTerminal(stack,&block)!=0) return _tab_error;
+    GetClosestTerminal(stack,&block);
     //#
     if (block->blockType == _operator_expr && block->oper == _length){
         if (nextToken->type == _operator && nextToken->data.oper == _length)
@@ -493,9 +497,9 @@ actions ChooseAction(BubbleStack_t *stack,token* nextToken){
         else if (nextToken->type == _keyword && nextToken->data.kw==_nil)
             return _tab_shift;
         else if (IsEndSymbol(nextToken))
-            return _tab_end;
+            {BS_Dispose(stack);comError(2)}
         else
-            return _tab_error;
+            {BS_Dispose(stack);comError(2)}
     }else
     if (block->blockType == _operator_expr && (block->oper == _mul || block->oper==_div || block->oper==_div2)){
         if (nextToken->type == _operator && nextToken->data.oper == _length)
@@ -513,9 +517,9 @@ actions ChooseAction(BubbleStack_t *stack,token* nextToken){
         else if (nextToken->type == _keyword && nextToken->data.kw==_nil)
             return _tab_shift;
         else if (IsEndSymbol(nextToken))
-            return _tab_end;
+            {BS_Dispose(stack);comError(2)}
         else
-            return _tab_error;
+            {BS_Dispose(stack);comError(2)}
     }else
     if (block->blockType == _operator_expr && (block->oper == _sub || block->oper == _add)){
         if (nextToken->type == _operator && (nextToken->data.oper == _length || nextToken->data.oper == _mul || nextToken->data.oper == _div || nextToken->data.oper == _div2))
@@ -533,9 +537,9 @@ actions ChooseAction(BubbleStack_t *stack,token* nextToken){
         else if (nextToken->type == _keyword && nextToken->data.kw==_nil)
             return _tab_shift;
         else if (IsEndSymbol(nextToken))
-            return _tab_end;
+            {BS_Dispose(stack);comError(2)}
         else
-            return _tab_error;
+            {BS_Dispose(stack);comError(2)}
     }else
     if (block->blockType == _operator_expr && block->oper == _konk){
         if (nextToken->type == _operator && (nextToken->data.oper == _length || nextToken->data.oper == _mul || nextToken->data.oper == _div || nextToken->data.oper == _div2 || nextToken->data.oper == _sub || nextToken->data.oper == _add))
@@ -553,9 +557,9 @@ actions ChooseAction(BubbleStack_t *stack,token* nextToken){
         else if (nextToken->type == _keyword && nextToken->data.kw==_nil)
             return _tab_shift;
         else if (IsEndSymbol(nextToken))
-            return _tab_end;
+            {BS_Dispose(stack);comError(2)}
         else
-            return _tab_error;
+            {BS_Dispose(stack);comError(2)}
     }else
     if (block->blockType == _operator_expr){
         if (nextToken->type == _operator && (nextToken->data.oper == _length || nextToken->data.oper == _mul || nextToken->data.oper == _div || nextToken->data.oper == _div2 || nextToken->data.oper == _sub || nextToken->data.oper == _add || nextToken->data.oper == _konk ))
@@ -573,9 +577,9 @@ actions ChooseAction(BubbleStack_t *stack,token* nextToken){
         else if (nextToken->type == _keyword && nextToken->data.kw==_nil)
             return _tab_shift;
         else if (IsEndSymbol(nextToken))
-            return _tab_end;
+            {BS_Dispose(stack);comError(2)}
         else
-            return _tab_error;
+            {BS_Dispose(stack);comError(2)}
     }else
     if (block->blockType == _misc_expr && block->em == _lbr){
         if (nextToken->type == _misc && nextToken->data.msc == _bracketR)
@@ -589,7 +593,7 @@ actions ChooseAction(BubbleStack_t *stack,token* nextToken){
         else if (nextToken->type == _keyword && nextToken->data.kw==_nil)
             return _tab_shift;
         else
-            return _tab_error;
+            {BS_Dispose(stack);comError(2)}
     }else
     if (block->blockType == _misc_expr && block->em == _rbr){
         if (nextToken->type == _operator)
@@ -601,7 +605,7 @@ actions ChooseAction(BubbleStack_t *stack,token* nextToken){
         else if (nextToken->type ==_identifier)
             return _tab_end;    //IT SHOULD END HERE, NOT SURE IF THIS IS ENOUGH
         else
-            return _tab_error;
+            {BS_Dispose(stack);comError(2)}
     }else
     if (block->blockType == _operand_expr && (block->operType == _variable_oper || block->operType==_constant_oper)){
         if (nextToken->type == _operator)
@@ -613,8 +617,8 @@ actions ChooseAction(BubbleStack_t *stack,token* nextToken){
         }
         else if (nextToken->type ==_identifier)
             return _tab_end;    //IT SHOULD END HERE, NOT SURE IF THIS IS ENOUGH
-        else{
-            return _tab_error;}
+        else
+            {BS_Dispose(stack);comError(2)}
     }else
     if (block->blockType == _misc_expr && block->em== _endMark){
         if (nextToken->type == _operator)
@@ -632,38 +636,29 @@ actions ChooseAction(BubbleStack_t *stack,token* nextToken){
         else if (nextToken->type == _misc && nextToken->data.msc == _bracketR)
             return _tab_end;
         else
-            return _tab_error;
+            {BS_Dispose(stack);comError(2)}
     }else
-        return _tab_error;
-    }
+        {BS_Dispose(stack);comError(2)}
+}
 
 expression_block* SolveCycle(BubbleStack_t* stack,token *nextToken,int *termNumber){
     actions curAction = ChooseAction(stack,nextToken);
-    int control;
-    expression_block* err=FillErrorMark();
     while (curAction!=_tab_end){
         if(curAction==_tab_shift){
-            control=TAB_Shift(stack,nextToken,termNumber);
+            TAB_Shift(stack,nextToken,termNumber);
         }else if (curAction==_tab_terminalize){
-            control=TAB_Terminalize(stack,nextToken,termNumber);
+            TAB_Terminalize(stack,nextToken,termNumber);
         }else if (curAction == _tab_equals){
-            control=TAB_Equals(stack,nextToken);
-        }else return err;
-        if(control!=0)break;
+            TAB_Equals(stack,nextToken);
+        }
         curAction=ChooseAction(stack,nextToken);
-        if(curAction==_tab_error){control=INVALID_EXPRESSION_CONST_CODE;break;}
     }
-    if (control==MALLOC_ERR_CODE){free(err); return NULL;}
-    else if(control==INVALID_EXPRESSION_CONST_CODE){return err;}
     while(stack->BS_TopIndex!=1){
-        control=TAB_Terminalize(stack,nextToken,termNumber);
-        if (control==MALLOC_ERR_CODE){free(err); return NULL;}
-        else if(control==INVALID_EXPRESSION_CONST_CODE){return err;}
+        TAB_Terminalize(stack,nextToken,termNumber);
     }
     expression_block* result=NULL;
     result=BS_TopStack(stack);
     BS_Pop(stack);
-    free(err);
     return result;
 }
 
@@ -673,8 +668,9 @@ expression_block* CallTheCommander(token *nextToken){
     BubbleStack_t stack;
     int termNumber = 0;
     BS_Init(&stack);
+    if(stack_err_flag){comError(99)}
     block = FillEndMark();
-    if(block==NULL)return NULL;
+    if(block==NULL){BS_Dispose(&stack); comError(99)}
     BS_Push(&stack,block);
     expression_block* result = SolveCycle(&stack,nextToken,&termNumber);
     BS_Dispose(&stack);
