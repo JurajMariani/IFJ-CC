@@ -672,8 +672,12 @@ void F_SVar(token* nextToken,TreeElement ***vl){
 
 void ashes_to_ashes_dust_to_dust()
 {
-    //Can I interest you in everything all of the time?
+    // Can I interest you in everything all of the time?
     // free ( everything and anything and everything and anything and everything and anything and everything and anything amd all of the time )
+
+    FreeTheseBees(ts);
+    dtroy_variable_name_catcher();
+
     return;
 }
 

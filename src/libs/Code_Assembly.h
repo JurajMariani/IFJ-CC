@@ -15,6 +15,10 @@ int if_counter;
 int while_counter;
 int logic_counter;
 
+// # ooga booga monkey method
+char** variable_names;
+int number_of_names;
+
 
 //asi su nejake includes zbytocne, ptm skontroluj
 int G_CompareBool(expression_block *);
@@ -46,3 +50,5 @@ void print_tointeger();
 void print_ord();
 void print_chr();
 void def_var(TreeElement *);
+void dtroy_variable_name_catcher(void);
+void init_variable_name_catcher(void);

@@ -26,7 +26,6 @@
 
 
 
-
 /**
  * function to generate adress at the end of expression name 
  * x -> x_adress
@@ -150,7 +149,6 @@ void generate_execute_jump(void)
  */
 void generate_header(void)
 {
-
     out(".IFJcode21");
     newline
     out("CREATEFRAME");
@@ -217,6 +215,14 @@ void G_string_correct_print(char* string)
 }
 
 
+/**
+ * @brief 
+ * 
+ * @param returning 
+ * @param param_num 
+ * @param param_max 
+ * @return expression_block* 
+ */
 expression_block* generate_exp_block(dataType* returning, int param_num, int param_max)
 {
     expression_block* ret = (expression_block*) malloc(sizeof(expression_block));
@@ -232,12 +238,28 @@ expression_block* generate_exp_block(dataType* returning, int param_num, int par
     return ret;
 }
 
+
+/**
+ * @brief 
+ * 
+ * @param new_var 
+ */
 void def_var(TreeElement* new_var)
 {
     char* name = generate_name(new_var);
     out_partial("DEFVAR TF@");
     out_partial(name);
     newline
+    fprintf(stderr,"var: %s\n",name);
+    char** temp = (char**) realloc(variable_names, (number_of_names + 1) * sizeof(char*));
+    if (temp == NULL)
+    {
+        RaiseError(99);
+        exit(99);
+    }
+    variable_names = temp;
+    variable_names[number_of_names] = name;
+    number_of_names++;
 }
 
 /**
@@ -471,6 +493,41 @@ void G_IfEND()
 }
 
 
+void get_from_local_frame()
+{
+    int index = 0;
+    while (index < number_of_names)
+    {
+        out_partial("DEFVAR TF@");
+        out_partial(variable_names[index]);
+        newline
+        out_partial("MOVE TF@");
+        out_partial(variable_names[index]);
+        out_partial(" LF@");
+        out_partial(variable_names[index]);
+        newline
+
+        index++;
+    }
+}
+
+
+void get_from_temp_frame()
+{
+    int index = 0;
+    while (index < number_of_names)
+    {
+        out_partial("MOVE LF@");
+        out_partial(variable_names[index]);
+        out_partial(" TF@");
+        out_partial(variable_names[index]);
+        newline
+
+        index++;
+    }
+}
+
+
 /**
  * @brief 
  * 
@@ -483,6 +540,12 @@ void G_WhileBGN()
     out_integer(while_counter);
     newline
     newline
+    out("PUSHFRAME");
+    out("CREATEFRAME");
+    newline
+    get_from_local_frame();
+    newline
+
 
     // <statement> <st-list>
     // G_ComparBool / G_CompareNull
@@ -555,12 +618,14 @@ int G_CompareNull(expression_block* term)
 void G_WhileEND()
 {
     newline
+    get_from_temp_frame();
     newline
+    out("POPFRAME");
     out_partial("JUMP WHILE_LOOP_");
     out_integer(while_counter);
     newline
     newline
-    out_partial("LABEL WHILE_END_LOOP_");
+    out_partial("LABEL WHILE_LOOP_END_");
     out_integer(while_counter);
     newline
     newline
@@ -652,8 +717,42 @@ void G_AssignToVars(TreeElement** var,BubbleStack_t* stack)//<----------------- 
     }
 }
 
+
+/**
+ * @brief 
+ * 
+ */
+void init_variable_name_catcher()
+{
+    variable_names = NULL;
+    number_of_names = 0;
+}
+
+
+void dtroy_variable_name_catcher()
+{
+    int i = 0;
+    if (variable_names == NULL)
+    {
+    	return;
+    }
+
+    while (i < number_of_names)
+    {
+    	free(variable_names[i]);
+    	i++;
+    }
+    free(variable_names);
+    
+    init_variable_name_catcher();
+    return;
+}
+
+
 int G_function_bgn(TreeElement* func)
 {
+    init_variable_name_catcher();
+
     generate_execute_jump();
 
 
@@ -699,6 +798,8 @@ void G_function_end(char* func_name)
     newline
     newline
     generate_execute_block();
+    
+    dtroy_variable_name_catcher();
 }   
 
 
@@ -1283,4 +1384,4 @@ void print_chr()
 }
 
 
-//ic21int prg.code < prg.in > prg.out
+/**      ----------------       END OF CODE_ASSEMBLY.C      -------------------     */
