@@ -10,7 +10,6 @@ void GetNextToken(token *tokenOut)
         if(tokenOut->data.msc == _EOF) 
         {
             free(result.data.str);
-            //fprintf(stderr,"\nIt's already end of file\n\n");
             return;
         }
     }
@@ -18,7 +17,6 @@ void GetNextToken(token *tokenOut)
     char *output = (char*) malloc(STR_SIZE * sizeof(char));
     if(output == NULL)
     {
-        TS_COLLAPSE(&ts);
         RaiseError(99);
         exit(99);
     }
@@ -188,7 +186,6 @@ void GetNextToken(token *tokenOut)
 
         default:
         {
-            TS_COLLAPSE(&ts);
             RaiseError(1);
             exit(1);
         }
@@ -210,7 +207,6 @@ void GetNextToken(token *tokenOut)
     if(lex_err_flag)
     {
         free(output);
-        TS_COLLAPSE(&ts);
         RaiseError(99);
         exit(99);
     }
