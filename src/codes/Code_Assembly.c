@@ -92,7 +92,7 @@ char * generate_term_name(expression_block* term)
 }
 
 
-char* generate_param_name(char* name)
+/*char* generate_param_name(char* name)
 {
     int name_len = strlen(name);
     char *out = malloc((name_len + 7)*sizeof(char));
@@ -126,7 +126,7 @@ char* generate_param_name(char* name)
         i++;
     }
     return out;
-}
+}*/
 
 
 
@@ -239,6 +239,21 @@ expression_block* generate_exp_block(dataType* returning, int param_num, int par
 }
 
 
+void add_local_variable_name(char* var_name)
+{
+    char** temp = (char**) realloc(variable_names, (number_of_names + 1) * sizeof(char*));
+    if (temp == NULL)
+    {
+        RaiseError(99);
+        exit(99);
+    }
+    variable_names = temp;
+    variable_names[number_of_names] = var_name;
+    number_of_names++;
+}
+
+
+
 /**
  * @brief 
  * 
@@ -250,16 +265,7 @@ void def_var(TreeElement* new_var)
     out_partial("DEFVAR TF@");
     out_partial(name);
     newline
-    fprintf(stderr,"var: %s\n",name);
-    char** temp = (char**) realloc(variable_names, (number_of_names + 1) * sizeof(char*));
-    if (temp == NULL)
-    {
-        RaiseError(99);
-        exit(99);
-    }
-    variable_names = temp;
-    variable_names[number_of_names] = name;
-    number_of_names++;
+    add_local_variable_name(name);
 }
 
 /**
@@ -762,14 +768,16 @@ int G_function_bgn(TreeElement* func)
     out("PUSHFRAME");
     out("CREATEFRAME");
 
+    TreeElement* local_var;
+
     int i = 0;
     user_func* temp = (user_func*)func->data;
     while( temp->params[i] != _ender)
     {
-        char* var_name = generate_param_name(temp->param_names[i]);
-        if (var_name == NULL)
-            return MALLOC_ERR_CODE;
-        
+        local_var = TS_LookVariable(ts, temp->param_names[i]);
+        char* var_name = generate_name(local_var);
+        add_local_variable_name(var_name);
+
         out_partial("DEFVAR TF@");
         out_partial(var_name);
         newline
