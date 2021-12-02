@@ -39,23 +39,21 @@ int ParamCheck(TreeElement* func, BubbleStack_t *stack){
     }
     int i=0;
     int bad = 0;
-    user_func* data=(user_func*)func->data;
     while (!BS_IsEmpty(&helper)){
-        dataType paramPointer=data->params[i];
-        if(paramPointer==_ender){BS_Dispose(stack);BS_Dispose(&helper);return 0;}
+        if(((user_func*)func->data)->params[i]==_ender){BS_Dispose(stack);BS_Dispose(&helper);return 0;}
         expression_block* tmp = BS_TopStack(&helper);
-        if(tmp->dt!=data->params[i]){
-            if(tmp->dt==_number && data->params[i]==_integer)convert_to_float(tmp);
-            else if(tmp->dt==_integer && data->params[i]==_number)convert_to_int(tmp);
-            else bad=1;
+        if(tmp->dt!=((user_func*)func->data)->params[i]){
+            if(tmp->dt==_number && ((user_func*)func->data)->params[i]==_integer)convert_to_float(tmp);
+            else if(tmp->dt==_integer && ((user_func*)func->data)->params[i]==_number)convert_to_int(tmp);
+            else {bad=1;break;}
         }
 
         BS_Push(stack,tmp);
         BS_Pop(&helper);
         i++;
     }
-    dataType paramPointer=data->params[i];
-    if(paramPointer!=_ender){BS_Dispose(stack);BS_Dispose(&helper);return 0;}
+    if(bad){BS_Dispose(stack);BS_Dispose(&helper);return 0;}
+    if(((user_func*)func->data)->params[i]!=_ender){BS_Dispose(stack);BS_Dispose(&helper);return 0;}
     BS_Dispose(&helper);
     if(bad==0)return 1;
     else return 0;
@@ -103,7 +101,6 @@ int ReturnsCheck(TreeElement *func, BubbleStack_t * returnedStack){
     }
     int lengthReturns=0;
     user_func* data=(user_func*)func->data;
-    printf("%s %d",func->name,data->returns[0]);
     while (data->returns[lengthReturns]!=_ender)
     {
         lengthReturns++;
@@ -199,6 +196,17 @@ int C_AssignToVar(TreeElement* target, expression_block* source){
         return 0;
 }
 
+void TS_Looper(TreeElement* root){
+    if(root==NULL)return;
+    if(((user_func*)root->data)->vUsed==1 && ((user_func*)root->data)->vDefined==0){comError(3)}
+    TS_Looper(root->left);
+    TS_Looper(root->right);
+}
+
+void TS_FunctionCaller(){
+    TS_Looper(ts->functionLayer->tree->root);
+}
+
 //DNT
 int IsEndSymbol(token *nextToken){
     if ((nextToken->type == _keyword && nextToken->data.kw == _end) ||
@@ -232,6 +240,7 @@ int ConvertToBlock(expression_block *block, token* nextToken, int *termNumber){
         block->blockType=_operand_expr;
         block->operType=_variable_oper;
         block->TSPointer=TS_LookVariable(ts,nextToken->data.str);
+        //fprintf(stderr,"%s %p\n",nextToken->data.str,block->TSPointer);///////////////////////////////////THIS SHIT IS NULL FOR REASONS UNKNOWN
         if(block->TSPointer == NULL)return UNKNOWN_IDENTIF;
         block->dt = ((variable*)(block->TSPointer->data))->type;
         block->str=block->TSPointer->name;
@@ -667,6 +676,7 @@ expression_block* CallTheCommander(token *nextToken){
     expression_block *block = NULL;
     BubbleStack_t stack;
     int termNumber = 0;
+    exprCounter+=1.0f;
     BS_Init(&stack);
     if(stack_err_flag){comError(99)}
     block = FillEndMark();

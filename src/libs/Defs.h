@@ -58,6 +58,7 @@ typedef struct variable{
 
 typedef struct user_func{
 	int vDefined;
+	int vUsed;
 	dataType *params;
 	char** param_names;
 	dataType *returns;

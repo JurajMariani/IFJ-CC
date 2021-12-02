@@ -47,13 +47,18 @@ user_func* CreateFunctionData();
 
 void F_Prog(token* nextToken);
 
-void F_Params(token* nextToken, char* );
+void F_ParamsGlobal(token *nextToken, TreeElement* func);
+void F_SecondParamGlobal(token *nextToken,TreeElement* func);
+void F_ParamsFunction(token *nextToken,TreeElement* func,int globaled);
+void F_SecondParamFunction(token *nextToken,TreeElement* func, int globaled);
 
-void F_ParamsR(token *nextToken, char* );
+//void F_Params(token* nextToken, char* );
 
-void F_SecondParam(token* nextToken, char* );
+void F_ParamsR(token *nextToken, char* ,int);
 
-void F_SecondParamR(token* nextToken, char* );
+//void F_SecondParam(token* nextToken, char* );
+
+void F_SecondParamR(token* nextToken, char* ,int);
 
 void F_Type(token* nextToken, dataType* );
 

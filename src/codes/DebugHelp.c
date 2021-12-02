@@ -64,19 +64,19 @@ void DebbugPrintExpress(expression_block *block){
 	if (block->blockType==_misc_expr){
 		switch (block->em)
 		{
-		case _lbr: printf(" ( "); break;
-		case _rbr: printf(" ) ");break;
-		case _bgnMark: printf(" M< ");break;
-		case _endMark: printf(" $ ");break;
-		default:printf(" Invalid ");break;
+		case _lbr: fprintf(stderr," ( "); break;
+		case _rbr: fprintf(stderr," ) ");break;
+		case _bgnMark: fprintf(stderr," M< ");break;
+		case _endMark: fprintf(stderr," $ ");break;
+		default:fprintf(stderr," Invalid ");break;
 		}
 	}else 
 	if (block->blockType==_operator_expr){
 		switch (block->oper)
 		{
-		case _less: printf(" < ");break;
-		case _lessEq: printf(" <= ");break;
-		case _great: printf(" > ");break;
+		case _less: fprintf(stderr," < ");break;
+		case _lessEq: fprintf(stderr," <= ");break;
+		case _great: fprintf(stderr," > ");break;
 		case _greatEq: printf(" >= ");break;
 		case _Eq: printf(" == ");break;
 		case _nEq: printf(" != ");break;
@@ -103,11 +103,11 @@ void DebbugPrintExpress(expression_block *block){
 			if(block->dt==_string)printf(" Vstring %sV  ",block->str);
 		}else
 		if(block->operType==_not_terminal_oper){
-			if(block->dt==_integer)printf(" <integer %d %f> ",block->_integer, block->_double);
-			if(block->dt==_string)printf(" <string %d %f> ", block->_integer, block->_double);
-			if(block->dt==_number)printf(" <number %d %f> ", block->_integer, block->_double);
-			if(block->dt==_bool)printf(" <bool %d %f> ", block->_integer, block->_double);
-			if(block->dt==_nan)printf(" <nil %d %f> ", block->_integer, block->_double);
+			if(block->dt==_integer)fprintf(stderr," <integer %d %f> ",block->_integer, block->_double);
+			if(block->dt==_string)fprintf(stderr," <string %d %f> ", block->_integer, block->_double);
+			if(block->dt==_number)fprintf(stderr," <number %d %f> ", block->_integer, block->_double);
+			if(block->dt==_bool)fprintf(stderr," <bool %d %f> ", block->_integer, block->_double);
+			if(block->dt==_nan)fprintf(stderr," <nil %d %f> ", block->_integer, block->_double);
 		}
 		else printf(" Invalid ");
 	}
@@ -116,8 +116,9 @@ void DebbugPrintExpress(expression_block *block){
 }
 
 void DebbugPrintStack(BubbleStack_t *stack){
+	fprintf(stderr,"Line %d: Stack bgn",GetLineNumber());
 	for (int i=0;i<=stack->BS_TopIndex;i++){
 		DebbugPrintExpress((stack->BS_Element)[i]);
 	}
-	printf("\n");
+	fprintf(stderr,"Stack end\n");
 }

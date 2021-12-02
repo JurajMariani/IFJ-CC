@@ -28,6 +28,9 @@ int ReturnsCheck(TreeElement *, BubbleStack_t *);
 void MoveStack(BubbleStack_t*, BubbleStack_t*);
 int C_AssignToVar(TreeElement* , expression_block* );
 
+void TS_Looper(TreeElement* root);
+void TS_FunctionCaller();
+
 /**
  * @brief checks if token is one of those that end expression by default
  * 

@@ -1,7 +1,7 @@
 
 #include "../libs/parser.h"
 
-#define RError(d) fprintf(stderr,"%s %d ",__func__, __LINE__); RaiseError(d); exit(d);
+#define RError(d) fprintf(stderr,"%s %d ",__func__, __LINE__); RaiseError(d); DebbugPrintToken(nextToken); exit(d);
 
 #define IFLeftBracket (nextToken->type ==_misc && nextToken->data.msc==_bracketL)
 #define IFDoubleKomma (nextToken->type ==_misc && nextToken->data.msc==_doubleKomma)
@@ -17,7 +17,7 @@
 #define IFKwReturn (nextToken->type ==_keyword && nextToken->data.kw==_return)
 #define IFKwThen (nextToken->type==_keyword && nextToken->data.kw==_then)
 #define IFKwWrite (nextToken->type==_keyword && nextToken->data.kw==_write)
-#define IFIdentif (nextToken->type == _identifier)                                   //TU SA MODLI ABY DENIS NEPOSLAL NULL4
+#define IFIdentif (nextToken->type == _identifier)                                  
 #define IFKwWhile (nextToken->type == _keyword && nextToken->data.kw == _while)
 #define IFKwIf (nextToken->type == _keyword && nextToken->data.kw == _if)
 #define IFKwGlobal (nextToken->type == _keyword && nextToken->data.kw == _global)
@@ -35,10 +35,6 @@ void FreeTheseBees(TreeSupport *ts){
     // Bees Knees 
     (void)ts;
 
-}
-//Function to generate errors - TBD
-void GiveMeAnError(int errCode){
-    (void) errCode;
 }
 
 //DNT
@@ -74,10 +70,10 @@ char** PushParamName(char** param_names, char* param_name)
         strcpy(param_names[count-1], param_name);
     else
         param_names[count-1][0] = '\0';
-    param_names[count] = NULL;
+    param_names[count] = NULL;    
     return param_names;
 }
-
+/*
 int update_param_name(char* param_name, char** param_names, int position)
 {
     int index = 0;
@@ -114,7 +110,7 @@ int update_param_name(char* param_name, char** param_names, int position)
     return 0;
 
 }
-
+*/
 //DNT
 user_func* CreateFunctionData(){
     user_func* newData = malloc(sizeof(user_func));
@@ -145,6 +141,7 @@ user_func* CreateFunctionData(){
     newData->param_names[0] = NULL;
     *(newData->returns)=_ender;
     newData->vDefined=0;
+    newData->vUsed=0;
     return newData;
 }
 
@@ -170,6 +167,7 @@ void F_Prog(token* nextToken){
         strcpy(newStr,nextToken->data.str);
         if (newData==NULL){free(newStr); RError(99);}//<---------------------------------------_Error
         if(TS_InsertFunction(ts,newStr,w_func,newData)==MALLOC_ERR_CODE){RError(99)}//<---------------------------------------_Error
+        TreeElement* func = TS_LookFunction(ts,newStr);
         NEXT;
         if (!IFDoubleKomma){RError(2)}//<---------------------------------------_Error
         NEXT;
@@ -177,47 +175,72 @@ void F_Prog(token* nextToken){
         NEXT;
         if (!IFLeftBracket){RError(2)}//<---------------------------------------_Error
         NEXT;
-        F_Params(nextToken, newStr);
+        F_ParamsGlobal(nextToken, func);
         if (!IFRightBracket){RError(2)}//<---------------------------------------_Error
         NEXT;
-        F_ParamsR(nextToken, newStr);
+        param_cter=-1;
+        F_ParamsR(nextToken, newStr,0);
         return;
         
     }
     else if(nextToken->type ==_keyword && nextToken->data.kw == _function){
         param_cter = -1;
+        char *newStr;
+        int globaled = 0;
         NEXT;
         if (!IFIdentif){RError(2)}//<---------------------------------------_Error
         TreeElement *oldFunc = TS_LookFunction(ts,nextToken->data.str);
         if (oldFunc!=NULL && ((user_func*)oldFunc->data)->vDefined==1) {RError(4)}//<---------------------------------------_Error
         else if (oldFunc!=NULL && ((user_func*)oldFunc->data)->vDefined==0){
-            printf("pls");
-        }/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////TODO
-        user_func* newData = CreateFunctionData();
-        if (newData==NULL) {RError(99)}//<---------------------------------------_Error
-        char *newStr = malloc(sizeof(char)*strlen(nextToken->data.str));
-        if(newStr==NULL){free(newData);RError(99)}//<---------------------------------------_Error
-        strcpy(newStr,nextToken->data.str);
-        if(TS_InsertFunction(ts,newStr,w_func,newData)==MALLOC_ERR_CODE) {RError(99)}//<---------------------------------------_Error
+            globaled = 1;
+            newStr=oldFunc->name;
+        }else{
+            user_func* newData = CreateFunctionData();
+            if (newData==NULL) {RError(99)}//<---------------------------------------_Error
+            newStr = malloc(sizeof(char)*strlen(nextToken->data.str));
+            if(newStr==NULL){free(newData);RError(99)}//<---------------------------------------_Error
+            strcpy(newStr,nextToken->data.str);
+            if(TS_InsertFunction(ts,newStr,w_func,newData)==MALLOC_ERR_CODE) {RError(99)}//<---------------------------------------_Error
+        }
+        TreeElement* func = TS_LookFunction(ts,newStr);
         NEXT;
         if (!IFLeftBracket){RError(2)}//<---------------------------------------_Error
         NEXT;
-        F_Params(nextToken, newStr);
+        F_ParamsFunction(nextToken, func,globaled);
         if (!IFRightBracket){RError(2)}//<---------------------------------------_Error
         NEXT;
-        F_ParamsR(nextToken, newStr);
+        param_cter=-1;
+        F_ParamsR(nextToken, newStr,globaled);
         TreeElement* function = TS_LookFunction(ts,newStr);
         G_function_bgn(function);//<---------------------------------------------_LK
+        if(TS_OpenLayer(ts)!=0){RError(99)}
+        
+        int i=0;
+        /*
+        fprintf(stderr,"bgn");
+        while(((user_func*)function->data)->param_names[i]!=NULL){
+            fprintf(stderr,"%s",((user_func*)function->data)->param_names[i]);i++;
+        }fprintf(stderr,"end");*/
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////?RETURNS SAME ADDREESSSEEE!!????
+        while(((user_func*)function->data)->params[i]!=_ender){
+            variable *new=CreateVariableData(((user_func*)function->data)->params[i]);
+            if(new==NULL){RError(99)}
+            if(TS_InsertVariable(ts,((user_func*)function->data)->param_names[i],((user_func*)function->data)->params[i],new)!=0){free(new); RError(99)}
+            fprintf(stderr,"\n%s %p\n",((user_func*)function->data)->param_names[i],TS_LookVariable(ts,((user_func*)function->data)->param_names[i]));
+            i++;
+        }
+
         F_StList(nextToken,TS_LookFunction(ts,newStr));
+        TS_CloseLayer(ts);
         if (!IFKwEnd){RError(2)}//<---------------------------------------_Error
-        newData->vDefined=1;                              
+        ((user_func*)func->data)->vDefined=1;                              
         NEXT;
         G_function_end(function->name);
         return;
-
     }
     else if((nextToken->type == _identifier && TS_LookFunction(ts,nextToken->data.str)!=NULL)){
             TreeElement* func = TS_LookFunction(ts,nextToken->data.str);
+            ((user_func*)func->data)->vUsed=1;
             NEXT;
             if(!IFLeftBracket){RError(2)}
             NEXT;
@@ -239,7 +262,129 @@ void F_Prog(token* nextToken){
         {RError(2)}
 }
 
+void F_ParamsGlobal(token *nextToken,TreeElement* func){
+    param_cter++;
+    if(IFIdentif){
+        char** test = PushParamName(((user_func*)func->data)->param_names, nextToken->data.str);
+        if (test == NULL) {RError(99)}
+        ((user_func*)func->data)->param_names = test;
+        NEXT;
+        if (!IFDoubleKomma){RError(2)}
+        NEXT;
+        if ( IFKwInteger || IFKwString || IFKwNumber || IFKwNil ){
+            dataType tmp =_ender;
+            F_Type(nextToken, &tmp);
+            dataType* newParamAddr = PushDataType(((user_func*)func->data)->params,tmp);
+            if(newParamAddr==NULL){RError(99)}
+            ((user_func*)func->data)->params = newParamAddr;
+        }else {
+            fprintf(stderr,"%d %d",nextToken->type,nextToken->data.kw);
+            RError(2)
+        }
+        NEXT;
+        F_SecondParamGlobal(nextToken, func);
+    }else
+    if (IFKwNil||IFKwInteger||IFKwNumber||IFKwString){
+        char** test = PushParamName(((user_func*)func->data)->param_names, NULL);
+        if (test == NULL) {RError(99)}
+        ((user_func*)func->data)->param_names = test;
+        dataType tmp = _ender;
+        F_Type(nextToken, &tmp);
+        dataType *newParamAddr=PushDataType(((user_func*)func->data)->params,tmp);
+        if(newParamAddr==NULL){RError(99)}
+        ((user_func*)func->data)->params = newParamAddr;
+        NEXT;
+        F_SecondParamGlobal(nextToken, func);
+    }else
+    if(IFRightBracket){
+        return;
+    }else
+    {RError(2)}
+}
 
+void F_SecondParamGlobal(token *nextToken,TreeElement* func){
+    if ( IfKomma )
+    {
+        NEXT;
+        F_ParamsGlobal(nextToken, func);
+    }
+    else if( IFRightBracket )
+        return;
+    else
+        {RError(2)}
+}
+
+void F_ParamsFunction(token *nextToken,TreeElement* func,int globaled){
+    param_cter++;
+    if(globaled){
+        if(IFIdentif){
+            if(((user_func*)func->data)->params[param_cter]==_ender){
+                RError(3)
+            }else if(((user_func*)func->data)->param_names[param_cter][0]=='\0'){
+                char** test = PushParamName(((user_func*)func->data)->param_names, nextToken->data.str);
+                if (test == NULL) {RError(99)}
+                ((user_func*)func->data)->param_names = test;
+            }else{
+                if(strcmp(((user_func*)func->data)->param_names[param_cter],nextToken->data.str)!=0){RError(3)}
+            }
+            NEXT;
+            if (!IFDoubleKomma){RError(2)}
+            NEXT;
+            if ( IFKwInteger || IFKwString || IFKwNumber || IFKwNil ){
+                dataType tmp =_ender;
+                F_Type(nextToken, &tmp);
+                if(tmp!=((user_func*)func->data)->params[param_cter]){RError(3)}
+            }else {
+                RError(2)
+            }
+            NEXT;
+            F_SecondParamFunction(nextToken, func,globaled);
+        }else if(IFRightBracket){
+            return;
+        }else{
+            RError(2)
+        }
+    }else{
+        if(IFIdentif){
+            char** test = PushParamName(((user_func*)func->data)->param_names, nextToken->data.str);
+            if (test == NULL) {RError(99)}
+            ((user_func*)func->data)->param_names = test;
+            NEXT;
+            if (!IFDoubleKomma){RError(2)}
+            NEXT;
+            if ( IFKwInteger || IFKwString || IFKwNumber || IFKwNil ){
+                dataType tmp =_ender;
+                F_Type(nextToken, &tmp);
+                dataType* newParamAddr = PushDataType(((user_func*)func->data)->params,tmp);
+                if(newParamAddr==NULL){RError(99)}
+                ((user_func*)func->data)->params = newParamAddr;
+            }else {
+                RError(2)
+            }
+            NEXT;
+            F_SecondParamFunction(nextToken, func,globaled);
+        }else if(IFRightBracket){
+            return;   
+        }else{
+            RError(2)
+        }
+    }
+}
+
+void F_SecondParamFunction(token *nextToken,TreeElement* func,int globaled){
+     if ( IfKomma )
+    {
+        NEXT
+        F_ParamsFunction(nextToken, func,globaled);
+    }
+    else if( IFRightBracket ){
+        if (globaled && ((user_func*)func->data)->params[param_cter+1]!=_ender){RError(3)}
+        return;
+    }else
+        {RError(2)}
+}
+
+/*
 void F_Params(token* nextToken, char* func_name)
 {
     int output = 0;
@@ -251,7 +396,7 @@ void F_Params(token* nextToken, char* func_name)
     if ( IFKwInteger || IFKwString || IFKwNumber || IFKwNil )
     {
         param_cter++;
-        test = PushParamName(((user_func*)func->data)->param_names, NULL);
+        test = PushParamName(((user_func*)func->data)->param_names, "\0");
         if (test == NULL) {RError(99)}
         ((user_func*)func->data)->param_names = test;
         dataType tmp = _ender;
@@ -289,10 +434,11 @@ void F_Params(token* nextToken, char* func_name)
         if ( !IFRightBracket )
             {RError(2)}
     }
-}
+}*/
 
-void F_ParamsR(token *nextToken, char* name_func)
-{
+void F_ParamsR(token *nextToken, char* name_func,int globaled)
+{   
+    param_cter++;
     if ( IFDoubleKomma )
     {
         NEXT
@@ -303,12 +449,15 @@ void F_ParamsR(token *nextToken, char* name_func)
         {
             dataType tmp= _ender;
             F_Type(nextToken, &tmp);
-            return_array=PushDataType(return_array,tmp);
-            //fprintf(stderr,"%d",return_array[0]);DebbugPrintParams(func);
-            if(return_array==NULL){RError(99)}
-             ((user_func*)func->data)->returns = return_array;
+            if(!globaled){
+                return_array=PushDataType(return_array,tmp);
+                if(return_array==NULL){RError(99)}
+                ((user_func*)func->data)->returns = return_array;
+            }else{
+                if(tmp!=return_array[param_cter]){RError(3)}
+            }
             NEXT;
-            F_SecondParamR(nextToken, name_func);
+            F_SecondParamR(nextToken, name_func,globaled);
             return;
         }
         else
@@ -317,10 +466,10 @@ void F_ParamsR(token *nextToken, char* name_func)
     else
         if ( IFKwGlobal || IFKwFunction || IFIdentif || IFKwLocal || IFKwWhile || IFKwIf )
             return;
-        else
-            {RError(2)}
+    else
+        {RError(2)}
 }
-
+/*
 void F_SecondParam(token* nextToken, char* name_func)
 { 
     if ( IfKomma )
@@ -333,11 +482,11 @@ void F_SecondParam(token* nextToken, char* name_func)
     else
         {RError(2)}
 }
+*/
 
-
-void F_SecondParamR(token* nextToken, char* name_func)
+void F_SecondParamR(token* nextToken, char* name_func,int  globaled)
 {
-
+    param_cter++;
     if ( IfKomma )
     {
         NEXT;
@@ -348,11 +497,15 @@ void F_SecondParamR(token* nextToken, char* name_func)
         {
             dataType temp=_ender;
             F_Type(nextToken, &temp);
-            return_array = PushDataType(return_array,temp);
-            if(return_array==NULL){RError(99)}
-            ((user_func*)func->data)->returns = return_array;
+            if(!globaled){
+                return_array = PushDataType(return_array,temp);
+                if(return_array==NULL){RError(99)}
+                ((user_func*)func->data)->returns = return_array;
+            }else{
+                if(return_array[param_cter]!=temp){RError(3)}
+            }
             NEXT;
-            F_SecondParamR(nextToken, name_func);
+            F_SecondParamR(nextToken, name_func,globaled);
 
         }else
             {RError(2)}   
@@ -431,7 +584,9 @@ void F_Statement(token* nextToken, TreeElement* curFunc){
         G_IfBGN(ret);//<---------------------------------------------LF
         free(ret);
         NEXT;
+        if(TS_OpenLayer(ts)!=0){RError(99)}
         F_StList(nextToken,curFunc);
+        TS_CloseLayer(ts);
         G_IfELSE();
         if (IFKwElse)
             F_Else(nextToken,curFunc);
@@ -466,14 +621,13 @@ void F_Statement(token* nextToken, TreeElement* curFunc){
         BS_Init(&returnStack);
         if(stack_err_flag!=0){RError(99)}
         Returner(nextToken,&returnStack);
-        DebbugPrintStack(&returnStack);
         if(ReturnsCheck(curFunc,&returnStack)!=1){RError(6)}//<---------------------------------------_Error
-        //void G_RETUR_TERM(BubbleStack_t *)<----------Dole je prva polozka--------------------------------------------------------------------nova lukasova
-        //G_RetrunTerm(&returnStack,curFunc->name);
+        G_RetrunTerm(&returnStack,curFunc->name);
         BS_Dispose(&returnStack);
         return;
     }else if(IFIdentif && TS_LookFunction(ts,nextToken->data.str)!=NULL){
         TreeElement* func=TS_LookFunction(ts,nextToken->data.str);
+        ((user_func*)func->data)->vUsed=1;
         NEXT;
         if(!IFLeftBracket){RError(2)}
         NEXT;
@@ -524,11 +678,13 @@ void F_Statement(token* nextToken, TreeElement* curFunc){
 
 void F_Else(token* nextToken,TreeElement* curFunc){
     NEXT;
+    if(TS_OpenLayer(ts)!=0){RError(99)}
     F_StList(nextToken,curFunc);
+    TS_CloseLayer(ts);
 }
 
 void Returner(token* nextToken,BubbleStack_t *returnStack){
-    if((IFIdentif && TS_LookVariable(ts,nextToken->data.str)!=NULL)||IFLeftBracket|| nextToken->type==_const){
+    if((IFIdentif && (TS_LookVariable(ts,nextToken->data.str)!=NULL || TS_LookFunction(ts,nextToken->data.str)!=NULL))||IFLeftBracket|| nextToken->type==_const){
         if(stack_err_flag!=0){RError(99)}
         F_Exprb(nextToken,returnStack);
         F_SExpr(nextToken, returnStack);
@@ -538,14 +694,21 @@ void Returner(token* nextToken,BubbleStack_t *returnStack){
 void F_Exprb(token* nextToken,BubbleStack_t *stack){
     if(IFIdentif && TS_LookFunction(ts,nextToken->data.str)!= NULL){
         TreeElement* func = TS_LookFunction(ts,nextToken->data.str);
+        ((user_func*)func->data)->vUsed=1;
         NEXT;
         if(!IFLeftBracket){BS_Dispose(stack); RError(2)}//<-----------------------------------------------------___Error
         NEXT;
-        F_SentPar(nextToken,stack);
+        BubbleStack_t paramStack;
+        BS_Init(&paramStack);
+        if(stack_err_flag!=0){BS_Dispose(&paramStack);RError(99)}
+        F_SentPar(nextToken,&paramStack);
+        if(ParamCheck(func,&paramStack)==0){BS_Dispose(&paramStack);RError(3)}
         BubbleStack_t mockStack;
         BS_Init(&mockStack);
-        
-        int help = G_CallFunc(func, stack, &mockStack);
+        if(!IFRightBracket){BS_Dispose(stack); RError(2)}
+        NEXT;
+        int help = G_CallFunc(func, &paramStack, &mockStack);
+        BS_Dispose(&paramStack);
         if(help!=0){BS_Dispose(stack); BS_Dispose(&mockStack); RError(99)}//<-------------------------------------------------Error
         help=ReturnsCheck(func,&mockStack);
         if(help!=1){BS_Dispose(stack); BS_Dispose(&mockStack); RError(4)} //<--------------------------------------------------Error invalid return
@@ -554,9 +717,11 @@ void F_Exprb(token* nextToken,BubbleStack_t *stack){
         return;
 
     }else if((IFIdentif && TS_LookVariable(ts,nextToken->data.str)!=NULL) || IFLeftBracket || nextToken->type==_const){
+        //if(nextToken->type==_const && strcmp(nextToken->data.str,"ahoj")==0)fprintf(stderr,"here");
         expression_block* result = F_Expression(nextToken);
         if (result == NULL){BS_Dispose(stack); RError(99)}//<-------------------------------------------------Error
         else{
+            //fprintf(stderr,"vys \n"); DebbugPrintExpress(result);
             BS_Push(stack,result);
             if (stack_err_flag!=0){BS_Dispose(stack); RError(99)}//<-------------------------------------------------Error
             return;
@@ -622,7 +787,6 @@ void F_ExprAfterLoc(token* nextToken,TreeElement* targetVar){
 }
 
 expression_block* F_Expression(token* nextToken){
-    exprCounter+=1.0;
     return CallTheCommander(nextToken);
 }
 
@@ -635,7 +799,7 @@ void F_SExpr(token* nextToken, BubbleStack_t * stack){
 }
 
 void F_SentPar(token* nextToken,BubbleStack_t *stack){
-    if(IFRightBracket){NEXT; return;}
+    if(IFRightBracket){return;}
     F_Exprb(nextToken,stack);
     F_SPar(nextToken,stack);
     return;
@@ -672,12 +836,11 @@ void F_SVar(token* nextToken,TreeElement ***vl){
 
 void ashes_to_ashes_dust_to_dust()
 {
-    // Can I interest you in everything all of the time?
+    //Can I interest you in everything all of the time?
     // free ( everything and anything and everything and anything and everything and anything and everything and anything amd all of the time )
-
+    
     FreeTheseBees(ts);
-    dtroy_variable_name_catcher();
-
+    //dtroy_variable_name_catcher();
     return;
 }
 
@@ -685,6 +848,7 @@ int PushBuiltInFunctions(){
     //readi
     user_func* new = CreateFunctionData();
     if(new==NULL)return MALLOC_ERR_CODE;
+    new->vDefined=1;
     new->returns = PushDataType( new->returns,_integer);
     if(new->returns==NULL){free(new); return MALLOC_ERR_CODE;}
     char *readi = malloc(sizeof(char)*6);
@@ -695,6 +859,7 @@ int PushBuiltInFunctions(){
     //readn
     new = CreateFunctionData();
     if(new==NULL)return MALLOC_ERR_CODE;
+    new->vDefined=1;
     new->returns = PushDataType( new->returns,_number);
     if(new->returns==NULL){free(new); return MALLOC_ERR_CODE;}
     char *readn = malloc(sizeof(char)*6);
@@ -705,6 +870,7 @@ int PushBuiltInFunctions(){
     //reads
     new = CreateFunctionData();
     if(new==NULL)return MALLOC_ERR_CODE;
+    new->vDefined=1;
     new->returns = PushDataType( new->returns,_string);
     if(new->returns==NULL){free(new); return MALLOC_ERR_CODE;}
     char *reads = malloc(sizeof(char)*6);
@@ -715,6 +881,7 @@ int PushBuiltInFunctions(){
     //toInt
     new = CreateFunctionData();
     if(new==NULL)return MALLOC_ERR_CODE;
+    new->vDefined=1;
     new->returns = PushDataType( new->returns,_integer);
     if(new->returns==NULL){free(new); return MALLOC_ERR_CODE;}
     new->params = PushDataType( new->params,_number);
@@ -727,6 +894,7 @@ int PushBuiltInFunctions(){
     //substr
     new = CreateFunctionData();
     if(new==NULL)return MALLOC_ERR_CODE;
+    new->vDefined=1;
     new->returns = PushDataType( new->returns,_string);
     if(new->returns==NULL){free(new); return MALLOC_ERR_CODE;}
     new->params = PushDataType( new->params,_string);
@@ -743,6 +911,7 @@ int PushBuiltInFunctions(){
     //ord
     new = CreateFunctionData();
     if(new==NULL)return MALLOC_ERR_CODE;
+    new->vDefined=1;
     new->returns = PushDataType( new->returns,_integer);
     if(new->returns==NULL){free(new); return MALLOC_ERR_CODE;}
     new->params = PushDataType( new->params,_string);
@@ -757,6 +926,7 @@ int PushBuiltInFunctions(){
     //chr
     new = CreateFunctionData();
     if(new==NULL)return MALLOC_ERR_CODE;
+    new->vDefined=1;
     new->returns = PushDataType( new->returns,_string);
     if(new->returns==NULL){free(new); return MALLOC_ERR_CODE;}
     new->params = PushDataType( new->params,_integer);
@@ -769,6 +939,7 @@ int PushBuiltInFunctions(){
     //write
     new = CreateFunctionData();
     if(new==NULL)return MALLOC_ERR_CODE;
+    new->vDefined=1;
     char *write = malloc(sizeof(char)*6);
     if(write==NULL)return MALLOC_ERR_CODE;
     strcpy(write,"write");
@@ -829,6 +1000,7 @@ int mainParseFunction(){
     while (!IFEof){
         F_Prog(nextToken);
     }
+    TS_FunctionCaller();
     FreeTheseBees(ts);
     return 0;
 }
