@@ -634,9 +634,9 @@ void G_WhileEND()
 void G_RetrunTerm(BubbleStack_t *godzilla, char* func_name)
 {
     expression_block* kingkong = NULL;
-    while(godzilla != NULL)
+    while(!BS_IsEmpty(godzilla))
     {
-        BS_TopStack(godzilla);
+        kingkong = BS_TopStack(godzilla);
         BS_Pop(godzilla);
         char* minidzilla = generate_term_name(kingkong);
         out_partial("PUSHS TF@");
