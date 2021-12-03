@@ -212,23 +212,18 @@ void F_Prog(token* nextToken){
         param_cter=-1;
         F_ParamsR(nextToken, newStr,globaled);
         TreeElement* function = TS_LookFunction(ts,newStr);
-        G_function_bgn(function);//<---------------------------------------------_LK
         if(TS_OpenLayer(ts)!=0){RError(99)}
-        
         int i=0;
-        /*
-        fprintf(stderr,"bgn");
-        while(((user_func*)function->data)->param_names[i]!=NULL){
-            fprintf(stderr,"%s",((user_func*)function->data)->param_names[i]);i++;
-        }fprintf(stderr,"end");*/
+        //fprintf(stderr,"%s param %s typ %d",function->name,((user_func*)function->data)->param_names[0],((user_func*)function->data)->params[0]);fflush(stderr);
         ///////////////////////////////////////////////////////////////////////////////////////////////////////?RETURNS SAME ADDREESSSEEE!!????
         while(((user_func*)function->data)->params[i]!=_ender){
             variable *new=CreateVariableData(((user_func*)function->data)->params[i]);
             if(new==NULL){RError(99)}
             if(TS_InsertVariable(ts,((user_func*)function->data)->param_names[i],((user_func*)function->data)->params[i],new)!=0){free(new); RError(99)}
-            fprintf(stderr,"\n%s %p\n",((user_func*)function->data)->param_names[i],TS_LookVariable(ts,((user_func*)function->data)->param_names[i]));
             i++;
         }
+
+        G_function_bgn(function);//<---------------------------------------------_LK
 
         F_StList(nextToken,TS_LookFunction(ts,newStr));
         TS_CloseLayer(ts);
@@ -321,9 +316,7 @@ void F_ParamsFunction(token *nextToken,TreeElement* func,int globaled){
             if(((user_func*)func->data)->params[param_cter]==_ender){
                 RError(3)
             }else if(((user_func*)func->data)->param_names[param_cter][0]=='\0'){
-                char** test = PushParamName(((user_func*)func->data)->param_names, nextToken->data.str);
-                if (test == NULL) {RError(99)}
-                ((user_func*)func->data)->param_names = test;
+                strcpy(((user_func*)func->data)->param_names[param_cter],nextToken->data.str);
             }else{
                 if(strcmp(((user_func*)func->data)->param_names[param_cter],nextToken->data.str)!=0){RError(3)}
             }

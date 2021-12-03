@@ -384,6 +384,7 @@ void TAB_Shift(BubbleStack_t *stack,token *nextToken, int *termNumber){
     block=malloc(sizeof(expression_block));
     if(block==NULL){BS_Dispose(stack);comError(99)}
     int test = ConvertToBlock(block,nextToken,termNumber);
+    printf("sht %d",test);  DebbugPrintToken(nextToken);
     if (test != 0) {BS_Dispose(stack);comError(2)}
     NEXT;
     BS_Push(stack,block);
