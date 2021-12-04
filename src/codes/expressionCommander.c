@@ -28,9 +28,10 @@ void VL_Dispose(TreeElement **vl){
 }
 
 int ParamCheck(TreeElement* func, BubbleStack_t *stack){
+    if(strcmp(func->name,"write")==0)return 1;
     BubbleStack_t helper;
     BS_Init(&helper);
-    if (helper.BS_Element==NULL){BS_Dispose(stack); comError(99)}
+    if (stack_err_flag){BS_Dispose(stack); comError(99)}
 
     while (!BS_IsEmpty(stack))
     {
@@ -173,11 +174,11 @@ int C_AssignToVar(TreeElement* target, expression_block* source){
         if(source->dt == _string)return 1;
         else return 0;
     }else
+    if(((variable*)target->data)->type==_nan){
+        if(source->dt == _nan)return 1;
+        else return 0;
+    }else
     if (((variable*)target->data)->type==_number){
-        if(source->dt==_integer){
-            convert_to_float(source);//<-------------------------------LK
-            return 1;
-        }else
         if (source->dt==_number) 
             return 1;
         else
@@ -185,10 +186,6 @@ int C_AssignToVar(TreeElement* target, expression_block* source){
     }else
     if(((variable*)target->data)->type==_integer){
         if(source->dt==_integer){
-            return 1;
-        }else
-        if (source->dt==_number){ 
-            convert_to_int(source);//<_----------------------------LK
             return 1;
         }else
             return 0;
@@ -216,8 +213,9 @@ int IsEndSymbol(token *nextToken){
     (nextToken ->type == _keyword && nextToken->data.kw == _local)||
     (nextToken ->type == _keyword && nextToken->data.kw == _then)||
     (nextToken ->type == _keyword && nextToken->data.kw == _do)||
+    (nextToken ->type == _keyword && nextToken->data.kw == _else)||
     (nextToken ->type == _misc && nextToken->data.msc == _komma)||
-    (nextToken ->type == _identifier && TS_LookFunction(ts,nextToken->data.str)!=0)||
+    (nextToken ->type == _identifier && TS_LookFunction(ts,nextToken->data.str)!=NULL)||
     (nextToken ->type == _misc && nextToken->data.msc == _EOF))
     return 1;
     else return 0; 
@@ -240,10 +238,10 @@ int ConvertToBlock(expression_block *block, token* nextToken, int *termNumber){
         block->blockType=_operand_expr;
         block->operType=_variable_oper;
         block->TSPointer=TS_LookVariable(ts,nextToken->data.str);
-        //fprintf(stderr,"%s %p\n",nextToken->data.str,block->TSPointer);///////////////////////////////////THIS SHIT IS NULL FOR REASONS UNKNOWN
-        if(block->TSPointer == NULL)return UNKNOWN_IDENTIF;
+        if(block->TSPointer == NULL){return UNKNOWN_IDENTIF;}
         block->dt = ((variable*)(block->TSPointer->data))->type;
-        block->str=block->TSPointer->name;
+        block->str=malloc(sizeof(char)*strlen(nextToken->data.str));
+        strcpy(block->str,nextToken->data.str);
     }else
     if (nextToken->type==_const){
         block->blockType=_operand_expr;
@@ -384,7 +382,7 @@ void TAB_Shift(BubbleStack_t *stack,token *nextToken, int *termNumber){
     block=malloc(sizeof(expression_block));
     if(block==NULL){BS_Dispose(stack);comError(99)}
     int test = ConvertToBlock(block,nextToken,termNumber);
-    printf("sht %d",test);  DebbugPrintToken(nextToken);
+    //printf("sht %d",test);  DebbugPrintToken(nextToken);
     if (test != 0) {BS_Dispose(stack);comError(2)}
     NEXT;
     BS_Push(stack,block);
@@ -500,6 +498,8 @@ actions ChooseAction(BubbleStack_t *stack,token* nextToken){
             return _tab_shift;
         else if (nextToken->type == _misc && nextToken->data.msc == _bracketR)
             return _tab_terminalize;
+        //else if (BS_TopStack(stack)->blockType==_not_terminal_oper && nextToken->type== _identifier && TS_LookFunction(ts,nextToken->data.str)!=NULL)
+        //   return _tab_end;
         else if (nextToken->type == _identifier)
             return _tab_shift;
         else if (nextToken->type == _const)
