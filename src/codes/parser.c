@@ -557,6 +557,7 @@ void F_StList(token* nextToken,TreeElement* curFunc)
 void F_Statement(token* nextToken, TreeElement* curFunc){
     if(IFKwWhile){
         while_counter+=1;
+        int thisWhile = while_counter;
         NEXT;
         G_WhileBGN();//<---------------------------------------------------------------------LF
         expression_block *ret=F_Expression(nextToken);
@@ -570,12 +571,13 @@ void F_Statement(token* nextToken, TreeElement* curFunc){
         NEXT;
         F_StList(nextToken,curFunc);
         if(!IFKwEnd){RError(2)}//<-------------------------------------------------Error
-        G_WhileEND();//<------------------------------------------------------------------------LF
+        G_WhileEND(thisWhile);//<------------------------------------------------------------------------LF
         NEXT;
         return;
 
     }else if(IFKwIf){
         if_counter+=1;
+        int thisIf = if_counter;
         NEXT;
         expression_block *ret=F_Expression(nextToken);
         G_IfBGN(ret);//<---------------------------------------------LF
@@ -584,10 +586,10 @@ void F_Statement(token* nextToken, TreeElement* curFunc){
         if(TS_OpenLayer(ts)!=0){RError(99)}
         F_StList(nextToken,curFunc);
         TS_CloseLayer(ts);
-        G_IfELSE();
+        G_IfELSE(thisIf);
         if (IFKwElse)
             F_Else(nextToken,curFunc);
-        G_IfEND(); //<----------------------------------------------------------LF
+        G_IfEND(thisIf); //<----------------------------------------------------------LF
         if(!IFKwEnd){RError(2)}//<-------------------------------------------------Error
         NEXT;
         return;
@@ -596,6 +598,7 @@ void F_Statement(token* nextToken, TreeElement* curFunc){
         NEXT;
         if(!IFIdentif){RError(2)}//<----------------------------------------------Error
         if(TS_LookLayerVariable(ts,nextToken->data.str)!=NULL){RError(3)}//<----------------------------------------------Error
+        if(TS_LookFunction(ts,nextToken->data.str)!=NULL){RError(3)}//<----------------------------------------------Error
         char* newVarName = malloc((strlen(nextToken->data.str)+1)*sizeof(char));
         if (newVarName==NULL){RError(99)}//<---------------------------------------_Error
         strcpy(newVarName,nextToken->data.str);
@@ -753,6 +756,7 @@ void F_ExprAfterLoc(token* nextToken,TreeElement* targetVar){
                 help = G_CallFunc(func,&stack,&mockStack);//<--------------------------------------------------------------LK
                 if(help!=0){BS_Dispose(&mockStack);BS_Dispose(&stack);RError(99)}//<--------------------------------------------Error
                 if(SemanticCheck(vl,&mockStack)!=1)if(help!=0){BS_Dispose(&mockStack);BS_Dispose(&stack);RError(4)}//<--------------------------Error
+                G_AssignToVar(targetVar,BS_TopStack(&mockStack));
                 BS_Dispose(&mockStack);
                 BS_Dispose(&stack);
                 return;       

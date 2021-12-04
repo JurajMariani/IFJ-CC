@@ -686,6 +686,7 @@ void G_AssignToVar(TreeElement* var,expression_block* term)
 
 void G_AssignToVars(TreeElement** var,BubbleStack_t* stack)//<----------------- Ked je NULL,NULL tak len vypopuje returny, funkcia nema priradenie
 {
+    //fprintf(stderr,"sssssssssssssssssssssss%p %p",var,stack);
     //aj pomocne funkcie var a stack?
     if ((var == NULL) || (stack == NULL))
     {
