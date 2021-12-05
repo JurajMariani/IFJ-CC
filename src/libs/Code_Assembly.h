@@ -23,9 +23,9 @@ int number_of_names;
 //asi su nejake includes zbytocne, ptm skontroluj
 int G_CompareBool(expression_block *);
 int G_CompareNull(expression_block *);
-void G_IfEND();
-void G_WhileEND(); 
-void G_IfELSE(); 
+void G_IfEND(int);
+void G_WhileEND(int); 
+void G_IfELSE(int); 
 void G_WhileBGN();
 int G_IfBGN(expression_block*);
 //void G_RetrunTerm(BubbleStack_t *); vola sa ked najde return, a na zasobniku su pushnute vysledky vyrazov v return, Tomas to chce zmazat ci?

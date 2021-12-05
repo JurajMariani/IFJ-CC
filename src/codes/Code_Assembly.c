@@ -25,7 +25,6 @@
 #define newline fprintf(stdout,"\n");
 
 
-
 /**
  * function to generate adress at the end of expression name 
  * x -> x_adress
@@ -90,45 +89,6 @@ char * generate_term_name(expression_block* term)
     out[i]='\0';
     return out;
 }
-
-
-/*char* generate_param_name(char* name)
-{
-    int name_len = strlen(name);
-    char *out = malloc((name_len + 7)*sizeof(char));
-    if (out == NULL)
-        return NULL;
-
-    int card = 0;
-    int i = 0;
-    while(i < name_len)
-    {
-        card += name[i];
-        i++;
-    }
-
-    char num[6];
-    sprintf(num, "%d", card);
-    
-    i = 0;
-    while (i < name_len + 6)
-    {
-        if (i < name_len)
-            out[i] = name[i];
-        if(i == name_len)
-            out[i] = '_';
-        if ((i > name_len) && (i < name_len + 6) && (num[i - (name_len + 1)] != '\0'))
-        {
-            out[i] = num[i - (name_len + 1)];
-        }
-        else
-            out[i] = '\0';
-        i++;
-    }
-    return out;
-}*/
-
-
 
 
 void generate_execute_jump(void)
@@ -203,12 +163,30 @@ void G_string_correct_print(char* string)
     {
         if (string[i] > 32)
         {
-            out_char(string[i]);
+            if (string[i] == '\\')
+            {
+                out_partial("\\034");
+            }
+            else
+                if (string[i] == '\"')
+                {
+                    out_partial("\\092");
+                }
+                else    
+                out_char(string[i]);
         }
         else
         {
-            out_partial("\\0");
-            out_integer(string[i]);
+            if (string[i] > 9)
+            {
+                out_partial("\\0");
+                out_integer(string[i]);
+            }
+            else
+            {
+                out_partial("\\00");
+                out_integer(string[i]);
+            }
         }
         i++;
     }
@@ -228,8 +206,7 @@ expression_block* generate_exp_block(dataType* returning, int param_num, int par
     expression_block* ret = (expression_block*) malloc(sizeof(expression_block));
     if (ret == NULL)
         return NULL;
-    ret->_double = exprCounter;
-    exprCounter++;
+    ret->_double = ++exprCounter;
     ret->operType = _not_terminal_oper;
     ret->blockType = _operand_expr;
     ret->dt = returning[param_num];
@@ -265,8 +242,40 @@ void def_var(TreeElement* new_var)
     out_partial("DEFVAR TF@");
     out_partial(name);
     newline
+    
     add_local_variable_name(name);
+    
+    out_partial("MOVE TF@");
+    out_partial(name);
+    out_partial(" nil@nil");
+    newline
 }
+
+
+BubbleStack_t* reverse_stack(BubbleStack_t* orig_stack)
+{
+    BubbleStack_t* reversed = malloc(sizeof(BubbleStack_t));
+    BubbleStack_t* tmp = reversed;
+    BS_Init(tmp);
+
+    if (tmp == NULL)
+    {
+        return NULL;
+    }
+
+    expression_block* data;
+
+    while(!BS_IsEmpty(orig_stack))
+    {
+        data = BS_TopStack(orig_stack);
+        BS_Push(reversed, data);
+        BS_Pop(orig_stack);
+    }
+
+    return reversed;
+
+}
+
 
 /**
  * @brief 
@@ -321,7 +330,7 @@ int G_CallFunc(TreeElement* func, BubbleStack_t* params, BubbleStack_t* returns)
             else
             {
                 if (strcmp(func->name,"readi") == 0)
-                    out_partial(" integer");
+                    out_partial(" int");
             }
         }
         newline
@@ -334,9 +343,11 @@ int G_CallFunc(TreeElement* func, BubbleStack_t* params, BubbleStack_t* returns)
     {
         if (strcmp(func->name,"write") == 0)
         {
-            while(!BS_IsEmpty(params))
+            BubbleStack_t* reversed = reverse_stack(params);
+
+            while(!BS_IsEmpty(reversed))
             {
-                var = BS_TopStack(params);
+                var = BS_TopStack(reversed);
                 term_name = generate_term_name(var);
 
                 out_partial("WRITE TF@");
@@ -345,7 +356,7 @@ int G_CallFunc(TreeElement* func, BubbleStack_t* params, BubbleStack_t* returns)
 
                 free(term_name);
                 free(var);
-                BS_Pop(params);
+                BS_Pop(reversed);
             }
         }
         else
@@ -470,15 +481,15 @@ int G_IfBGN(expression_block* term)
  * @brief 
  * 
  */
-void G_IfELSE()
+void G_IfELSE(int counter)
 {
     out_partial("JUMP END_");
-    out_integer(if_counter);
+    out_integer(counter);
     newline
     newline
     newline
     out_partial("LABEL ELSE_");
-    out_integer(if_counter);
+    out_integer(counter);
     newline
 }
 
@@ -487,12 +498,12 @@ void G_IfELSE()
  * @brief 
  * 
  */
-void G_IfEND()
+void G_IfEND(int counter)
 {
     newline
     newline
     out_partial("LABEL END_");
-    out_integer(if_counter);
+    out_integer(counter);
     newline
     newline
 
@@ -621,18 +632,18 @@ int G_CompareNull(expression_block* term)
  * @brief 
  * 
  */
-void G_WhileEND()
+void G_WhileEND(int counter)
 {
     newline
     get_from_temp_frame();
     newline
     out("POPFRAME");
     out_partial("JUMP WHILE_LOOP_");
-    out_integer(while_counter);
+    out_integer(counter);
     newline
     newline
     out_partial("LABEL WHILE_LOOP_END_");
-    out_integer(while_counter);
+    out_integer(counter);
     newline
     newline
 }
@@ -686,7 +697,6 @@ void G_AssignToVar(TreeElement* var,expression_block* term)
 
 void G_AssignToVars(TreeElement** var,BubbleStack_t* stack)//<----------------- Ked je NULL,NULL tak len vypopuje returny, funkcia nema priradenie
 {
-    //fprintf(stderr,"sssssssssssssssssssssss%p %p",var,stack);
     //aj pomocne funkcie var a stack?
     if ((var == NULL) || (stack == NULL))
     {
@@ -696,9 +706,6 @@ void G_AssignToVars(TreeElement** var,BubbleStack_t* stack)//<----------------- 
 
     expression_block* temp_expbl;
     TreeElement* temp_treeelem;
-
-    //fprintf(stderr,"%p",*var);
-    //fprintf(stderr,"%p\n",BS_TopStack(stack));
 
     while (!BS_IsEmpty(stack))
     {
@@ -909,28 +916,6 @@ int G_FillWithNil(expression_block* term)
 }
 
 
-
-/**
- * @brief Get the hash object
- * 
- * function copied from: https://stackoverflow.com/questions/13325125/lightweight-8-byte-hash-function-algorithm
- * 
- * @param string 
- * @return unsigned int 
- */
-unsigned int get_hash(char* string)
-{
-    unsigned int P1 = 7;
-    unsigned int P2 = 31;
-
-    unsigned int hash = P1;
-    for (const char* p = string; *p != 0; p++) {
-        hash = hash * P2 + *p;
-    }
-    return hash;
-}
-
-
 /**
  * @brief 
  * 
@@ -949,8 +934,6 @@ void operation_quick_action(expression_block* target, expression_block* operand_
     out_partial("DEFVAR TF@");
     out_partial(target_name);
     newline
-
-    unsigned int hash;
 
     switch(sign->oper)
     {
@@ -1025,36 +1008,19 @@ void operation_quick_action(expression_block* target, expression_block* operand_
             break;
 
         case _lessEq:
-            out_partial("LT TF@");
+            out_partial("GT TF@");
             out_partial(target_name);
             out_partial(" TF@");
             out_partial(operand_one_name);
             out_partial(" TF@");
             out_partial(operand_two_name);
             newline
-            
-            hash = get_hash(operand_one_name) + get_hash(operand_two_name) - get_hash(target_name) + logic_counter;
-            out_partial("DEFVAR TF@__TMP__");
-            out_integer(hash);
-            newline
-            
-            out_partial("EQ TF@__TMP__");
-            out_integer(hash);
-            out_partial(" TF@");
-            out_partial(operand_one_name);
-            out_partial(" TF@");
-            out_partial(operand_two_name);
-            newline
 
-            out_partial("AND TF@");
+            out_partial("NOT TF@");
             out_partial(target_name);
             out_partial(" TF@");
             out_partial(target_name);
-            out_partial(" TF@__TMP__");
-            out_integer(hash);
             newline
-
-            logic_counter++;
             break;
 
         case _great:
@@ -1068,36 +1034,19 @@ void operation_quick_action(expression_block* target, expression_block* operand_
             break;
 
         case _greatEq:
-            out_partial("GT TF@");
+            out_partial("LT TF@");
             out_partial(target_name);
             out_partial(" TF@");
             out_partial(operand_one_name);
             out_partial(" TF@");
             out_partial(operand_two_name);
             newline
-            
-            hash = get_hash(operand_one_name) + get_hash(operand_two_name) - get_hash(target_name) + logic_counter;
-            out_partial("DEFVAR TF@__TMP__");
-            out_integer(hash);
-            newline
-            
-            out_partial("EQ TF@__TMP__");
-            out_integer(hash);
-            out_partial(" TF@");
-            out_partial(operand_one_name);
-            out_partial(" TF@");
-            out_partial(operand_two_name);
-            newline
 
-            out_partial("AND TF@");
+            out_partial("NOT TF@")
             out_partial(target_name);
             out_partial(" TF@");
             out_partial(target_name);
-            out_partial(" TF@__TMP__");
-            out_integer(hash);
             newline
-
-            logic_counter++;
             break;
 
         case _Eq:
