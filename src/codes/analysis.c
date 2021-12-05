@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "../libs/analysis.h"
+#include "err_one_func.c"
 
 void GetNextToken(token *tokenOut)
 {
@@ -207,8 +208,17 @@ void GetNextToken(token *tokenOut)
     if(lex_err_flag)
     {
         free(output);
-        RaiseError(99);
-        exit(99);
+
+        if(lex_err_flag == 2 || lex_err_flag == -2)
+        {
+            RaiseError(1);
+            exit(1);
+        }
+        else
+        {
+            RaiseError(99);
+            exit(99);
+        }
     }
 
     if(str2write)
@@ -265,7 +275,7 @@ void first_perimeter(char *state, char **output, unsigned *output_length)
 
         (*output)[*output_length] = '\0';
 
-        int tmp = Is_Keyword(output);
+        int tmp = IsKeyword(output);
         if((tmp >= 0) && (tmp != 8) && (tmp != 13))
         {
             result.type = _keyword;
@@ -910,7 +920,7 @@ int right_bracket(char* state)
     }
 }
 
-int Is_Keyword(char **output)
+int IsKeyword(char **output)
 {
     KeyArrInit();
 
