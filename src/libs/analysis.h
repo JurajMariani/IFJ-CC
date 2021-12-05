@@ -20,7 +20,7 @@ void first_perimeter( char * , char ** , unsigned * );
 void second_perimeter( char * , char ** , unsigned * );
 void other_states( char * , char ** , unsigned * );
 
-int Is_Keyword(char **);
+int IsKeyword(char **);
 
 int left_bracket(char *);
 int right_bracket(char *);
