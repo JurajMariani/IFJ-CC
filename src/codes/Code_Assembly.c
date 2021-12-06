@@ -50,7 +50,7 @@ char* generate_name(TreeElement* var)
         out[strlen(temp1)+i+1] = temp2[i];
         i++;
     }
-    out[i]='\0';
+    out[strlen(temp1) + i + 1]='\0';
     return (out);
 }
 
@@ -165,12 +165,12 @@ void G_string_correct_print(char* string)
         {
             if (string[i] == '\\')
             {
-                out_partial("\\034");
+                out_partial("\\092");
             }
             else
                 if (string[i] == '\"')
                 {
-                    out_partial("\\092");
+                    out_partial("\\034");
                 }
                 else    
                 out_char(string[i]);
@@ -255,13 +255,17 @@ void def_var(TreeElement* new_var)
 BubbleStack_t* reverse_stack(BubbleStack_t* orig_stack)
 {
     BubbleStack_t* reversed = malloc(sizeof(BubbleStack_t));
-    BubbleStack_t* tmp = reversed;
-    BS_Init(tmp);
+    //BubbleStack_t* tmp = reversed;
+    BS_Init(reversed);
 
-    if (tmp == NULL)
+    /*if (tmp == NULL
+void BS_Init(BubbleStack_t* stack)
+{)
     {
         return NULL;
     }
+
+    reversed = tmp;*/
 
     expression_block* data;
 
@@ -349,9 +353,29 @@ int G_CallFunc(TreeElement* func, BubbleStack_t* params, BubbleStack_t* returns)
             {
                 var = BS_TopStack(reversed);
                 term_name = generate_term_name(var);
-
+                
+                out_partial("JUMPIFEQ __WRITE_NIL__");
+                out_integer(logic_counter);
+                out_partial(" TF@");
+                out_partial(term_name);
+                out_partial(" nil@nil");
+                newline
+                
                 out_partial("WRITE TF@");
                 out_partial(term_name);
+                newline
+                out_partial("JUMP __AFTER_WRITE_NIL__");
+                out_integer(logic_counter);
+                newline
+
+                out_partial("LABEL __WRITE_NIL__");
+                out_integer(logic_counter);
+                newline
+                out_partial("WRITE string@nil");
+                newline
+
+                out_partial("LABEL __AFTER_WRITE_NIL__");
+                out_integer(logic_counter++);
                 newline
 
                 free(term_name);
@@ -409,6 +433,7 @@ int G_CallFunc(TreeElement* func, BubbleStack_t* params, BubbleStack_t* returns)
                 free(term_name);
                 BS_Push(returns, term);
             }
+            returns = reverse_stack(returns);
         }
     }
         
@@ -542,6 +567,17 @@ void get_from_temp_frame()
 
         index++;
     }
+}
+
+
+void unnamed(TreeLayer* act_layer, TreeSupport* ts)
+{
+    if (act_layer == ts->functionLayer)
+        return;
+    
+    //...
+
+    act_layer = act_layer->prevLayer;
 }
 
 
@@ -879,13 +915,16 @@ void unary_operator(expression_block* target, expression_block* input)
 {
     char* pom_target;
     char* pom_input;
+    pom_target = generate_term_name(target);
+    pom_input = generate_term_name(input);
+    out_partial("DEFVAR TF@");
+    out_partial(pom_target);
+    newline
     out_partial("STRLEN ");
     out_partial("TF@");
     //strlen_TF@targetname_string@input-str
-    pom_target = generate_term_name(target);
     out_partial(pom_target);
     out_partial(" TF@");
-    pom_input = generate_term_name(input);
     out_partial(pom_input);
     newline
 
@@ -1091,13 +1130,25 @@ void operation_quick_action(expression_block* target, expression_block* operand_
  */
 void convert_to_float(expression_block* term)
 {
+    char* term_name = generate_term_name(term);
     newline
+    
+    out_partial("JUMPIFEQ __SKIP_INT2FLOAT__");
+    out_integer(logic_counter);
+    out_partial(" TF@");
+    out_partial(term_name);
+    out_partial(" nil@nil");
+    newline;
+
     out_partial("INT2FLOAT ");
     out_partial("TF@");
-    char* term_name = generate_term_name(term);
     out_partial(term_name);
     out_partial(" TF@");
     out_partial(term_name);
+    newline
+
+    out_partial("LABEL __SKIP_INT2FLOAT__");
+    out_integer(logic_counter++);
     newline
 
     term->dt = _number;
@@ -1111,13 +1162,25 @@ void convert_to_float(expression_block* term)
  */
 void convert_to_int(expression_block* term)
 {
+    char* term_name = generate_term_name(term);
+    
+    out_partial("JUMPIFEQ __SKIP_INT2FLOAT__");
+    out_integer(logic_counter);
+    out_partial(" TF@");
+    out_partial(term_name);
+    out_partial(" nil@nil");
+    newline;
+
     newline
     out_partial("FLOAT2INT ");
     out_partial("TF@");
-    char* term_name = generate_term_name(term);
     out_partial(term_name);
     out_partial(" TF@");
     out_partial(term_name);
+    newline
+
+    out_partial("LABEL __SKIP_INT2FLOAT__");
+    out_integer(logic_counter++);
     newline
 
     term->dt = _integer;
