@@ -243,7 +243,7 @@ void def_var(TreeElement* new_var)
     out_partial(name);
     newline
     
-    add_local_variable_name(name);
+    //add_local_variable_name(name);
     
     out_partial("MOVE TF@");
     out_partial(name);
@@ -570,14 +570,31 @@ void get_from_temp_frame()
 }
 
 
-void unnamed(TreeLayer* act_layer, TreeSupport* ts)
+void store_local_var_names(TreeElement* root)
+{
+    if(root == NULL)
+        return;
+
+    if (root->type == w_var)
+    {
+        char* tmp_name = generate_name(root);
+
+        add_local_variable_name(tmp_name);
+    }
+
+    store_local_var_names(root->left);
+    store_local_var_names(root->right);
+}
+
+
+void extract_local_vars(TreeLayer* act_layer)
 {
     if (act_layer == ts->functionLayer)
         return;
     
-    //...
+    store_local_var_names(act_layer->tree->root);
 
-    act_layer = act_layer->prevLayer;
+    extract_local_vars(act_layer->prevLayer);
 }
 
 
@@ -596,7 +613,11 @@ void G_WhileBGN()
     out("PUSHFRAME");
     out("CREATEFRAME");
     newline
+    
+    extract_local_vars(ts->curLayer);
     get_from_local_frame();
+    dtroy_variable_name_catcher();
+
     newline
 
 
@@ -671,7 +692,11 @@ int G_CompareNull(expression_block* term)
 void G_WhileEND(int counter)
 {
     newline
+    
+    extract_local_vars(ts->curLayer);
     get_from_temp_frame();
+    dtroy_variable_name_catcher();
+
     newline
     out("POPFRAME");
     out_partial("JUMP WHILE_LOOP_");
@@ -820,7 +845,7 @@ int G_function_bgn(TreeElement* func)
     {
         local_var = TS_LookVariable(ts, temp->param_names[i]);
         char* var_name = generate_name(local_var);
-        add_local_variable_name(var_name);
+        //add_local_variable_name(var_name);
 
         out_partial("DEFVAR TF@");
         out_partial(var_name);
