@@ -1,10 +1,10 @@
 
 /**
  * @file Code_Assembly.c
- * @author xmaria03 (xmaria03@stud.fit.vutbr.cz)
+ * @author xmaria03 (xmaria03@stud.fit.vutbr.cz), xmacej03 (xmacej03@stud.fit.vutbr.cz)
  * @brief Code Generation file, transcribing the parser(input) to IFJcode21(output)
- * @version 0.1
- * @date 2021-11-15
+ * @version 0.20
+ * @date 2021-12-07
  * 
  * @copyright Copyright (c) 2021
  * 
@@ -17,6 +17,10 @@
 #include <string.h>
 #include <stdlib.h>
 
+/**
+ * @brief Printing Macros for Instructions and constants
+ * 
+ */
 #define out(s) fprintf(stdout,"%s\n",s);
 #define out_partial(s) fprintf(stdout,"%s",s);
 #define out_number(number) fprintf(stdout,"%a",number);
@@ -26,8 +30,11 @@
 
 
 /**
- * function to generate adress at the end of expression name 
- * x -> x_adress
+ * @brief Local variable name generator
+ * Generates name by appending the symtable address to the variable name: x -> x_0xfffffffff
+ * 
+ * @param var pointer to the variable element in symtable
+ * @return (char*) pointer to the generated name 
  */
 char* generate_name(TreeElement* var)
 {
@@ -59,9 +66,17 @@ char* generate_name(TreeElement* var)
  * function to generate term adress at the end of expression name 
  * x -> T_x_adress
  */
+
+/**
+ * @brief Term variable name generator
+ * Generates term names:
+ *      T_int_double(trunc)_double(decimal); (int = expression_block->_integer, double = expression_block->_double)
+ *      T_1_0_5 => int = 1, double = 0.5
+ * @param term 
+ * @return char* 
+ */
 char * generate_term_name(expression_block* term)
 {
-//T_int_double
     char *out = malloc(sizeof(char)*203);
     unsigned i = 0;
     out[i++] = 'T';
@@ -70,8 +85,8 @@ char * generate_term_name(expression_block* term)
     double pom2 = term->_double;
     char char_pom1[100];
     char char_pom2[100];
-    sprintf(char_pom1, "%d", pom1);//gut??
-    sprintf(char_pom2, "%lf", pom2);//gut??
+    sprintf(char_pom1, "%d", pom1);
+    sprintf(char_pom2, "%lf", pom2);
     while (char_pom1[i-2] != '\0')
     {
         out[i] = char_pom1[i-2];
@@ -91,6 +106,10 @@ char * generate_term_name(expression_block* term)
 }
 
 
+/**
+ * @brief Jump Generator
+ * It is used to jump over function definitions
+ */
 void generate_execute_jump(void)
 {
     newline
@@ -105,7 +124,8 @@ void generate_execute_jump(void)
 
 
 /**
- * @brief 
+ * @brief Generates the code header
+ * prints ".IFJcode21" and prints the builtin functions
  */
 void generate_header(void)
 {
@@ -134,7 +154,8 @@ void generate_header(void)
 
 
 /**
- * @brief 
+ * @brief Creates the execute label
+ * see generate_execute_jump()
  * 
  */
 void generate_execute_block(void)
@@ -150,11 +171,14 @@ void generate_execute_block(void)
 }
 
 
-//funckia ahoj ako sa mas -> ahoj\032ako\032sa\032mas
 /**
- * @brief 
+ * @brief String format converter
+ * Converts normal strings into suitable result codes strings\
+ * Replaces special characters with escape sequences
  * 
- * @param string 
+ * EXAMPLE "What is this?", he asked angrily. -> \034What\032is\032this?\034,\032he\032asked\032angrily.
+ * 
+ * @param string The original string
  */
 void G_string_correct_print(char* string)
 {
@@ -194,12 +218,13 @@ void G_string_correct_print(char* string)
 
 
 /**
- * @brief 
+ * @brief New Expression block generator
+ * Used to generate (expr_blocks) terms returning from functions
  * 
- * @param returning 
- * @param param_num 
- * @param param_max 
- * @return expression_block* 
+ * @param returning Array of returning data types
+ * @param param_num Index of the returning parameter
+ * @param param_max The number of returning parameters
+ * @return (expression_block*) Pointer to the newly allocated term
  */
 expression_block* generate_exp_block(dataType* returning, int param_num, int param_max)
 {
@@ -216,6 +241,11 @@ expression_block* generate_exp_block(dataType* returning, int param_num, int par
 }
 
 
+/**
+ * @brief Stores the generated variable name pointer to an array (variable_names[global])
+ * 
+ * @param var_name The pointer to the generated name
+ */
 void add_local_variable_name(char* var_name)
 {
     char** temp = (char**) realloc(variable_names, (number_of_names + 1) * sizeof(char*));
@@ -232,9 +262,9 @@ void add_local_variable_name(char* var_name)
 
 
 /**
- * @brief 
+ * @brief CODE GENERATOR - Local variable definition
  * 
- * @param new_var 
+ * @param new_var Pointer to the variable (in symtable)
  */
 void def_var(TreeElement* new_var)
 {
@@ -242,51 +272,22 @@ void def_var(TreeElement* new_var)
     out_partial("DEFVAR TF@");
     out_partial(name);
     newline
-    
-    //add_local_variable_name(name);
-    
+    // New variables are automatically nullified
     out_partial("MOVE TF@");
     out_partial(name);
     out_partial(" nil@nil");
     newline
-}
-
-
-BubbleStack_t* reverse_stack(BubbleStack_t* orig_stack)
-{
-    BubbleStack_t* reversed = malloc(sizeof(BubbleStack_t));
-    //BubbleStack_t* tmp = reversed;
-    BS_Init(reversed);
-
-    /*if (tmp == NULL
-void BS_Init(BubbleStack_t* stack)
-{)
-    {
-        return NULL;
-    }
-    reversed = tmp;*/
-
-    expression_block* data;
-
-    while(!BS_IsEmpty(orig_stack))
-    {
-        data = BS_TopStack(orig_stack);
-        BS_Push(reversed, data);
-        BS_Pop(orig_stack);
-    }
-
-    return reversed;
-
+    free(name);
 }
 
 
 /**
- * @brief 
+ * @brief CODE GENERATOR - Pushes function parameters, generates the function call and pops the returns
  * 
- * @param func 
- * @param params 
- * @param returns 
- * @return int 
+ * @param func Pointer to the function element (in symtable)
+ * @param params Stack of (expression_block*) terms - Function parameters
+ * @param returns Stack of (expression_block*) terms - Functions returns (empty at the beginning, terms generated internally) 
+ * @return (int) Status - '0' = OK 
  */
 int G_CallFunc(TreeElement* func, BubbleStack_t* params, BubbleStack_t* returns)
 {
@@ -301,7 +302,7 @@ int G_CallFunc(TreeElement* func, BubbleStack_t* params, BubbleStack_t* returns)
     {
         n++;
     }
-
+    // Read function variants have no parameters
     if ((strcmp(func->name,"reads") == 0) || (strcmp(func->name,"readn") == 0) || (strcmp(func->name,"readi") == 0))
     {
         var = NULL;
@@ -346,13 +347,11 @@ int G_CallFunc(TreeElement* func, BubbleStack_t* params, BubbleStack_t* returns)
     {
         if (strcmp(func->name,"write") == 0)
         {
-            //BubbleStack_t* reversed = reverse_stack(params);
-            //DebbugPrintStack(params);
             while(!BS_IsEmpty(params))
             {
                 var = BS_TopStack(params);
                 term_name = generate_term_name(var);
-                
+                // write(param) : if the param is nil, the WRITE instruction is supposed to write string@nil
                 out_partial("JUMPIFEQ __WRITE_NIL__");
                 out_integer(logic_counter);
                 out_partial(" TF@");
@@ -378,7 +377,6 @@ int G_CallFunc(TreeElement* func, BubbleStack_t* params, BubbleStack_t* returns)
                 newline
 
                 free(term_name);
-                //fprintf(stderr,"%f",var->_double);fflush(stderr);
                 free(var);
                 BS_Pop(params);
             }
@@ -403,6 +401,7 @@ int G_CallFunc(TreeElement* func, BubbleStack_t* params, BubbleStack_t* returns)
             }
 
             newline
+            // Even the builtin functions are called here (with returning parameters)
             out_partial("CALL ");
             out_partial(func->name);
             newline
@@ -433,7 +432,6 @@ int G_CallFunc(TreeElement* func, BubbleStack_t* params, BubbleStack_t* returns)
                 free(term_name);
                 BS_Push(returns, term);
             }
-            //returns = reverse_stack(returns);
         }
     }
         
@@ -442,10 +440,10 @@ int G_CallFunc(TreeElement* func, BubbleStack_t* params, BubbleStack_t* returns)
 
 
 /**
- * @brief 
+ * @brief CODE GENERATOR - Generates IF condition
  * 
- * @param term 
- * @return int 
+ * @param term The term variable compared within the condition
+ * @return (int) Status, '0' = OK
  */
 int G_IfBGN(expression_block* term)
 {
@@ -503,8 +501,7 @@ int G_IfBGN(expression_block* term)
 
 
 /**
- * @brief 
- * 
+ * @brief CODE GENERATOR - Generates the ELSE branch (LABEL)
  */
 void G_IfELSE(int counter)
 {
@@ -520,7 +517,7 @@ void G_IfELSE(int counter)
 
 
 /**
- * @brief 
+ * @brief CODE GENERATOR - Generates the IF condition end label
  * 
  */
 void G_IfEND(int counter)
@@ -535,6 +532,9 @@ void G_IfEND(int counter)
 }
 
 
+/**
+ * @brief CODE GENERATOR - Generates the shift of local variables (LF -> TF) in the while loop
+ */
 void get_from_local_frame()
 {
     int index = 0;
@@ -554,6 +554,9 @@ void get_from_local_frame()
 }
 
 
+/**
+ * @brief CODE GENERATOR - Generates the shift of local variables (TF -> LF) in the while loop
+ */
 void get_from_temp_frame()
 {
     int index = 0;
@@ -570,6 +573,11 @@ void get_from_temp_frame()
 }
 
 
+/**
+ * @brief Recursive preorder through the symtable layer tree, stores the generated variable names
+ * 
+ * @param root Pointer to the root of the tree of current layer
+ */
 void store_local_var_names(TreeElement* root)
 {
     if(root == NULL)
@@ -587,6 +595,11 @@ void store_local_var_names(TreeElement* root)
 }
 
 
+/**
+ * @brief Recursive go-through the layers of symtable, calling store_local_var_names() over each layer's tree
+ * 
+ * @param act_layer pointer to the "starting" layer (ts->curLayer is intended)
+ */
 void extract_local_vars(TreeLayer* act_layer)
 {
     if (act_layer == ts->functionLayer)
@@ -599,8 +612,7 @@ void extract_local_vars(TreeLayer* act_layer)
 
 
 /**
- * @brief 
- * 
+ * @brief CODE GENERATOR - Generates the WHILE loop label, creates a new frame and copies the values of all local variables inside the frame
  */
 void G_WhileBGN()
 {
@@ -627,10 +639,10 @@ void G_WhileBGN()
 
 
 /**
- * @brief 
+ * @brief CODE GENERATOR - Generates the IF statement for a loop, compares a given term with a bool value
  * 
- * @param term 
- * @return int 
+ * @param term Pointer to the compared term
+ * @return (int) Status, '0' = OK
  */
 int G_CompareBool(expression_block *term)
 {
@@ -650,16 +662,17 @@ int G_CompareBool(expression_block *term)
     newline
 
     return 0;
+
     // <statement> <st-list>
     // JMUP WHILE_LOOP_X
 }
 
 
 /**
- * @brief 
+ * @brief CODE GENERATOR - Generates the IF statement for a loop, compares a given term with nil
  * 
- * @param term 
- * @return int 
+ * @param term Pointer to the compared term
+ * @return (int) Status, '0' = OK
  */
 int G_CompareNull(expression_block* term)
 {
@@ -686,8 +699,7 @@ int G_CompareNull(expression_block* term)
 
 
 /**
- * @brief 
- * 
+ * @brief CODE GENERATOR - Generates the shift of changed local variable values (TF -> LF), jump to the start of the loop and the end label
  */
 void G_WhileEND(int counter)
 {
@@ -709,6 +721,13 @@ void G_WhileEND(int counter)
     newline
 }
 
+
+/**
+ * @brief CODE GENERATOR - Pushes the return values to the stack, then jumps to the end of function
+ * 
+ * @param godzilla Stack containing to be pushed terms
+ * @param func_name Name of the function (for a correct jump)
+ */
 void G_RetrunTerm(BubbleStack_t *godzilla, char* func_name)
 {
     expression_block* kingkong = NULL;
@@ -731,9 +750,14 @@ void G_RetrunTerm(BubbleStack_t *godzilla, char* func_name)
 }
 
 
+/**
+ * @brief CODE GENERATOR - Generates assignment TERM -> VARIABLE(local)
+ * 
+ * @param var Pointer to a local variable (symtable)
+ * @param term Pointer to a term variable
+ */
 void G_AssignToVar(TreeElement* var,expression_block* term)
 {
-    //do var prirad hodnotu z expression
    char* bake_rolls;
    char* boiled_rolls;
    bake_rolls = generate_term_name(term);
@@ -748,17 +772,17 @@ void G_AssignToVar(TreeElement* var,expression_block* term)
 
     free(bake_rolls);
     free(boiled_rolls);
-   //asi su tu pojebiky
-
-   // vynegerujes meno pre var a term
-   // MOVE TF@var_name TF@term_name
-   
-
 }
 
+
+/**
+ * @brief CODE GENERATOR - Generates assignment TERM -> VARIABLE(local) for more variables
+ * 
+ * @param var Pointer to a local variable stack (symtable)
+ * @param stack Pointer to a term variable stack
+ */
 void G_AssignToVars(TreeElement** var,BubbleStack_t* stack)//<----------------- Ked je NULL,NULL tak len vypopuje returny, funkcia nema priradenie
 {
-    //aj pomocne funkcie var a stack?
     if ((var == NULL) || (stack == NULL))
     {
         return;
@@ -773,6 +797,8 @@ void G_AssignToVars(TreeElement** var,BubbleStack_t* stack)//<----------------- 
         temp_expbl = BS_TopStack(stack);
         temp_treeelem = var[i];
 
+        variable* varPtr = temp_treeelem->data;
+
         char* orangutan = generate_term_name(temp_expbl);
         char* pavian = generate_name(temp_treeelem);
 
@@ -781,6 +807,12 @@ void G_AssignToVars(TreeElement** var,BubbleStack_t* stack)//<----------------- 
         out_partial(" TF@");
         out_partial(orangutan);
         newline
+
+        varPtr->vDefined = 1;
+        if(temp_expbl->dt == _nan)
+            varPtr->isNil = 1;
+        else
+            varPtr->isNil = 0;
 
         free(pavian);
         free(orangutan);
@@ -794,8 +826,7 @@ void G_AssignToVars(TreeElement** var,BubbleStack_t* stack)//<----------------- 
 
 
 /**
- * @brief 
- * 
+ * @brief Initialiser of variable names string array
  */
 void init_variable_name_catcher()
 {
@@ -804,6 +835,9 @@ void init_variable_name_catcher()
 }
 
 
+/**
+ * @brief Destructor of variable names string array
+ */
 void dtroy_variable_name_catcher()
 {
     int i = 0;
@@ -824,6 +858,12 @@ void dtroy_variable_name_catcher()
 }
 
 
+/**
+ * @brief CODE GENERATOR - Generates function label, creates frame and pops parameters
+ * 
+ * @param func Pointer to a function (symtable)
+ * @return (int) Status '0' = OK
+ */
 int G_function_bgn(TreeElement* func)
 {
     init_variable_name_catcher();
@@ -845,7 +885,6 @@ int G_function_bgn(TreeElement* func)
     {
         local_var = TS_LookVariable(ts, temp->param_names[i]);
         char* var_name = generate_name(local_var);
-        //add_local_variable_name(var_name);
 
         out_partial("DEFVAR TF@");
         out_partial(var_name);
@@ -856,12 +895,18 @@ int G_function_bgn(TreeElement* func)
         newline
 
         i++;
+        free(var_name);
     }
 
     return 0;
 }
 
 
+/**
+ * @brief CODE GENERATOR - Generates function end label and returns
+ * 
+ * @param func_name Name of the function (for a correct jump)
+ */
 void G_function_end(char* func_name)
 {
     newline
@@ -881,10 +926,10 @@ void G_function_end(char* func_name)
 
 
 /**
- * @brief 
+ * @brief CODE GENERATOR - Assignment (VAR -> TERM) or (CONST -> TERM)
  * 
- * @param target 
- * @param input 
+ * @param target Pointer to expr_block TERM
+ * @param input Pointer to expr_block VAR/CONST
  */
 void var_to_term_assign(expression_block* target, expression_block* input)
 {
@@ -897,7 +942,8 @@ void var_to_term_assign(expression_block* target, expression_block* input)
 
     out_partial("MOVE TF@");
     out_partial(target_term);
-    if(input->operType!=_variable_oper){
+    if(input->operType!=_variable_oper)
+    {
         switch(input->dt)
         {
             case _string:
@@ -918,10 +964,12 @@ void var_to_term_assign(expression_block* target, expression_block* input)
             default:
                 break;
         }
-    }else{
+    }else
+    {
         input_variable=generate_name(input->TSPointer);
         out_partial(" TF@");
         out_partial(input_variable);
+        free(input_variable);
     }
     newline
 
@@ -930,10 +978,12 @@ void var_to_term_assign(expression_block* target, expression_block* input)
 
 
 /**
- * @brief 
+ * @brief CODE GENERATOR - The # operator
  * 
- * @param target 
- * @param input 
+ * //strlen TF@targetname string@input-str
+ * 
+ * @param target Pointer to expr_block TERM, DST (int)
+ * @param input Pointer to expr_block TERM, SRC (str)
  */
 void unary_operator(expression_block* target, expression_block* input)
 {
@@ -946,7 +996,7 @@ void unary_operator(expression_block* target, expression_block* input)
     newline
     out_partial("STRLEN ");
     out_partial("TF@");
-    //strlen_TF@targetname_string@input-str
+    
     out_partial(pom_target);
     out_partial(" TF@");
     out_partial(pom_input);
@@ -959,10 +1009,10 @@ void unary_operator(expression_block* target, expression_block* input)
 
 
 /**
- * @brief 
+ * @brief CODE GENERATOR - Assign nil@nil to TERM
  * 
- * @param term 
- * @return int 
+ * @param term Pointer to expr_block TERM, DST
+ * @return (int) Status, '0' = OK 
  */
 int G_FillWithNil(expression_block* term)
 {
@@ -980,12 +1030,12 @@ int G_FillWithNil(expression_block* term)
 
 
 /**
- * @brief 
+ * @brief CODE GENERATOR - Performs Arithmetic and Logic instructions
  * 
- * @param target 
- * @param operand_one 
- * @param operand_two 
- * @param sign 
+ * @param target Pointer to expr_block TERM, DST
+ * @param operand_one Pointer to expr_block TERM, OPERAND ONE
+ * @param operand_two Pointer to expr_block TERM, OPERAND TWO
+ * @param sign Pointer to expr_block TERM, OPERATOR
  */
 void operation_quick_action(expression_block* target, expression_block* operand_one, expression_block* operand_two, expression_block* sign)
 {
@@ -1148,9 +1198,9 @@ void operation_quick_action(expression_block* target, expression_block* operand_
 }
 
 /**
- * @brief 
+ * @brief Performs the int to float conversion
  * 
- * @param term 
+ * @param term Pointer to expr_block TERM
  */
 void convert_to_float(expression_block* term)
 {
@@ -1180,20 +1230,20 @@ void convert_to_float(expression_block* term)
 
 
 /**
- * @brief 
+ * @brief Performs the float to int conversion
  * 
- * @param term 
+ * @param term Pointer to expr_block TERM
  */
 void convert_to_int(expression_block* term)
 {
     char* term_name = generate_term_name(term);
     
-    out_partial("JUMPIFEQ __SKIP_INT2FLOAT__");
+    out_partial("JUMPIFEQ __SKIP_FLOAT2INT__");
     out_integer(logic_counter);
     out_partial(" TF@");
     out_partial(term_name);
     out_partial(" nil@nil");
-    newline;
+    newline
 
     newline
     out_partial("FLOAT2INT ");
@@ -1203,7 +1253,7 @@ void convert_to_int(expression_block* term)
     out_partial(term_name);
     newline
 
-    out_partial("LABEL __SKIP_INT2FLOAT__");
+    out_partial("LABEL __SKIP_FLOAT2INT__");
     out_integer(logic_counter++);
     newline
 
@@ -1211,6 +1261,9 @@ void convert_to_int(expression_block* term)
 }
 
 
+/**
+ * @brief Prints the substr() builtin function
+ */
 void print_substr()
 {
     out("LABEL substr");
@@ -1246,16 +1299,16 @@ void print_substr()
     out("MOVE TF@out_string string@");
     newline
     out("AND TF@if_stmnt_1 TF@if_stmnt_1 TF@if_stmnt_2");
-    out("JUMPIFNEQ __SUBSTR_RET_EMPTY__ TF@if_stmnt_1 bool@true");        // JUMP LABEL __SUBSTR_RET_EMPTY__
+    out("JUMPIFNEQ __SUBSTR_RET_EMPTY__ TF@if_stmnt_1 bool@true");      // JUMP LABEL __SUBSTR_RET_EMPTY__
     newline
     out("GT TF@if_stmnt_1 TF@j_number int@0");
     out("LT TF@if_stmnt_2 TF@j_number TF@str_len");
     newline
     out("AND TF@if_stmnt_1 TF@if_stmnt_1 TF@if_stmnt_2");
-    out("JUMPIFNEQ __SUBSTR_RET_EMPTY__ TF@if_stmnt_1 bool@true");        // JUMP LABEL __SUBSTR_RET_EMPTY__
+    out("JUMPIFNEQ __SUBSTR_RET_EMPTY__ TF@if_stmnt_1 bool@true");      // JUMP LABEL __SUBSTR_RET_EMPTY__
     newline
     out("LT TF@if_stmnt_1 TF@j_number TF@i_number");
-    out("JUMPIFNEQ __SUBSTR_RET_EMPTY__ TF@if_stmnt_1 bool@false");       // JUMP LABEL __SUBSTR_RET_EMPTY__
+    out("JUMPIFNEQ __SUBSTR_RET_EMPTY__ TF@if_stmnt_1 bool@false");     // JUMP LABEL __SUBSTR_RET_EMPTY__
     newline
     out("DEFVAR TF@new_len");
     out("MOVE TF@new_len TF@j_number");
@@ -1314,6 +1367,9 @@ void print_substr()
 }
 
 
+/**
+ * @brief Prints the tointeger() builtin function
+ */
 void print_tointeger()
 {
     newline
@@ -1343,6 +1399,9 @@ void print_tointeger()
 }
 
 
+/**
+ * @brief Prints the ord() builtin function
+ */
 void print_ord()
 {
     newline
@@ -1389,6 +1448,9 @@ void print_ord()
 }
 
 
+/**
+ * @brief Prints the chr() builtin function
+ */
 void print_chr()
 {
     newline
