@@ -4,60 +4,61 @@ void DebbugPrintToken(token *nextToken){
 	if (nextToken->type==_operator){
 		switch (nextToken->data.oper)
 		{
-		case _less: printf(" < ");break;
-		case _lessEq: printf(" <= ");break;
-		case _great: printf(" > ");break;
-		case _greatEq: printf(" >= ");break;
-		case _Eq: printf(" == ");break;
-		case _nEq: printf(" != ");break;
-		case _add: printf(" + ");break;
-		case _sub: printf(" - ");break;
-		case _div: printf(" / ");break;
-		case _div2: printf(" // ");break;
-		case _mul: printf(" * ");break;
-		case _length: printf(" # ");break;
-		case _konk: printf(" .. ");break;
+		case _less: fprintf(stderr," < ");break;
+		case _lessEq: fprintf(stderr," <= ");break;
+		case _great: fprintf(stderr," > ");break;
+		case _greatEq: fprintf(stderr," >= ");break;
+		case _Eq: fprintf(stderr," == ");break;
+		case _nEq: fprintf(stderr," != ");break;
+		case _add: fprintf(stderr," + ");break;
+		case _sub: fprintf(stderr," - ");break;
+		case _div: fprintf(stderr," / ");break;
+		case _div2: fprintf(stderr," // ");break;
+		case _mul: fprintf(stderr," * ");break;
+		case _length: fprintf(stderr," # ");break;
+		case _konk: fprintf(stderr," .. ");break;
 		default:break;
 		}
 	}else if(nextToken->type==_misc){
 		switch (nextToken->data.msc)
 		{
-		case _bracketL: printf(" ( "); break;
-		case _bracketR: printf(" ) ");break;
-		case _EOF: printf(" EOF ");break;
-		case _assign: printf(" = ");break;
-		case _komma: printf(" , ");break;
-		case _doubleKomma: printf(" : ");break;
+		case _bracketL: fprintf(stderr," ( "); break;
+		case _bracketR: fprintf(stderr," ) ");break;
+		case _EOF: fprintf(stderr," EOF ");break;
+		case _assign: fprintf(stderr," = ");break;
+		case _komma: fprintf(stderr," , ");break;
+		case _doubleKomma: fprintf(stderr," : ");break;
 		default:
 			break;
 		}
 	}else if(nextToken->type==_identifier){
-		printf(" %s ",nextToken->data.str);
+		fprintf(stderr," %s ",nextToken->data.str);
 	}else if(nextToken->type==_const){
-		if (nextToken->data.type==_string) printf(" \"%s\" ",nextToken->data.str);
-		if (nextToken->data.type==_integer) printf(" %d ",nextToken->data._integer);
-		if (nextToken->data.type==_number) printf(" %f ",nextToken->data._double);
+		if (nextToken->data.type==_string) fprintf(stderr," \"%s\" ",nextToken->data.str);
+		if (nextToken->data.type==_integer) fprintf(stderr," %d ",nextToken->data._integer);
+		if (nextToken->data.type==_number) fprintf(stderr," %f ",nextToken->data._double);
 	}else if(nextToken->type==_keyword){
 		switch (nextToken->data.kw)
 		{
-		case _if:printf (" if ");break;
-		case _end:printf(" end ");break;
-		case _while: printf(" while ");break;
-		case _function: printf(" function ");break;
-		case _require: printf(" require ");break;
-		case _return: printf (" return ");break;
-		case _global: printf (" global ");break;
-		case _do : printf(" do ");break;
-		case _local: printf(" local ");break;
-		case _else: printf(" else ");break;
-		case _k_integer: printf(" integer ");break;
-		case _k_number: printf(" number ");break;
-		case _k_string: printf(" string ");break;
-		case _nil: printf(" nil ");break;
-		case _then: printf(" then ");break;
+		case _if:fprintf (stderr," if ");break;
+		case _end:fprintf(stderr," end ");break;
+		case _while: fprintf(stderr," while ");break;
+		case _function: fprintf(stderr," function ");break;
+		case _require: fprintf(stderr," require ");break;
+		case _return: fprintf (stderr," return ");break;
+		case _global: fprintf (stderr," global ");break;
+		case _do : fprintf(stderr," do ");break;
+		case _local: fprintf(stderr," local ");break;
+		case _else: fprintf(stderr," else ");break;
+		case _k_integer: fprintf(stderr," integer ");break;
+		case _k_number: fprintf(stderr," number ");break;
+		case _k_string: fprintf(stderr," string ");break;
+		case _nil: fprintf(stderr," nil ");break;
+		case _then: fprintf(stderr," then ");break;
 		default:break;
 		}
 	}
+	fflush(stderr);
 }
 
 void DebbugPrintExpress(expression_block *block){
@@ -77,30 +78,30 @@ void DebbugPrintExpress(expression_block *block){
 		case _less: fprintf(stderr," < ");break;
 		case _lessEq: fprintf(stderr," <= ");break;
 		case _great: fprintf(stderr," > ");break;
-		case _greatEq: printf(" >= ");break;
-		case _Eq: printf(" == ");break;
-		case _nEq: printf(" != ");break;
-		case _add: printf(" + ");break;
-		case _sub: printf(" - ");break;
-		case _div: printf(" / ");break;
-		case _div2: printf(" // ");break;
-		case _mul: printf(" * ");break;
-		case _length: printf(" # ");break;
-		case _konk: printf(" .. ");break;
-		default:printf(" Invalid ");break;
+		case _greatEq: fprintf(stderr," >= ");break;
+		case _Eq: fprintf(stderr," == ");break;
+		case _nEq: fprintf(stderr," != ");break;
+		case _add: fprintf(stderr," + ");break;
+		case _sub: fprintf(stderr," - ");break;
+		case _div: fprintf(stderr," / ");break;
+		case _div2: fprintf(stderr," // ");break;
+		case _mul: fprintf(stderr," * ");break;
+		case _length: fprintf(stderr," # ");break;
+		case _konk: fprintf(stderr," .. ");break;
+		default:fprintf(stderr," Invalid ");break;
 		}
 	}else 
 	if (block->blockType==_operand_expr){
 		if(block->operType==_constant_oper){
-			if(block->dt==_number){printf(" CfloatC ");}
-			if(block->dt==_integer){printf(" CintegerC ");}
-			if(block->dt==_string){printf(" CstringC ");}
-			if(block->dt==_nan)printf(" nil ");
+			if(block->dt==_number){fprintf(stderr," CfloatC ");}
+			if(block->dt==_integer){fprintf(stderr," CintegerC ");}
+			if(block->dt==_string){fprintf(stderr," CstringC ");}
+			if(block->dt==_nan)fprintf(stderr," nil ");
 		}else
 		if (block->operType==_variable_oper){
-			if(block->dt==_number)printf(" Vfloat %sV ",block->str);
-			if(block->dt==_integer)printf(" Vinteger %sV ",block->str);
-			if(block->dt==_string)printf(" Vstring %sV  ",block->str);
+			if(block->dt==_number)fprintf(stderr," Vfloat %sV ",block->str);
+			if(block->dt==_integer)fprintf(stderr," Vinteger %sV ",block->str);
+			if(block->dt==_string)fprintf(stderr," Vstring %sV  ",block->str);
 		}else
 		if(block->operType==_not_terminal_oper){
 			if(block->dt==_integer)fprintf(stderr," <integer %d %f> ",block->_integer, block->_double);
@@ -119,6 +120,8 @@ void DebbugPrintStack(BubbleStack_t *stack){
 	fprintf(stderr,"Line %d: Stack bgn",GetLineNumber());
 	for (int i=0;i<=stack->BS_TopIndex;i++){
 		DebbugPrintExpress((stack->BS_Element)[i]);
+		fprintf(stderr,"\n");
 	}
 	fprintf(stderr,"Stack end\n");
+	fflush(stderr);
 }

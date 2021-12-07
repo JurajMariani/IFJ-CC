@@ -46,7 +46,7 @@ int IsEndSymbol(token *nextToken);
  * @param nextToken 
  * @return int 
  */
-int ConvertToBlock(expression_block *block, token* nextToken, int* termNumber);
+int ConvertToBlock(expression_block *block, token* nextToken);
 
 /**
  * @brief Fills with error marker used to distinguish errors from malloc errors
@@ -104,7 +104,7 @@ void GetClosestTerminal(BubbleStack_t *stack, expression_block **block);
  * @param stack 
  * @param nextToken  
  */
-void TAB_Shift(BubbleStack_t *stack,token *nextToken,int* termNumber);
+void TAB_Shift(BubbleStack_t *stack,token *nextToken);
 
 /**
  * @brief Makes = operation from tab

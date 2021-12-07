@@ -46,7 +46,7 @@ int ParamCheck(TreeElement* func, BubbleStack_t *stack){
         if(tmp->dt!=((user_func*)func->data)->params[i]){
             if(tmp->dt==_number && ((user_func*)func->data)->params[i]==_integer)convert_to_float(tmp);
             else if(tmp->dt==_integer && ((user_func*)func->data)->params[i]==_number)convert_to_int(tmp);
-            else {bad=1;break;}
+            else if(tmp->dt!=_nan){bad=1;break;}
         }
 
         BS_Push(stack,tmp);
@@ -115,6 +115,7 @@ int ReturnsCheck(TreeElement *func, BubbleStack_t * returnedStack){
             tmp->blockType=_operand_expr;
             tmp->operType=_not_terminal_oper;
             tmp->dt=data->returns[i];
+            //tmp->_integer = i;
             tmp->_double = exprCounter;
             G_FillWithNil(tmp);//<--------------------------------------------------------------------------------------------------------------------LK TODO
             BS_Push(returnedStack,tmp);
@@ -126,7 +127,7 @@ int ReturnsCheck(TreeElement *func, BubbleStack_t * returnedStack){
             if(tmp->dt!=data->returns[i]){
                 if(tmp->dt==_number && data->returns[i]==_integer){convert_to_int(tmp);}//<--------------------------------------------LK
                 else if(tmp->dt==_integer && data->returns[i]==_number){convert_to_float(tmp);}
-                else bad=1;
+                else if(tmp->dt!=_nan) bad=1;
             }
             BS_Push(returnedStack,tmp);
             BS_Pop(&helperStack);
@@ -139,9 +140,10 @@ int ReturnsCheck(TreeElement *func, BubbleStack_t * returnedStack){
             if(tmp->dt!=data->returns[i]){
                 if(tmp->dt==_number && data->returns[i]==_integer){convert_to_int(tmp);}//<--------------------------------------------LK
                 else if(tmp->dt==_integer && data->returns[i]==_number){convert_to_float(tmp);}
-                else bad=1;
+                else if(tmp->dt!=_nan) bad=1;
             }
             BS_Push(returnedStack,tmp);
+            BS_Pop(&helperStack);
             i++;
         }
     }
@@ -172,6 +174,7 @@ void MoveStack(BubbleStack_t* dest, BubbleStack_t* target){
 int C_AssignToVar(TreeElement* target, expression_block* source){
     if(((variable*)target->data)->type==_string){
         if(source->dt == _string)return 1;
+        else if(source->dt == _nan)return 1;
         else return 0;
     }else
     if(((variable*)target->data)->type==_nan){
@@ -179,13 +182,23 @@ int C_AssignToVar(TreeElement* target, expression_block* source){
         else return 0;
     }else
     if (((variable*)target->data)->type==_number){
+        if(source->dt == _nan)return 1;
         if (source->dt==_number) 
             return 1;
+        else if(source->dt==_integer){
+            convert_to_float(source);
+            return 1;
+        }
         else
             return 0;
     }else
     if(((variable*)target->data)->type==_integer){
+        if(source->dt == _nan)return 1;
         if(source->dt==_integer){
+            return 1;
+        }else
+        if(source->dt==_number){
+            convert_to_int(source);
             return 1;
         }else
             return 0;
@@ -222,7 +235,7 @@ int IsEndSymbol(token *nextToken){
 }
 
 //Should work
-int ConvertToBlock(expression_block *block, token* nextToken, int *termNumber){
+int ConvertToBlock(expression_block *block, token* nextToken){
     if (nextToken->type==_misc){
         if (nextToken->data.msc == _bracketL){
             block->em=_lbr; block->blockType=_misc_expr; return 0;
@@ -257,10 +270,9 @@ int ConvertToBlock(expression_block *block, token* nextToken, int *termNumber){
     if (nextToken->type==_keyword && nextToken->data.kw==_nil){
         block->blockType=_operand_expr;
         block->operType=_constant_oper;
-        block->_double=exprCounter;
-        block->_integer=*termNumber;
-        (*termNumber)++;
         block->dt=_nan;
+        block->str=malloc(sizeof(char));
+        block->str[0]='\0';
     }
     return 0;
 }
@@ -316,7 +328,7 @@ int TypeCheck(expression_block* operand1,expression_block* sign, expression_bloc
             else if (operand1->dt == _number && operand2->dt == _number) return 1; //DAJ SEM MOZNO ROVNO VYPIS
             else if (operand1->dt==_string && operand2->dt == _string) return 1;
             else if (operand1->dt==_bool && operand2->dt == _bool) return 1;
-            else if (operand1->dt==_nan || operand2->dt==_nan) return 1;
+            else if ((sign->oper==_Eq || sign->oper==_nEq) && ( operand1->dt==_nan || operand2->dt==_nan)) return 1;
             return 0;
         }else
             return 0;  
@@ -335,7 +347,7 @@ int TypeCheck(expression_block* operand1,expression_block* sign, expression_bloc
 void GetClosestTerminal(BubbleStack_t *stack, expression_block **block){
     *block=BS_TopStack(stack);
     if (stack_err_flag == 1){BS_Dispose(stack);comError(99)}
-    if ((*block)->operType != _not_terminal_oper){ 
+    if (!((*block)->blockType==_operand_expr && (*block)->operType == _not_terminal_oper)){ 
         return;
     }else{
         expression_block *helper;
@@ -349,7 +361,7 @@ void GetClosestTerminal(BubbleStack_t *stack, expression_block **block){
 }
 
 //DNT
-void TAB_Shift(BubbleStack_t *stack,token *nextToken, int *termNumber){
+void TAB_Shift(BubbleStack_t *stack,token *nextToken){
     expression_block *block;
     if(nextToken->type==_identifier || nextToken->type==_const || (nextToken->type == _misc && nextToken->data.msc == _bracketL)){
         block = FillBeginMark();
@@ -381,9 +393,8 @@ void TAB_Shift(BubbleStack_t *stack,token *nextToken, int *termNumber){
     }
     block=malloc(sizeof(expression_block));
     if(block==NULL){BS_Dispose(stack);comError(99)}
-    int test = ConvertToBlock(block,nextToken,termNumber);
-    //printf("sht %d",test);  DebbugPrintToken(nextToken);
-    if (test != 0) {BS_Dispose(stack);comError(2)}
+    int test = ConvertToBlock(block,nextToken);
+    if (test != 0) {BS_Dispose(stack);comError(2)}////////////////////////////////////////////////////////////////////
     NEXT;
     BS_Push(stack,block);
     if (stack_err_flag != 0) {BS_Dispose(stack);comError(99)}
@@ -424,14 +435,13 @@ void TAB_Terminalize(BubbleStack_t *stack,token *nextToken,int* termNumber){
         newTerm->dt=operand2->dt;
         newTerm->_integer=*termNumber;
         newTerm->_double=exprCounter;
-        newTerm->TSPointer=operand2->TSPointer;
-        newTerm->str=operand2->str;
+        newTerm->TSPointer=NULL;
+        newTerm->str=NULL;
         (*termNumber)++;
-
         var_to_term_assign(newTerm,operand2);//<-----------------------------------------------------------LK FIXME
-        if(operand2->dt==_string)free(operand2->str);
         BS_Push(stack,newTerm);
         if(stack_err_flag==1){free(operand2);BS_Dispose(stack);comError(99)}
+        if(operand2->operType==_variable_oper || (operand2->operType==_constant_oper && operand2->dt==_string))free(operand2->str);
         free(operand2);
         return;
     }
@@ -491,17 +501,20 @@ actions ChooseAction(BubbleStack_t *stack,token* nextToken){
     //#
     if (block->blockType == _operator_expr && block->oper == _length){
         if (nextToken->type == _operator && nextToken->data.oper == _length)
-            return _tab_terminalize; //NOT SURE ABOUT THIS ONE, CHECK LATER, MIGHT BE STRAIGHT OUT ERROR
+            return _tab_terminalize; //NOT SURE ABOUT THIS ONE, CHECK LATER, MIGHT BE STRAIGHT OUT ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         else if (nextToken->type == _operator)
             return _tab_terminalize;
         else if (nextToken->type == _misc && nextToken->data.msc == _bracketL)
             return _tab_shift;
         else if (nextToken->type == _misc && nextToken->data.msc == _bracketR)
             return _tab_terminalize;
-        //else if (BS_TopStack(stack)->blockType==_not_terminal_oper && nextToken->type== _identifier && TS_LookFunction(ts,nextToken->data.str)!=NULL)
-        //   return _tab_end;
+        else if (BS_TopStack(stack)->blockType == _operand_expr && BS_TopStack(stack)->operType==_not_terminal_oper && nextToken->type== _identifier && TS_LookFunction(ts,nextToken->data.str)!=NULL)
+           return _tab_end;
         else if (nextToken->type == _identifier)
-            return _tab_shift;
+            if(TS_LookVariable(ts,nextToken->data.str)!=NULL)
+                return _tab_shift;
+            else
+                {BS_Dispose(stack);comError(3)}
         else if (nextToken->type == _const)
             return _tab_shift;
         else if (nextToken->type == _keyword && nextToken->data.kw==_nil)
@@ -521,13 +534,19 @@ actions ChooseAction(BubbleStack_t *stack,token* nextToken){
         else if (nextToken->type == _misc && nextToken->data.msc == _bracketR)
             return _tab_terminalize;
         else if (nextToken->type == _identifier)
-            return _tab_shift;
+            if(TS_LookVariable(ts,nextToken->data.str)!=NULL)
+                return _tab_shift;
+            else
+                {BS_Dispose(stack);comError(3)}
         else if (nextToken->type == _const)
             return _tab_shift;
         else if (nextToken->type == _keyword && nextToken->data.kw==_nil)
             return _tab_shift;
         else if (IsEndSymbol(nextToken))
-            {BS_Dispose(stack);comError(2)}
+            if(BS_TopStack(stack)->blockType==_operand_expr){
+                return _tab_end;
+            }else
+                {BS_Dispose(stack);comError(2)}
         else
             {BS_Dispose(stack);comError(2)}
     }else
@@ -541,7 +560,10 @@ actions ChooseAction(BubbleStack_t *stack,token* nextToken){
         else if (nextToken->type == _misc && nextToken->data.msc == _bracketR)
             return _tab_terminalize;
         else if (nextToken->type == _identifier)
-            return _tab_shift;
+            if(TS_LookVariable(ts,nextToken->data.str)!=NULL)
+                return _tab_shift;
+            else
+                {BS_Dispose(stack);comError(3)}
         else if (nextToken->type == _const)
             return _tab_shift;
         else if (nextToken->type == _keyword && nextToken->data.kw==_nil)
@@ -561,7 +583,10 @@ actions ChooseAction(BubbleStack_t *stack,token* nextToken){
         else if (nextToken->type == _misc && nextToken->data.msc == _bracketR)
             return _tab_terminalize;
         else if (nextToken->type == _identifier)
-            return _tab_shift;
+            if(TS_LookVariable(ts,nextToken->data.str)!=NULL)
+                return _tab_shift;
+            else
+                {BS_Dispose(stack);comError(3)}
         else if (nextToken->type==_const)
             return _tab_shift;
         else if (nextToken->type == _keyword && nextToken->data.kw==_nil)
@@ -581,7 +606,10 @@ actions ChooseAction(BubbleStack_t *stack,token* nextToken){
         else if (nextToken->type == _misc && nextToken->data.msc == _bracketR)
             return _tab_terminalize;
         else if (nextToken->type == _identifier)
-            return _tab_shift;
+            if(TS_LookVariable(ts,nextToken->data.str)!=NULL)
+                return _tab_shift;
+            else
+                {BS_Dispose(stack);comError(3)}
         else if (nextToken->type==_const)
             return _tab_shift;
         else if (nextToken->type == _keyword && nextToken->data.kw==_nil)
@@ -594,10 +622,15 @@ actions ChooseAction(BubbleStack_t *stack,token* nextToken){
     if (block->blockType == _misc_expr && block->em == _lbr){
         if (nextToken->type == _misc && nextToken->data.msc == _bracketR)
             return _tab_equals;
+        else if (nextToken->type == _misc && nextToken->data.msc == _bracketL)
+            return _tab_shift;
         else if (nextToken->type == _operator)
             return _tab_shift;
         else if (nextToken->type == _identifier)
-            return _tab_shift;
+            if(TS_LookVariable(ts,nextToken->data.str)!=NULL)
+                return _tab_shift;
+            else
+                {BS_Dispose(stack);comError(3)}
         else if (nextToken->type == _const)
             return _tab_shift;
         else if (nextToken->type == _keyword && nextToken->data.kw==_nil)
@@ -636,13 +669,20 @@ actions ChooseAction(BubbleStack_t *stack,token* nextToken){
         else if (nextToken->type == _misc && nextToken->data.msc == _bracketL)
             return _tab_shift;
         else if (nextToken->type == _identifier)
-            return _tab_shift;
+            if(TS_LookVariable(ts,nextToken->data.str)!=NULL)
+                return _tab_shift;
+            else
+                {BS_Dispose(stack);comError(3)}
         else if (nextToken->type == _const)
             return _tab_shift;
         else if (nextToken->type == _keyword && nextToken->data.kw==_nil)
             return _tab_shift;
         else if(IsEndSymbol(nextToken))
-            return _tab_end; // TODO AGAIN NOT SURE ABOUT THIS
+            if(BS_TopStack(stack)->blockType==_operand_expr){ 
+                return _tab_end; // TODO AGAIN NOT SURE ABOUT THIS
+            }
+            else
+                {BS_Dispose(stack);comError(2)}
         else if (nextToken->type == _misc && nextToken->data.msc == _bracketR)
             return _tab_end;
         else
@@ -655,7 +695,7 @@ expression_block* SolveCycle(BubbleStack_t* stack,token *nextToken,int *termNumb
     actions curAction = ChooseAction(stack,nextToken);
     while (curAction!=_tab_end){
         if(curAction==_tab_shift){
-            TAB_Shift(stack,nextToken,termNumber);
+            TAB_Shift(stack,nextToken);
         }else if (curAction==_tab_terminalize){
             TAB_Terminalize(stack,nextToken,termNumber);
         }else if (curAction == _tab_equals){
@@ -673,7 +713,7 @@ expression_block* SolveCycle(BubbleStack_t* stack,token *nextToken,int *termNumb
 }
 
 expression_block* CallTheCommander(token *nextToken){
-    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Add undefined and unknown var support and also the floats
+    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Add undefined
     expression_block *block = NULL;
     BubbleStack_t stack;
     int termNumber = 0;

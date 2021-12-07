@@ -264,7 +264,6 @@ void BS_Init(BubbleStack_t* stack)
     {
         return NULL;
     }
-
     reversed = tmp;*/
 
     expression_block* data;
@@ -347,11 +346,11 @@ int G_CallFunc(TreeElement* func, BubbleStack_t* params, BubbleStack_t* returns)
     {
         if (strcmp(func->name,"write") == 0)
         {
-            BubbleStack_t* reversed = reverse_stack(params);
-
-            while(!BS_IsEmpty(reversed))
+            //BubbleStack_t* reversed = reverse_stack(params);
+            //DebbugPrintStack(params);
+            while(!BS_IsEmpty(params))
             {
-                var = BS_TopStack(reversed);
+                var = BS_TopStack(params);
                 term_name = generate_term_name(var);
                 
                 out_partial("JUMPIFEQ __WRITE_NIL__");
@@ -379,8 +378,9 @@ int G_CallFunc(TreeElement* func, BubbleStack_t* params, BubbleStack_t* returns)
                 newline
 
                 free(term_name);
+                //fprintf(stderr,"%f",var->_double);fflush(stderr);
                 free(var);
-                BS_Pop(reversed);
+                BS_Pop(params);
             }
         }
         else
@@ -433,7 +433,7 @@ int G_CallFunc(TreeElement* func, BubbleStack_t* params, BubbleStack_t* returns)
                 free(term_name);
                 BS_Push(returns, term);
             }
-            returns = reverse_stack(returns);
+            //returns = reverse_stack(returns);
         }
     }
         
@@ -919,7 +919,6 @@ void var_to_term_assign(expression_block* target, expression_block* input)
                 break;
         }
     }else{
-        //fprintf(stderr,"vec"); fflush(stderr);
         input_variable=generate_name(input->TSPointer);
         out_partial(" TF@");
         out_partial(input_variable);

@@ -214,8 +214,6 @@ void F_Prog(token* nextToken){
         TreeElement* function = TS_LookFunction(ts,newStr);
         if(TS_OpenLayer(ts)!=0){RError(99)}
         int i=0;
-        //fprintf(stderr,"%s param %s typ %d",function->name,((user_func*)function->data)->param_names[0],((user_func*)function->data)->params[0]);fflush(stderr);
-        ///////////////////////////////////////////////////////////////////////////////////////////////////////?RETURNS SAME ADDREESSSEEE!!????
         while(((user_func*)function->data)->params[i]!=_ender){
             variable *new=CreateVariableData(((user_func*)function->data)->params[i]);
             if(new==NULL){RError(99)}
@@ -241,11 +239,10 @@ void F_Prog(token* nextToken){
             NEXT;
             BubbleStack_t paramStack;
             BubbleStack_t returnStack;
-            BubbleStack_t helperS;
             BS_Init(&paramStack);
             BS_Init(&returnStack);
             F_SentPar(nextToken,&paramStack);
-            if (!IFRightBracket){BS_Dispose(&paramStack); BS_Dispose(&returnStack);BS_Dispose(&helperS); RError(2)}//<---------------------------------------_Error
+            if (!IFRightBracket){BS_Dispose(&paramStack); BS_Dispose(&returnStack);RError(2)}//<---------------------------------------_Error
             NEXT;
             int help = ParamCheck(func,&paramStack);
             if(help!=1){ BS_Dispose(&paramStack);BS_Dispose(&returnStack);RError(5)}
@@ -277,7 +274,6 @@ void F_ParamsGlobal(token *nextToken,TreeElement* func){
             if(newParamAddr==NULL){RError(99)}
             ((user_func*)func->data)->params = newParamAddr;
         }else {
-            fprintf(stderr,"%d %d",nextToken->type,nextToken->data.kw);
             RError(2)
         }
         NEXT;
@@ -461,7 +457,7 @@ void F_ParamsR(token *nextToken, char* name_func,int globaled)
             {RError(2)}
     }
     else
-        if ( IFKwGlobal || IFKwFunction || IFIdentif || IFKwLocal || IFKwWhile || IFKwIf || IFKwEnd )
+        if ( IFKwGlobal || IFKwFunction || IFIdentif || IFKwLocal || IFKwWhile || IFKwIf || IFKwEnd || IFKwReturn)
             return;
     else
         {RError(2)}
@@ -550,7 +546,8 @@ void F_StList(token* nextToken,TreeElement* curFunc)
             F_StList(nextToken,curFunc);
             return;
         }else
-            {RError(2)}
+            {
+                RError(2)}
     }
 }
 
@@ -611,7 +608,6 @@ void F_Statement(token* nextToken, TreeElement* curFunc){
         if(newData==NULL){free(newVarName); RError(99)}//<---------------------------------------_Error
         if (TS_InsertVariable(ts,newVarName,w_var,newData) != 0) {free(newVarName); RError(99)}//<---------------------------------------_Error
         def_var(TS_LookVariable(ts,newVarName));
-        //fprintf(stderr,"gg %s",TS_LookVariable(ts,newVarName)->name);
         NEXT;
         if (IFKwAssign)
             F_ExprAfterLoc(nextToken,TS_LookVariable(ts,newVarName));
@@ -636,15 +632,26 @@ void F_Statement(token* nextToken, TreeElement* curFunc){
         BubbleStack_t returnStack;
         BubbleStack_t helperS;
         BS_Init(&paramStack);
+        if(stack_err_flag){RError(99)}
         BS_Init(&returnStack);
+        if(stack_err_flag){RError(99)}
+        BS_Init(&helperS);
+        if(stack_err_flag){RError(99)}
         F_SentPar(nextToken,&paramStack);
         if (!IFRightBracket){BS_Dispose(&paramStack); BS_Dispose(&returnStack);BS_Dispose(&helperS); RError(2)}//<---------------------------------------_Error
         NEXT;
         int help = ParamCheck(func,&paramStack);
         if(help!=1){RError(5)}
-        G_CallFunc(func,&paramStack,&returnStack );//<---------------------------------------------------------_Lukasova funkci
+
+        while(!BS_IsEmpty(&paramStack)){
+            expression_block* rr = BS_TopStack(&paramStack);
+            BS_Push(&helperS,rr);
+            BS_Pop(&paramStack);
+        }
+        G_CallFunc(func,&helperS,&returnStack );//<---------------------------------------------------------_Lukasova funkci
         BS_Dispose(&paramStack);
         BS_Dispose(&returnStack);
+        BS_Dispose(&helperS);
         return;
     }else if(IFIdentif && TS_LookVariable(ts,nextToken->data.str)!=NULL){
         TreeElement **vl=VL_INIT();
@@ -680,7 +687,7 @@ void F_Else(token* nextToken,TreeElement* curFunc){
 }
 
 void Returner(token* nextToken,BubbleStack_t *returnStack){
-    if((IFIdentif && (TS_LookVariable(ts,nextToken->data.str)!=NULL || TS_LookFunction(ts,nextToken->data.str)!=NULL))||IFLeftBracket|| nextToken->type==_const){
+    if((IFIdentif && (TS_LookVariable(ts,nextToken->data.str)!=NULL  || TS_LookFunction(ts,nextToken->data.str)!=NULL))|| (nextToken->type==_keyword && nextToken->data.kw == _nil)||IFLeftBracket|| nextToken->type==_const){
         if(stack_err_flag!=0){RError(99)}
         F_Exprb(nextToken,returnStack);
         F_SExpr(nextToken, returnStack);
@@ -711,22 +718,31 @@ void F_Exprb(token* nextToken,BubbleStack_t *stack){
         if(help!=0){BS_Dispose(stack); BS_Dispose(&mockStack); RError(99)}//<-------------------------------------------------Error
         help=ReturnsCheck(func,&mockStack);
         if(help!=1){BS_Dispose(stack); BS_Dispose(&mockStack); RError(5)} //<--------------------------------------------------Error invalid return
-        MoveStack(stack,&mockStack);
+
+        BubbleStack_t help2;
+        BS_Init(&help2);
+        while (!BS_IsEmpty(&mockStack))
+        {
+            BS_Push(&help2,BS_TopStack(&mockStack));
+            BS_Pop(&mockStack);
+        }
+        
+        MoveStack(stack,&help2);
         BS_Dispose(&mockStack);
+        BS_Dispose(&help2);
+        
         return;
 
     }else if((IFIdentif && TS_LookVariable(ts,nextToken->data.str)!=NULL) || IFLeftBracket || nextToken->type==_const || (nextToken->type==_keyword && nextToken->data.kw==_nil)){
-        //if(nextToken->type==_const && strcmp(nextToken->data.str,"ahoj")==0)fprintf(stderr,"here");
         expression_block* result = F_Expression(nextToken);
         if (result == NULL){BS_Dispose(stack); RError(99)}//<-------------------------------------------------Error
         else{
-            //fprintf(stderr,"vys \n"); DebbugPrintExpress(result);
             BS_Push(stack,result);
             if (stack_err_flag!=0){BS_Dispose(stack); RError(99)}//<-------------------------------------------------Error
             return;
         }
     }else if(IFIdentif){
-        RError(2)//<-------------------------------------------------Error 
+        RError(3)//<-------------------------------------------------Error 
     }else{RError(2)}//<-------------------------------------------------Error
 }
 
@@ -755,7 +771,7 @@ void F_ExprAfterLoc(token* nextToken,TreeElement* targetVar){
                 if(help!=1){RError(5)}
                 help = G_CallFunc(func,&stack,&mockStack);//<--------------------------------------------------------------LK
                 if(help!=0){BS_Dispose(&mockStack);BS_Dispose(&stack);RError(99)}//<--------------------------------------------Error
-                if(SemanticCheck(vl,&mockStack)!=1)if(help!=0){BS_Dispose(&mockStack);BS_Dispose(&stack);RError(4)}//<--------------------------Error
+                if(SemanticCheck(vl,&mockStack)!=1){BS_Dispose(&mockStack);BS_Dispose(&stack);RError(4)}//<--------------------------Error
                 G_AssignToVar(targetVar,BS_TopStack(&mockStack));
                 BS_Dispose(&mockStack);
                 BS_Dispose(&stack);
@@ -777,7 +793,6 @@ void F_ExprAfterLoc(token* nextToken,TreeElement* targetVar){
                     ((variable*)targetVar->data)->vDefined=1;
                     return;
                 }else{
-                    fprintf(stderr,"%d %d",targetVar->type,block->dt);
                     RError(4)// <-------------------------------------------------------------Error
                 }
         }else
@@ -809,7 +824,7 @@ void F_SentPar(token* nextToken,BubbleStack_t *stack){
 
 void F_SPar(token* nextToken, BubbleStack_t *stack){
     if(IFRightBracket){return;}
-    if(!IfKomma){ BS_Dispose(stack); RError(2)}//<-------------------------------------------------Error
+    if(!IfKomma){BS_Dispose(stack); RError(2)}//<-------------------------------------------------Error
     NEXT;
     F_Exprb(nextToken,stack);
     F_SPar(nextToken,stack);
@@ -996,7 +1011,7 @@ int mainParseFunction(){
     NEXT;
     if(nextToken->type==_keyword && nextToken->data.kw==_require){
         NEXT;
-        if (nextToken->type!=_const||nextToken->data.type!=_string||strcmp(nextToken->data.str,"ifj21")!=0) {RError(2)}
+        if (nextToken->type!=_const||nextToken->data.type!=_string||strcmp(nextToken->data.str,"ifj21")!=0) {RError(7)}
         NEXT;
     }
     if(IFEof){RError(2)}
