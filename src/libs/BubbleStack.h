@@ -11,12 +11,13 @@
 
 #ifndef __BubbleStack__
 #define __BubbleStack__
+
 #include "Defs.h"
 
 #define STACK_ERROR -2
 #define CHECK_FLAG if(stack_err_flag != 0)              \
                     return STACK_ERROR
-#define BS_MAX_ELEMS 200 - 1
+#define BS_MAX_ELEMS 300
 
 
 // STACK FUNCTIONS:
@@ -86,4 +87,4 @@ void BS_Dispose( BubbleStack_t* );
 
 #endif
 
-/** ---- End of File BubbleStack.h ---*/
+/** ---- End of File BubbleStack.h ---- */

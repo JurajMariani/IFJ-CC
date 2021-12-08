@@ -3,19 +3,15 @@
  * @file Code_Assembly.c
  * @author xmaria03 (xmaria03@stud.fit.vutbr.cz), xmacej03 (xmacej03@stud.fit.vutbr.cz)
  * @brief Code Generation file, transcribing the parser(input) to IFJcode21(output)
- * @version 0.20
- * @date 2021-12-07
+ * @version 1.0
+ * @date 2021-12-08
  * 
  * @copyright Copyright (c) 2021
  * 
  */
 
 
-#include "../libs/Defs.h"
-#include "../libs/BubbleStack.h"
 #include "../libs/Code_Assembly.h"
-#include <string.h>
-#include <stdlib.h>
 
 /**
  * @brief Printing Macros for Instructions and constants
@@ -42,7 +38,7 @@ char* generate_name(TreeElement* var)
     strcpy(temp1, var->name);
     char temp2[15];
     sprintf(temp2, "%p", var);
-    unsigned len = strlen(temp1) + strlen(temp2);
+    unsigned len = strlen(temp1) + strlen(temp2) + 5;
     char *out = malloc(sizeof(char) * len);
     unsigned i = 0;
     while (temp1[i] != '\0')
@@ -235,7 +231,7 @@ expression_block* generate_exp_block(dataType* returning, int param_num, int par
     ret->operType = _not_terminal_oper;
     ret->blockType = _operand_expr;
     ret->dt = returning[param_num];
-    ret->_integer = 1 - param_max;
+    ret->_integer = param_max - 1;
 
     return ret;
 }
@@ -414,6 +410,7 @@ int G_CallFunc(TreeElement* func, BubbleStack_t* params, BubbleStack_t* returns)
             while( control < n)
             {
                 term = NULL;
+                fprintf(stderr, "Co sa sem posiela, hmmm? %d, %d?\n",control, n);fflush(stderr);
                 term = generate_exp_block(rets, control, n);
                 if (term == NULL)
                     return MALLOC_ERR_CODE;
@@ -624,6 +621,7 @@ void G_WhileBGN()
     newline
     out("PUSHFRAME");
     out("CREATEFRAME");
+    function_frame_counter++;
     newline
     
     extract_local_vars(ts->curLayer);
@@ -682,7 +680,7 @@ int G_CompareNull(expression_block* term)
     
     newline
     newline
-    out_partial("JUMPIFNEQ WHILE_LOOP_END_");
+    out_partial("JUMPIFEQ WHILE_LOOP_END_");
     out_integer(while_counter);
     out_partial(" TF@");
     out_partial(term_name);
@@ -742,6 +740,13 @@ void G_RetrunTerm(BubbleStack_t *godzilla, char* func_name)
         free(kingkong);
         free(minidzilla);
     }
+    int iter = 0;
+    while(iter < function_frame_counter)
+    {
+        out("POPFRAME");
+        iter++;
+    }
+
     out_partial("JUMP __END_OF_");
     out_partial(func_name);
     out_partial("__");
@@ -867,6 +872,7 @@ void dtroy_variable_name_catcher()
 int G_function_bgn(TreeElement* func)
 {
     init_variable_name_catcher();
+    function_frame_counter = 0;
 
     generate_execute_jump();
 
@@ -894,8 +900,15 @@ int G_function_bgn(TreeElement* func)
         newline
         newline
 
+        add_local_variable_name(var_name);
         i++;
-        free(var_name);
+    }
+
+    i = 0;
+    while( temp->returns[i] != _ender)
+    {
+        out("PUSHS nil@nil");
+        i++;
     }
 
     return 0;
@@ -1197,6 +1210,7 @@ void operation_quick_action(expression_block* target, expression_block* operand_
     free(target_name);
 }
 
+
 /**
  * @brief Performs the int to float conversion
  * 
@@ -1328,7 +1342,7 @@ void print_substr()
     out("LABEL __SUBSTR_END_WHILE__")
     newline
     newline
-    out("SUB TF@i_number TF@i_number int@1");                // subtracting one from input params
+    out("SUB TF@i_number TF@i_number int@1");                           // subtracting one from input params
     out("SUB TF@j_number TF@j_number int@1");
     out("DEFVAR TF@getter");
     out("DEFVAR TF@displacement");
