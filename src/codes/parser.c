@@ -1,8 +1,18 @@
-
+/**
+ * @file expressionCommander.c
+ * @author Tomas Lukac xlukac16 xlukac16@fit.vutbr.cz Juraj Mariani xmaria03 xmaria03@fit.vutbr.cz
+ * @brief 
+ * @version 1.0
+ * @date 2021-12-08
+ * 
+ * 
+ */
 #include "../libs/parser.h"
 
-#define RError(d) fprintf(stderr,"%s %d ",__func__, __LINE__); RaiseError(d); DebbugPrintToken(nextToken); exit(d);
+//error macro
+#define RError(d) RaiseError(d); exit(d);
 
+//token macros
 #define IFLeftBracket (nextToken->type ==_misc && nextToken->data.msc==_bracketL)
 #define IFDoubleKomma (nextToken->type ==_misc && nextToken->data.msc==_doubleKomma)
 #define IfKomma (nextToken->type ==_misc && nextToken->data.msc == _komma)
@@ -50,6 +60,7 @@ dataType* PushDataType(dataType *toPush,dataType newType){
     return toPush;
 }
 
+//Pushes  param name to function
 char** PushParamName(char** param_names, char* param_name)
 {
     char** curAdr=param_names;
@@ -60,7 +71,7 @@ char** PushParamName(char** param_names, char* param_name)
     }
     param_names = realloc(param_names, (count + 1)* (sizeof(char*)));
     if (param_names == NULL)return NULL; // < so is one here
-    param_names[count-1] = malloc(100*sizeof(char));
+    param_names[count-1] = malloc(101*sizeof(char));
     if (param_names[count-1] == NULL)
         return NULL;
     if (param_name != NULL)
@@ -71,7 +82,7 @@ char** PushParamName(char** param_names, char* param_name)
     return param_names;
 }
 
-//DNT
+//Allocates data for function and fills in empty func
 user_func* CreateFunctionData(){
     user_func* newData = malloc(sizeof(user_func));
     if (newData == NULL) return NULL;
@@ -96,7 +107,7 @@ user_func* CreateFunctionData(){
     return newData;
 }
 
-//DNT
+//Allocates data for function and fills in empty variable
 variable* CreateVariableData(dataType newType){
     variable *newData = malloc(sizeof(variable));
     if(newData==NULL)return NULL;
@@ -106,9 +117,9 @@ variable* CreateVariableData(dataType newType){
     return newData;
 }
 
-//DNT
+//NON_TERMINAL --- F_Prog
 void F_Prog(token* nextToken){                                   
-    if (nextToken->type==_keyword && nextToken->data.kw==_global){
+    if (nextToken->type==_keyword && nextToken->data.kw==_global){ //keyword global
         param_cter = -1;
         NEXT;
         if (!IFIdentif){RError(2)}//<---------------------------------------_Error
@@ -135,7 +146,7 @@ void F_Prog(token* nextToken){
         return;
         
     }
-    else if(nextToken->type ==_keyword && nextToken->data.kw == _function){
+    else if(nextToken->type ==_keyword && nextToken->data.kw == _function){ // keyword function
         param_cter = -1;
         char *newStr;
         int globaled = 0;
@@ -186,7 +197,7 @@ void F_Prog(token* nextToken){
         G_function_end(function->name);
         return;
     }
-    else if((nextToken->type == _identifier && TS_LookFunction(ts,nextToken->data.str)!=NULL)){
+    else if((nextToken->type == _identifier && TS_LookFunction(ts,nextToken->data.str)!=NULL)){  // function identifier
             TreeElement* func = TS_LookFunction(ts,nextToken->data.str);
             ((user_func*)func->data)->vUsed=1;
             NEXT;
@@ -207,15 +218,16 @@ void F_Prog(token* nextToken){
             BS_Dispose(&returnStack);
             return;
     }
-    else if(IFEof)
+    else if(IFEof) // End of file
         return;
     else 
-        {RError(2)}
+        {RError(2)} // Unexpected token
 }
 
+//NON_TERMINAL --- F_Params
 void F_ParamsGlobal(token *nextToken,TreeElement* func){
     param_cter++;
-    if(IFIdentif){
+    if(IFIdentif){                                                                              //found identifier
         char** test = PushParamName(((user_func*)func->data)->param_names, nextToken->data.str);
         if (test == NULL) {RError(99)}
         ((user_func*)func->data)->param_names = test;
@@ -234,7 +246,7 @@ void F_ParamsGlobal(token *nextToken,TreeElement* func){
         NEXT;
         F_SecondParamGlobal(nextToken, func);
     }else
-    if (IFKwNil||IFKwInteger||IFKwNumber||IFKwString){
+    if (IFKwNil||IFKwInteger||IFKwNumber||IFKwString){                                  //found type
         char** test = PushParamName(((user_func*)func->data)->param_names, NULL);
         if (test == NULL) {RError(99)}
         ((user_func*)func->data)->param_names = test;
@@ -246,28 +258,30 @@ void F_ParamsGlobal(token *nextToken,TreeElement* func){
         NEXT;
         F_SecondParamGlobal(nextToken, func);
     }else
-    if(IFRightBracket){
+    if(IFRightBracket){                                                             //no parameters
         return;
     }else
-    {RError(2)}
+    {RError(2)} //Unexpected token
 }
 
+//NON_TERMINAL --- F_SParam
 void F_SecondParamGlobal(token *nextToken,TreeElement* func){
-    if ( IfKomma )
+    if ( IfKomma )//found ,
     {
         NEXT;
         F_ParamsGlobal(nextToken, func);
     }
-    else if( IFRightBracket )
+    else if( IFRightBracket ) //found )
         return;
     else
-        {RError(2)}
+        {RError(2)} // unexpected token
 }
 
+//NON_TERMINAL --- F_Params_type
 void F_ParamsFunction(token *nextToken,TreeElement* func,int globaled){
     param_cter++;
-    if(globaled){
-        if(IFIdentif){
+    if(globaled){ // This checks if it has been declared before
+        if(IFIdentif){                                                                  //found identifier
             if(((user_func*)func->data)->params[param_cter]==_ender){
                 RError(3)
             }else if(((user_func*)func->data)->param_names[param_cter][0]=='\0'){
@@ -287,13 +301,13 @@ void F_ParamsFunction(token *nextToken,TreeElement* func,int globaled){
             }
             NEXT;
             F_SecondParamFunction(nextToken, func,globaled);
-        }else if(IFRightBracket){
+        }else if(IFRightBracket){ //right bracket
             return;
         }else{
-            RError(2)
+            RError(2) //unexpected token
         }
     }else{
-        if(IFIdentif){
+        if(IFIdentif){                                                                                      //found identifier
             char** test = PushParamName(((user_func*)func->data)->param_names, nextToken->data.str);
             if (test == NULL) {RError(99)}
             ((user_func*)func->data)->param_names = test;
@@ -311,38 +325,39 @@ void F_ParamsFunction(token *nextToken,TreeElement* func,int globaled){
             }
             NEXT;
             F_SecondParamFunction(nextToken, func,globaled);
-        }else if(IFRightBracket){
+        }else if(IFRightBracket){       //found )
             return;   
         }else{
-            RError(2)
+            RError(2) // unexpected token
         }
     }
 }
 
+//NON_TERMINAL --- F_Second_Param_Type
 void F_SecondParamFunction(token *nextToken,TreeElement* func,int globaled){
-     if ( IfKomma )
+     if ( IfKomma ) // found ,
     {
         NEXT
         F_ParamsFunction(nextToken, func,globaled);
     }
-    else if( IFRightBracket ){
+    else if( IFRightBracket ){ //found )
         if (globaled && ((user_func*)func->data)->params[param_cter+1]!=_ender){RError(3)}
         return;
     }else
-        {RError(2)}
+        {RError(2)} // Unexpected token
 }
 
-
+//NON_TERMINAL --- F_ParamR
 void F_ParamsR(token *nextToken, char* name_func,int globaled)
 {   
     param_cter++;
-    if ( IFDoubleKomma )
+    if ( IFDoubleKomma ) // found :
     {
         NEXT
         TreeElement* func = TS_LookFunction(ts, name_func);
         dataType* return_array =  ((user_func*)func->data)->returns;
 
-        if ( IFKwInteger || IFKwString || IFKwNumber || IFKwNil )
+        if ( IFKwInteger || IFKwString || IFKwNumber || IFKwNil ) //found type
         {
             dataType tmp= _ender;
             F_Type(nextToken, &tmp);
@@ -358,26 +373,26 @@ void F_ParamsR(token *nextToken, char* name_func,int globaled)
             return;
         }
         else
-            {RError(2)}
+            {RError(2)} //unexpected token
     }
     else
-        if ( IFKwGlobal || IFKwFunction || IFIdentif || IFKwLocal || IFKwWhile || IFKwIf || IFKwEnd || IFKwReturn)
+        if ( IFKwGlobal || IFKwFunction || IFIdentif || IFKwLocal || IFKwWhile || IFKwIf || IFKwEnd || IFKwReturn) // End of returning params
             return;
     else
-        {RError(2)}
+        {RError(2)} // unexpected token
 }
 
-
+//NON_TERMINAL --- F_SecondParamsR
 void F_SecondParamR(token* nextToken, char* name_func,int  globaled)
 {
     param_cter++;
-    if ( IfKomma )
+    if ( IfKomma ) // found ,
     {
         NEXT;
         TreeElement* func = TS_LookFunction(ts, name_func);
         dataType* return_array =  ((user_func*)func->data)->returns;
 
-        if ( IFKwInteger || IFKwString || IFKwNumber || IFKwNil )
+        if ( IFKwInteger || IFKwString || IFKwNumber || IFKwNil ) // found type
         {
             dataType temp=_ender;
             F_Type(nextToken, &temp);
@@ -392,16 +407,16 @@ void F_SecondParamR(token* nextToken, char* name_func,int  globaled)
             F_SecondParamR(nextToken, name_func,globaled);
 
         }else
-            {RError(2)}   
+            {RError(2)}   // found invalid token
     }
     else 
         return;
 }
 
-
+//NON_TERMINAL --- F_Type
 void F_Type(token* nextToken, dataType* array)
 {
-    if ( IFKwInteger || IFKwString || IFKwNumber || IFKwNil )
+    if ( IFKwInteger || IFKwString || IFKwNumber || IFKwNil ) // found type token
     {
         switch(nextToken->data.kw)
         {
@@ -422,28 +437,30 @@ void F_Type(token* nextToken, dataType* array)
         }
         return;
     }else
-    {RError(2)}
+    {RError(2)} // found invalide token
 
 }
 
+//NON_TERMINAL --- F_Statement List
 void F_StList(token* nextToken,TreeElement* curFunc)
 {
-    if ( IFKwEnd || IFKwElse )
+    if ( IFKwEnd || IFKwElse ) // found 'and' or 'else' --> end of current st list 
         return;
     else
     {
-        if ( IFIdentif || IFKwLocal || IFKwWhile || IFKwIf || IFKwReturn ){ 
+        if ( IFIdentif || IFKwLocal || IFKwWhile || IFKwIf || IFKwReturn ){ //found commmand
             F_Statement(nextToken,curFunc);
             F_StList(nextToken,curFunc);
             return;
         }else
             {
-                RError(2)}
+                RError(2)} // found invalid token
     }
 }
 
+//NON_TERMINAL --- F_Stament
 void F_Statement(token* nextToken, TreeElement* curFunc){
-    if(IFKwWhile){
+    if(IFKwWhile){                                                  //found while 
         while_counter+=1;
         int thisWhile = while_counter;
         NEXT;
@@ -465,7 +482,7 @@ void F_Statement(token* nextToken, TreeElement* curFunc){
         NEXT;
         return;
 
-    }else if(IFKwIf){
+    }else if(IFKwIf){                                              //found if
         if_counter+=1;
         int thisIf = if_counter;
         NEXT;
@@ -484,7 +501,7 @@ void F_Statement(token* nextToken, TreeElement* curFunc){
         NEXT;
         return;
 
-    }else if(IFKwLocal){
+    }else if(IFKwLocal){                                            //found local
         NEXT;
         if(!IFIdentif){RError(2)}//<----------------------------------------------Error
         if(TS_LookLayerVariable(ts,nextToken->data.str)!=NULL){RError(3)}//<----------------------------------------------Error
@@ -505,7 +522,7 @@ void F_Statement(token* nextToken, TreeElement* curFunc){
         if (IFKwAssign)
             F_ExprAfterLoc(nextToken,TS_LookVariable(ts,newVarName));
         return;
-    }else if(IFKwReturn){
+    }else if(IFKwReturn){                                       //found return
         NEXT;
         BubbleStack_t returnStack;
         BS_Init(&returnStack);
@@ -515,7 +532,7 @@ void F_Statement(token* nextToken, TreeElement* curFunc){
         G_RetrunTerm(&returnStack,curFunc->name);
         BS_Dispose(&returnStack);
         return;
-    }else if(IFIdentif && TS_LookFunction(ts,nextToken->data.str)!=NULL){
+    }else if(IFIdentif && TS_LookFunction(ts,nextToken->data.str)!=NULL){           //found identif of declared function
         TreeElement* func=TS_LookFunction(ts,nextToken->data.str);
         ((user_func*)func->data)->vUsed=1;
         NEXT;
@@ -548,14 +565,13 @@ void F_Statement(token* nextToken, TreeElement* curFunc){
             BS_Push(helperS,rr);
             BS_Pop(paramStack);
         }
-        DebbugPrintStack(helperS);
         BS_Dispose(paramStack);
         G_CallFunc(func,helperS,returnStack);//<---------------------------------------------------------_Lukasova funkci
         BS_Dispose(returnStack);
         BS_Dispose(helperS);
         free(paramStack);free(returnStack);free(helperS);
         return;
-    }else if(IFIdentif && TS_LookVariable(ts,nextToken->data.str)!=NULL){
+    }else if(IFIdentif && TS_LookVariable(ts,nextToken->data.str)!=NULL){                   //found identifier of declared variable
         TreeElement **vl=VL_INIT();
         if(vl==NULL){RError(99)}//<---------------------------------------_Error
         vl=VL_PUSH(vl,TS_LookVariable(ts,nextToken->data.str));
@@ -577,18 +593,20 @@ void F_Statement(token* nextToken, TreeElement* curFunc){
         VL_Dispose(vl);
         return;
     }else{
-        RError(2)
+        RError(2)               //found invalid token
     }
 }
 
+//NON_TERMINAL --- F_Else
 void F_Else(token* nextToken,TreeElement* curFunc){
     NEXT;
-    if(TS_OpenLayer(ts)!=0){RError(99)}
+    if(TS_OpenLayer(ts)!=0){RError(99)}//<-------------------------------------------_Error
     F_StList(nextToken,curFunc);
     TS_CloseLayer(ts,0);
 }
 
-void Returner(token* nextToken,BubbleStack_t *returnStack){
+//NON_TERMINAL --- F_Ret
+void Returner(token* nextToken,BubbleStack_t *returnStack){ //This one expects begging of statement, if not found counts with empty return statement
     if((IFIdentif && (TS_LookVariable(ts,nextToken->data.str)!=NULL  || TS_LookFunction(ts,nextToken->data.str)!=NULL))|| (nextToken->type==_keyword && nextToken->data.kw == _nil)||IFLeftBracket|| nextToken->type==_const){
         if(stack_err_flag!=0){RError(99)}
         F_Exprb(nextToken,returnStack);
@@ -596,8 +614,9 @@ void Returner(token* nextToken,BubbleStack_t *returnStack){
     }
 }
 
+//NON_TERMINAL --- F_Expression beginning
 void F_Exprb(token* nextToken,BubbleStack_t *stack){
-    if(IFIdentif && TS_LookFunction(ts,nextToken->data.str)!= NULL){
+    if(IFIdentif && TS_LookFunction(ts,nextToken->data.str)!= NULL){ //Found identif of known function
         TreeElement* func = TS_LookFunction(ts,nextToken->data.str);
         ((user_func*)func->data)->vUsed=1;
         NEXT;
@@ -634,7 +653,7 @@ void F_Exprb(token* nextToken,BubbleStack_t *stack){
         BS_Dispose(&help2);
         
         return;
-
+                                                                                                    //found other symbol that can start an expression
     }else if((IFIdentif && TS_LookVariable(ts,nextToken->data.str)!=NULL) || IFLeftBracket || nextToken->type==_const || (nextToken->type==_keyword && nextToken->data.kw==_nil)){
         expression_block* result = F_Expression(nextToken);
         if (result == NULL){BS_Dispose(stack); RError(99)}//<-------------------------------------------------Error
@@ -643,16 +662,17 @@ void F_Exprb(token* nextToken,BubbleStack_t *stack){
             if (stack_err_flag!=0){BS_Dispose(stack); RError(99)}//<-------------------------------------------------Error
             return;
         }
-    }else if(IFIdentif){
+    }else if(IFIdentif){ // undeclared identif
         RError(3)//<-------------------------------------------------Error 
-    }else{RError(2)}//<-------------------------------------------------Error
+    }else{RError(2)}//found invalid token
 }
 
+//NON_TERMINAL --- F_Expression after local
 void F_ExprAfterLoc(token* nextToken,TreeElement* targetVar){
-    if (IFKwAssign){
+    if (IFKwAssign){    // found =
         NEXT;
-        if (IFIdentif){
-            if(TS_LookFunction(ts,nextToken->data.str)!=NULL){
+        if (IFIdentif){         //found identifier
+            if(TS_LookFunction(ts,nextToken->data.str)!=NULL){ //found function
                 TreeElement* func = TS_LookFunction(ts,nextToken->data.str);
                 NEXT;
                 if(!IFLeftBracket){RError(2)}       //<-------------------------------------------------Error
@@ -680,61 +700,62 @@ void F_ExprAfterLoc(token* nextToken,TreeElement* targetVar){
                 BS_Dispose(&stack);
                 VL_Dispose(vl);
                 return;       
-            }else{
+            }else{  //found other identif
                 expression_block* block=F_Expression(nextToken);
                 if (C_AssignToVar(targetVar,block)){
                     G_AssignToVar(targetVar,block);//<----------------------------------------------------LK
                     ((variable*)targetVar->data)->vDefined=1;
-                    //DebbugPrintExpress(block);
                     if(block->dt==_nan) ((variable*)targetVar->data)->isNil=1; else ((variable*)targetVar->data)->isNil=0; 
                     free(block);
                     return;
                 }else{
-                    RError(4)//<------------------------------------------------------------------------------Error
+                    RError(4)//<------------------------------------------------------------------------------Error type mismatch
                 }
-            }
+            }                           //foundother things that start an expression
         }else if (nextToken->type==_const || (nextToken->type==_misc && nextToken->data.msc==_bracketL)||(nextToken->type==_operator && nextToken->data.oper==_length)|| (nextToken->type == _keyword && nextToken->data.kw==_nil)){
             expression_block* block=F_Expression(nextToken);
                 if (C_AssignToVar(targetVar,block)){
                     G_AssignToVar(targetVar,block);//<------------------------------------------------------------___LK
                     ((variable*)targetVar->data)->vDefined=1;
-                    //DebbugPrintExpress(block);
                     if(block->dt==_nan) ((variable*)targetVar->data)->isNil=1; else ((variable*)targetVar->data)->isNil=0; 
-                    //fprintf(stderr,"%d",((variable*)targetVar->data)->isNil);
                     free(block);
                     return;
                 }else{
                     RError(4)// <-------------------------------------------------------------Error
                 }
         }else
-            {RError(2)}//<----------------------------------------------------------------------Error
+            {RError(2)}//<----------------------------------------------------------------------Error found invalid token
     }
     else{
-        return;
+        return; //no = after local
     }
 }
 
+//NON_TERMINAL --- expression --- calls semantic analysis
 expression_block* F_Expression(token* nextToken){
     return CallTheCommander(nextToken);
 }
 
+//NON_TERMINAL --- F_Second expression
 void F_SExpr(token* nextToken, BubbleStack_t * stack){
-    if(nextToken->type==_misc && nextToken->data.msc==_komma){
+    if(nextToken->type==_misc && nextToken->data.msc==_komma){//found ,
         NEXT;
         F_Exprb(nextToken,stack);
         F_SExpr(nextToken,stack);
     }
 }
 
+//NON_TERMINAL --- F_Second Param
 void F_SentPar(token* nextToken,BubbleStack_t *stack){
-    if(IFRightBracket){return;}
+    if(IFRightBracket){return;} //found ), else expecting expression
     F_Exprb(nextToken,stack);
     F_SPar(nextToken,stack);
     return;
 }
 
+//NON_TERMINAL --- F_Second Param
 void F_SPar(token* nextToken, BubbleStack_t *stack){
-    if(IFRightBracket){return;}
+    if(IFRightBracket){return;} //found ) => all sent
     if(!IfKomma){BS_Dispose(stack); RError(2)}//<-------------------------------------------------Error
     NEXT;
     F_Exprb(nextToken,stack);
@@ -742,17 +763,18 @@ void F_SPar(token* nextToken, BubbleStack_t *stack){
     return;
 }
 
+//NON_TERMINAL --- F_Second variable in multi assign
 void F_SVar(token* nextToken,TreeElement ***vl){
     NEXT;
-    if(IfKomma){
+    if(IfKomma){ //found ,
         NEXT;
-        if(IFIdentif && TS_LookVariable(ts,nextToken->data.str)!=NULL){
+        if(IFIdentif && TS_LookVariable(ts,nextToken->data.str)!=NULL){ // found defined variable
             *vl=VL_PUSH(*vl,TS_LookVariable(ts,nextToken->data.str));
             if(*vl == NULL){RError(99)}//<-------------------------------------------------Error
             F_SVar(nextToken,vl);
             return;
         }
-        else 
+        else //didnt found defined variable
         {
             VL_Dispose(*vl);
             RError(2)//<-------------------------------------------------Error
@@ -762,6 +784,7 @@ void F_SVar(token* nextToken,TreeElement ***vl){
     }
 }
 
+//this function is called on exit, in order to free the symtable
 void ashes_to_ashes_dust_to_dust()
 {
     //Can I interest you in everything all of the time?
@@ -771,8 +794,11 @@ void ashes_to_ashes_dust_to_dust()
     return;
 }
 
+// pushes builtin functinos to symtable
 int PushBuiltInFunctions(){
+
     //readi
+
     user_func* new = CreateFunctionData();
     if(new==NULL)return MALLOC_ERR_CODE;
     new->vDefined=1;
@@ -783,7 +809,9 @@ int PushBuiltInFunctions(){
     strcpy(readi,"readi");
     int help = TS_InsertFunction(ts,readi,w_func,new);
     if (help!=0){free(readi);free(new);return MALLOC_ERR_CODE;}
+    
     //readn
+
     new = CreateFunctionData();
     if(new==NULL)return MALLOC_ERR_CODE;
     new->vDefined=1;
@@ -794,7 +822,9 @@ int PushBuiltInFunctions(){
     strcpy(readn,"readn");
     help = TS_InsertFunction(ts,readn,w_func,new);
     if (help!=0){free(readn);free(new);return MALLOC_ERR_CODE;}
+    
     //reads
+
     new = CreateFunctionData();
     if(new==NULL)return MALLOC_ERR_CODE;
     new->vDefined=1;
@@ -805,7 +835,9 @@ int PushBuiltInFunctions(){
     strcpy(reads,"reads");
     help = TS_InsertFunction(ts,reads,w_func,new);
     if (help!=0){free(reads);free(new);return MALLOC_ERR_CODE;}
+    
     //toInt
+
     new = CreateFunctionData();
     if(new==NULL)return MALLOC_ERR_CODE;
     new->vDefined=1;
@@ -818,7 +850,9 @@ int PushBuiltInFunctions(){
     strcpy(tointeger,"tointeger");
     help = TS_InsertFunction(ts,tointeger,w_func,new);
     if (help!=0){free(tointeger);free(new);return MALLOC_ERR_CODE;}
+    
     //substr
+
     new = CreateFunctionData();
     if(new==NULL)return MALLOC_ERR_CODE;
     new->vDefined=1;
@@ -835,7 +869,9 @@ int PushBuiltInFunctions(){
     strcpy(substr,"substr");
     help = TS_InsertFunction(ts,substr,w_func,new);
     if (help!=0){free(substr);free(new);return MALLOC_ERR_CODE;}
+    
     //ord
+
     new = CreateFunctionData();
     if(new==NULL)return MALLOC_ERR_CODE;
     new->vDefined=1;
@@ -850,7 +886,9 @@ int PushBuiltInFunctions(){
     strcpy(ord,"ord");
     help = TS_InsertFunction(ts,ord,w_func,new);
     if (help!=0){free(ord);free(new);return MALLOC_ERR_CODE;}
+    
     //chr
+
     new = CreateFunctionData();
     if(new==NULL)return MALLOC_ERR_CODE;
     new->vDefined=1;
@@ -863,7 +901,9 @@ int PushBuiltInFunctions(){
     strcpy(chr,"chr");
     help = TS_InsertFunction(ts,chr,w_func,new);
     if (help!=0){free(chr);free(new);return MALLOC_ERR_CODE;}
+    
     //write
+
     new = CreateFunctionData();
     if(new==NULL)return MALLOC_ERR_CODE;
     new->vDefined=1;
@@ -875,6 +915,7 @@ int PushBuiltInFunctions(){
     return 0;
 }
 
+//inicializes array of keyword -> there was a linking problem with global variable inicialization and this solved it
 void key_arr_init(){
     strcpy(arr_keywords[0],"do");
     strcpy(arr_keywords[1],"else");
@@ -895,6 +936,7 @@ void key_arr_init(){
     strcpy(arr_keywords[16],"string");            
 }
 
+//inicializes global variables -> there was a linking problem with global variable inicialization and this solved it
 void initGlobals(){
     generate_code = 1;
     stack_err_flag=0;
@@ -908,7 +950,9 @@ void initGlobals(){
     key_arr_init();
 }
 
+
 int flag = 0;
+
 int mainParseFunction(){
     initGlobals();
     atexit( ashes_to_ashes_dust_to_dust );
@@ -918,16 +962,16 @@ int mainParseFunction(){
     if(nextToken==NULL){RError(99)}
     if(PushBuiltInFunctions()!=0){free(nextToken); RError(99)}
     NEXT;
-    if(nextToken->type==_keyword && nextToken->data.kw==_require){
+    if(nextToken->type==_keyword && nextToken->data.kw==_require){ //found require token
         NEXT;
-        if (nextToken->type!=_const||nextToken->data.type!=_string||strcmp(nextToken->data.str,"ifj21")!=0) {RError(7)}
+        if (nextToken->type!=_const||nextToken->data.type!=_string||strcmp(nextToken->data.str,"ifj21")!=0) {RError(7)} //invalid libary
         NEXT;
     }
     if(IFEof){RError(2)}
     while (!IFEof){
         F_Prog(nextToken);
     }
-    TS_FunctionCaller();
+    TS_FunctionCaller(); // Checks if all used functions have been also defined
     free(nextToken);
     return 0;
 }
@@ -976,3 +1020,4 @@ WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
 WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWTrust me, this was really despair inductingW
 WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
 */
+/*file end*/

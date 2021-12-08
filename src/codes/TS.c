@@ -1,4 +1,12 @@
-
+/**
+ * @file expressionCommander.c
+ * @author Tomas Lukac xlukac16 xlukac16@fit.vutbr.cz
+ * @brief 
+ * @version 1.0
+ * @date 2021-12-08
+ * 
+ * 
+ */
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -22,7 +30,7 @@ void TreeDive(TreeElement *element,int func){
 		TreeDive(hElement,func);
 	}
 	if(func){
-		user_func* dt=element->data;
+		user_func* dt=(user_func*)element->data;
 		int i=0;
 		while (dt->params[i]!=_ender)
 		{
@@ -243,4 +251,4 @@ WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWNKkdol:;,,;;;,,,,,,,,,,
 WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWNNNNNNNXXXXXXXXXXXXXXXXXXNNNNNNWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
 WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
 */
-//End of this file
+/*file end*/

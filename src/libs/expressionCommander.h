@@ -1,3 +1,12 @@
+/**
+ * @file expressionCommander.c
+ * @author Tomas Lukac xlukac16 xlukac16@fit.vutbr.cz
+ * @brief 
+ * @version 1.0
+ * @date 2021-12-08
+ * 
+ * 
+ */
 #ifndef expressionCommander
 #define expressionCommander
 #include "Defs.h"
@@ -6,7 +15,6 @@
 #include "Code_Assembly.h"
 #include <string.h>
 
-//TODO REMOVE THE LAST TWO IF THEY ARE NOT NEEDED
 typedef enum {_tab_shift,_tab_equals,_tab_terminalize,_tab_end}actions;
 
 #define INVALID_OPERATION 8
@@ -207,3 +215,4 @@ expression_block* SolveCycle(BubbleStack_t* stack,token *nextToken,int *termNumb
  */
 expression_block* CallTheCommander(token *nextToken);
 #endif
+/*file end*/

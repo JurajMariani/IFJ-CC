@@ -1,3 +1,13 @@
+/**
+ * @file expressionCommander.c
+ * @author Tomas Lukac xlukac16 xlukac16@fit.vutbr.cz Juraj Mariani xmaria03 xmaria03@fit.vutbr.cz
+ * @brief 
+ * @version 1.0
+ * @date 2021-12-08
+ * 
+ * 
+ */
+
 #ifndef PARSER_HH
 #define PARSER_HH
 
@@ -218,3 +228,4 @@ void F_SVar(token* nextToken, TreeElement ***);
 int mainParseFunction(); 
 
 #endif
+/*file end*/

@@ -245,7 +245,7 @@ void GetNextToken(token *tokenOut)
     if(str2write)                                               // Flag set to non-zero value -> memory will be freed, space for string allocated
     {                                                           // and string copied to auxillary structure
         free(result.data.str);
-        result.data.str = malloc(strlen(output)*sizeof(char));
+        result.data.str = malloc((strlen(output)+1)*sizeof(char));
         strcpy(result.data.str, output);
     }
 

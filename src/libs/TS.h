@@ -1,3 +1,12 @@
+/**
+ * @file expressionCommander.c
+ * @author Tomas Lukac xlukac16 xlukac16@fit.vutbr.cz
+ * @brief 
+ * @version 1.0
+ * @date 2021-12-08
+ * 
+ * 
+ */
 #ifndef TS
 #define TS
 #include "Defs.h"
@@ -130,4 +139,4 @@ int TS_InsertVariable(TreeSupport *ts, char* name,treeElementType type, void* da
 int TS_InsertFunction(TreeSupport *ts, char* name,treeElementType type,void* data);
 
 #endif
-//LIBARY ENDO
+/*file end*/
