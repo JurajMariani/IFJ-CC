@@ -1,46 +1,68 @@
+/**
+ * @file analysis.c
+ * @author xhoril01 (xhoril01@stud.fit.vutbr.cz)
+ * @brief Lexical analysis, reads characters from stdin(input) and returns token to parser (output)
+ * @version 1.0
+ * @date 2021-12-08
+ * 
+ * @copyright Copyright (c) 2021
+ * 
+ */
+
+
+
+
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include "../libs/analysis.h"
 
+/* @brief Main function of lexical analysis 
+ *        This function starts final state machine and set state of FSM according to character
+ *        loaded from standard input
+ * 
+ * @param tokenOut Pointer to structure token including all information about returning token
+ */
 void GetNextToken(token *tokenOut)
 {
     if(tokenOut->type == _misc)
     {
-        if(tokenOut->data.msc == _EOF) 
+        if(tokenOut->data.msc == _EOF)                          // In case it is already EOF, function does nothing returns
         {
             free(result.data.str);
             return;
         }
     }
 
-    char *output = (char*) malloc(STR_SIZE * sizeof(char));
-    if(output == NULL)
+    output = (char*) malloc(STR_SIZE * sizeof(char));           // Array of characters for storing token's characters
+    if(output == NULL)                                          // Allocating space for 10 characters and chceking if it was successful
     {
-        RaiseError(99);
+        RaiseError(99);                                         // If malloc is not successful, internal error will be raised
         exit(99);
     }
 
+    output_length = 0;                                          // Length of array initialisated to 0
+    lex_err_flag = 0;                                           // Error flag set to 0
+    str2write = 0;                                              // This flag determines if string in output variable should be 
+                                                                // copied to auxillary token variable
     char state[20];
     strcpy(state, "start");
-    lex_err_flag = 0;
-
-    unsigned output_length = 0;
-    str2write = 0;
       
     char input_c = fgetc(stdin);
 
-    while(input_c == 32 || input_c == '\t' || input_c == '\r' || input_c == '\n' || input_c == '\v' || input_c == '\f')
+    // Ignoring whitespaces in stdin
+    while WHITESPACES
     {
         if(input_c == '\n') line_cnt++;
         input_c = fgetc(stdin);
     } 
 
+    // Main switch which sets next state of FSM
     switch(input_c)
     {
         case 'a' ... 'z' :
         case 'A' ... 'Z' :
-        case '_' :
+        case '_' :           
         {
             strcpy(state, "id");
             output[output_length++] = input_c;
@@ -50,7 +72,7 @@ void GetNextToken(token *tokenOut)
 
         case '0' ... '9':
         {
-            strcpy(state, "num");
+            strcpy(state, "num");        
             output[output_length++] = input_c;
             first_perimeter(state, &output, &output_length);
             break;
@@ -58,7 +80,7 @@ void GetNextToken(token *tokenOut)
 
         case '.':
         {
-            strcpy(state, "dot");
+            strcpy(state, "dot");          
             output[output_length++] = input_c;
             first_perimeter(state, &output, &output_length);
             break;
@@ -66,7 +88,7 @@ void GetNextToken(token *tokenOut)
 
         case '+':
         {
-            strcpy(state, "add");
+            strcpy(state, "add");                              
             output[output_length++] = input_c;
             first_perimeter(state, &output, &output_length);
             break;
@@ -74,7 +96,7 @@ void GetNextToken(token *tokenOut)
             
         case '-':
         {
-            strcpy(state, "sub");
+            strcpy(state, "sub");                               
             output[output_length++] = input_c;
             first_perimeter(state, &output, &output_length);
             break;
@@ -82,7 +104,7 @@ void GetNextToken(token *tokenOut)
 
         case '*':
         {
-            strcpy(state, "mult");
+            strcpy(state, "mult");                              
             output[output_length++] = input_c;
             first_perimeter(state, &output, &output_length);
             break;
@@ -90,7 +112,7 @@ void GetNextToken(token *tokenOut)
 
         case '/':    
         {
-            strcpy(state, "div");
+            strcpy(state, "div");                               
             output[output_length++] = input_c;
             first_perimeter(state, &output, &output_length);
             break;
@@ -98,7 +120,7 @@ void GetNextToken(token *tokenOut)
 
         case '=':
         {
-            strcpy(state, "assign");
+            strcpy(state, "assign");                            
             output[output_length++] = input_c;
             first_perimeter(state, &output, &output_length);
             break;
@@ -106,7 +128,7 @@ void GetNextToken(token *tokenOut)
 
         case '<':
         {
-            strcpy(state, "less");
+            strcpy(state, "less");                              
             output[output_length++] = input_c;
             first_perimeter(state, &output, &output_length);
             break;
@@ -114,7 +136,7 @@ void GetNextToken(token *tokenOut)
 
         case '>':
         {
-            strcpy(state, "great");
+            strcpy(state, "great");                             
             output[output_length++] = input_c;
             first_perimeter(state, &output, &output_length);
             break;
@@ -122,7 +144,7 @@ void GetNextToken(token *tokenOut)
 
         case '~':
         {
-            strcpy(state, "not");
+            strcpy(state, "not");                               
             output[output_length++] = input_c;
             first_perimeter(state, &output, &output_length);
             break;
@@ -130,20 +152,20 @@ void GetNextToken(token *tokenOut)
 
         case '#':
         {
-            strcpy(state, "len");
+            strcpy(state, "len");                               
             output[output_length++] = input_c;
             first_perimeter(state, &output, &output_length);
             break;
         }
         
-        case '"':
+        case '"':                                               
         {
-            strcpy(state, "start_str");
+            strcpy(state, "start_str");                          
             first_perimeter(state, &output, &output_length);
             break;
         }
 
-        case '(' :
+        case '(' :                                              
         case '[' :
         {
             strcpy(state, "bracket_L");
@@ -152,7 +174,7 @@ void GetNextToken(token *tokenOut)
             break;
         }
 
-        case ')' :
+        case ')' :                                             
         case ']' :
         {
             strcpy(state, "bracket_R");
@@ -161,37 +183,37 @@ void GetNextToken(token *tokenOut)
             break;
         }
 
-        case ':' :
+        case ':' :                                              
         {
-            strcpy(state, "doubleKomma");
+            strcpy(state, "doubleKomma");                       
             output[output_length++] = input_c;
             first_perimeter(state, &output, &output_length);
             break;
         }
 
-        case ',' :
+        case ',' :                                                      
         {
-            strcpy(state, "komma");
+            strcpy(state, "komma");                             
             output[output_length++] = input_c;
             first_perimeter(state, &output, &output_length);
             break;
         }
         
-        case EOF:
+        case EOF:                                               // End of file -> end of switch
         {
             result.type = _misc;
             result.data.msc = _EOF;
             break;
         }
 
-        default:
-        {
+        default:                                                // Character which is not from alphabet of actual programming language,
+        {                                                       // will raise a lexical error
             RaiseError(1);
             exit(1);
         }
     }
     
-    if(!strcmp(state, "start"))
+    if(!strcmp(state, "start"))                                 // FSM is in state start -> next token will be read from stdin
     {
         if(result.data.msc == _EOF)
         {
@@ -204,32 +226,32 @@ void GetNextToken(token *tokenOut)
         return;
     }
 
-    if(lex_err_flag)
-    {
+    if(lex_err_flag)                                            // Error flag set to non-zero value -> type of error will be raised according
+    {                                                           // to number in error flag
         free(output);
 
         if(lex_err_flag == 2 || lex_err_flag == -2)
         {
-            RaiseError(1);
+            RaiseError(1);                                      // Lexical error
             exit(1);
         }
         else
         {
-            RaiseError(99);
+            RaiseError(99);                                     // Internal error
             exit(99);
         }
     }
 
-    if(str2write)
-    {
+    if(str2write)                                               // Flag set to non-zero value -> memory will be freed, space for string allocated
+    {                                                           // and string copied to auxillary structure
         free(result.data.str);
         result.data.str = malloc(strlen(output)*sizeof(char));
         strcpy(result.data.str, output);
     }
 
-    free(output);
+    free(output);                                             // This free should be here but it works without it
 
-    tokenOut->type = result.type;
+    tokenOut->type = result.type;                               // Every part of aux structure will be copied to structure tokenOut   
     tokenOut->data.kw = result.data.kw;
     tokenOut->data.msc = result.data.msc;
     tokenOut->data.oper = result.data.oper;
@@ -241,9 +263,20 @@ void GetNextToken(token *tokenOut)
     return;
 }
 
+
+/* @brief First perimeter of states - continue to second perimeter or returns back with token
+ * 
+ * @param state Array of characters storin actual state of FSM
+ * @param output Pointer to array of characters storing characters of actual token
+ * @param output_length Pointer to actual length of output variable
+ */
+
 void first_perimeter(char *state, char **output, unsigned *output_length)
 {
-    char input_c;
+    char input_c;                                                                   // Loading character
+
+    // SINGLE STATES OF FIRST PERIMETER IN if CONDITIONS
+
     if (!strcmp(state, "id"))
     {
         input_c = fgetc(stdin);
@@ -252,16 +285,16 @@ void first_perimeter(char *state, char **output, unsigned *output_length)
         {
             (*output)[(*output_length)++] = input_c;
 
-            if(!(*output_length % (unsigned) STR_SIZE)) 
+            if(!(*output_length % (unsigned) STR_SIZE))                         // If size of actual array is dividable by STR_SIZE, array will be extended to another 10 bytes
             {
                 char tmp[*output_length];
                 strcpy(tmp, (*output));
                 int size = (((*output_length) / STR_SIZE)+1 * (STR_SIZE)) * sizeof(char);
 
-                (*output) = realloc((*output), size);
+                (*output) = realloc((*output), size + 5);
                 if((*output) == NULL)
                 {
-                    lex_err_flag = MALLOC_ERR_CODE;
+                    lex_err_flag = MALLOC_ERR_CODE;                             // Unsuccessful realloc leads to internal error
                     return;  
                 }
                 else strcpy((*output), tmp);
@@ -270,23 +303,28 @@ void first_perimeter(char *state, char **output, unsigned *output_length)
             input_c = fgetc(stdin);
         }
 
-        ungetc(input_c, stdin);
+        // "While cyclus" ends when there's other character than letter, number or underscore
 
-        (*output)[*output_length] = '\0';
+        ungetc(input_c, stdin);                                                 // This character is returned to stdin
 
-        int tmp = IsKeyword(output);
+        (*output)[*output_length] = '\0';                                       // Correctly ended string
+
+        int tmp = IsKeyword(output);                                            // Check if identifier is not a keyword - returns index of keyword in array, else -1
+
+        // Return string as a keyword
         if((tmp >= 0) && (tmp != 8) && (tmp != 13))
         {
             result.type = _keyword;
             result.data.type = _string;
             result.data.kw = tmp;
         }
-        else
+        // Return string as an identifier
+        else        
         {
             result.type = _identifier;
             result.data.type = _string;
 
-            str2write = 1;
+            str2write = 1;                                                     
         }
          
         return;
@@ -297,6 +335,7 @@ void first_perimeter(char *state, char **output, unsigned *output_length)
         input_c = fgetc(stdin);
         while((input_c >= '0') && (input_c <= '9'))
         {
+            // String realloc if length is dividable by STR_SIZE (10)
             (*output)[(*output_length)++] = input_c;
             if(!(*output_length % STR_SIZE)) 
             {
@@ -304,7 +343,7 @@ void first_perimeter(char *state, char **output, unsigned *output_length)
                 strcpy(tmp, (*output));
 
                 int size = (((*output_length / STR_SIZE)+1) * (STR_SIZE)) * sizeof(char);
-                (*output) = realloc((*output), size);
+                (*output) = realloc((*output), size + 5);
                 if((*output) == NULL)
                 {
                     lex_err_flag = MALLOC_ERR_CODE;
@@ -316,18 +355,17 @@ void first_perimeter(char *state, char **output, unsigned *output_length)
         }
 
         
-
         if((input_c == 'e') || (input_c == 'E'))
         {
             (*output)[(*output_length)++] = input_c;
-            strcpy(state, "int_exp");
+            strcpy(state, "int_exp");                               // Number in exponent form
             second_perimeter(state, output, output_length);
             return;
         }
         else if(input_c == '.')
         {
             (*output)[(*output_length)++] = input_c;
-            strcpy(state, "float");
+            strcpy(state, "float");                                 // Number in decimal form
             second_perimeter(state, output, output_length);
             return;
         }
@@ -338,7 +376,7 @@ void first_perimeter(char *state, char **output, unsigned *output_length)
 
             result.type = _const;
             result.data.type = _integer;
-            result.data._integer = atoi((*output));
+            result.data._integer = atoi((*output));                 // Convert string to number
 
             return;
         }
@@ -348,6 +386,7 @@ void first_perimeter(char *state, char **output, unsigned *output_length)
     {
         input_c = fgetc(stdin);
 
+        // Change state and move to second perimeter function
         if(input_c == '.')
         {
             (*output)[(*output_length)++] = input_c;
@@ -357,7 +396,7 @@ void first_perimeter(char *state, char **output, unsigned *output_length)
         }
         else
         {
-            ungetc(input_c, stdin);
+            ungetc(input_c, stdin);                     // Single dot leads to lexical error
             lex_err_flag = INVALID_TOKEN_CONST_CODE;
             return;
         }
@@ -381,6 +420,8 @@ void first_perimeter(char *state, char **output, unsigned *output_length)
     {
         input_c = fgetc(stdin);
 
+        // Return either div operator or move to second perimeter
+
         if(input_c == '/')
         {
             (*output)[(*output_length)++] = input_c;
@@ -403,6 +444,8 @@ void first_perimeter(char *state, char **output, unsigned *output_length)
     {
         input_c = fgetc(stdin);
 
+        // Return either sub operator or move to second perimeter
+
         if(input_c == '-')
         {
             strcpy(state, "ln_cmt");
@@ -422,6 +465,9 @@ void first_perimeter(char *state, char **output, unsigned *output_length)
     if (!strcmp(state, "assign"))
     {
         input_c = fgetc(stdin);
+
+        // Return either assign operator or move to second perimeter
+
         if(input_c == '=')
         {
             (*output)[(*output_length)++] = input_c;
@@ -444,6 +490,8 @@ void first_perimeter(char *state, char **output, unsigned *output_length)
     {
         input_c = fgetc(stdin);
 
+        // Return either "less than" operator or move to second perimeter
+
         if(input_c == '=')
         {
             (*output)[(*output_length)++] = input_c;
@@ -464,6 +512,8 @@ void first_perimeter(char *state, char **output, unsigned *output_length)
     {
         input_c = fgetc(stdin);
 
+        // Return either "greater than" operator or move to second perimeter
+
         if(input_c == '=')
         {
             (*output)[(*output_length)++] = input_c;
@@ -483,6 +533,8 @@ void first_perimeter(char *state, char **output, unsigned *output_length)
     if (!strcmp(state, "not"))
     {
         input_c = fgetc(stdin);
+
+        // Move to second perimeter or set error flag 
 
         if(input_c == '=')
         {
@@ -513,6 +565,7 @@ void first_perimeter(char *state, char **output, unsigned *output_length)
         while(input_c != '"')
         {
             
+            // '\n' inside string literal leads to lexical error
             if(input_c < 32)
             {
                 if(input_c == '\n' || input_c == EOF) 
@@ -525,13 +578,14 @@ void first_perimeter(char *state, char **output, unsigned *output_length)
                 return;
             }
 
+            // String realloc if length is dividable by STR_SIZE (10)
             if(!(*output_length % STR_SIZE)) 
             {
                 char tmp[*output_length];
                 strcpy(tmp, (*output));
 
                 int size = (((*output_length / STR_SIZE)+1) * (STR_SIZE)) * sizeof(char);
-                (*output) = realloc((*output), size);
+                (*output) = realloc((*output), size + 5);
                 if((*output) == NULL)
                 {
                     lex_err_flag = MALLOC_ERR_CODE;
@@ -540,6 +594,7 @@ void first_perimeter(char *state, char **output, unsigned *output_length)
                 else strcpy((*output), tmp);
             }
 
+            // Start of escape sequence
             if(input_c == '\\')
             {
                 (*output)[(*output_length)++] = input_c;
@@ -552,6 +607,7 @@ void first_perimeter(char *state, char **output, unsigned *output_length)
            
         }
 
+        // Move to second perimeter
         strcpy(state, "end_str");
         second_perimeter(state, output, output_length);
         return;
@@ -586,6 +642,13 @@ void first_perimeter(char *state, char **output, unsigned *output_length)
     }
 }
 
+/* @brief Second perimeter of states - continue to next perimeter or returns back with token
+ * 
+ * @param state Array of characters storin actual state of FSM
+ * @param output Pointer to array of characters storing characters of actual token
+ * @param output_length Pointer to actual length of output variable
+ */
+
 void second_perimeter(char *state, char **output, unsigned *output_length)
 {
     char input_c;
@@ -598,13 +661,14 @@ void second_perimeter(char *state, char **output, unsigned *output_length)
         {
             (*output)[(*output_length)++] = input_c;
 
+            // String realloc if length is dividable by STR_SIZE (10)
             if(!(*output_length % STR_SIZE)) 
             {
                 char tmp[*output_length];
                 strcpy(tmp, (*output));
 
                 int size = (((*output_length / STR_SIZE)+1) * (STR_SIZE)) * sizeof(char);
-                (*output) = realloc((*output), size);
+                (*output) = realloc((*output), size + 5);
                 if((*output) == NULL)
                 {
                     lex_err_flag = MALLOC_ERR_CODE;
@@ -615,6 +679,8 @@ void second_perimeter(char *state, char **output, unsigned *output_length)
 
             input_c = fgetc(stdin);
         }
+
+        // Exponent form of decimal number
 
         if((input_c == 'e') || (input_c == 'E'))
         {
@@ -628,7 +694,7 @@ void second_perimeter(char *state, char **output, unsigned *output_length)
             ungetc(input_c, stdin);
             result.type = _const;
             result.data.type = _number;
-            result.data._double = atof((*output));
+            result.data._double = atof((*output));              // Convert string to float number
             return;
         }
     }
@@ -640,13 +706,15 @@ void second_perimeter(char *state, char **output, unsigned *output_length)
         while(((input_c >= '0') && (input_c <= '9')) || (input_c == '+') || (input_c == '-'))
         {
             (*output)[(*output_length)++] = input_c;
+
+            // String realloc if length is dividable by STR_SIZE (10)
             if(!(*output_length % STR_SIZE)) 
             {
                 char tmp[*output_length];
                 strcpy(tmp, (*output));
 
                 int size = (((*output_length / STR_SIZE)+1) * (STR_SIZE)) * sizeof(char);
-                (*output) = realloc((*output), size);
+                (*output) = realloc((*output), size + 5);
                 if((*output) == NULL)
                 {
                     lex_err_flag = MALLOC_ERR_CODE;
@@ -661,7 +729,7 @@ void second_perimeter(char *state, char **output, unsigned *output_length)
         ungetc(input_c, stdin);
         result.type = _const;
         result.data.type = _number;
-        result.data._double = atof((*output));
+        result.data._double = atof((*output));              // Convert string to float number
         return;
     }
 
@@ -683,6 +751,7 @@ void second_perimeter(char *state, char **output, unsigned *output_length)
     {
         input_c = fgetc(stdin);
         
+        
         while((input_c != '\n') && (input_c != '[') && (input_c != EOF))
         {
             input_c = fgetc(stdin);
@@ -703,6 +772,7 @@ void second_perimeter(char *state, char **output, unsigned *output_length)
             return;
         }
 
+        // '[' can be start of block commentary
         if(input_c == '[')
         {
             strcpy(state, "left_bracket");
@@ -716,6 +786,7 @@ void second_perimeter(char *state, char **output, unsigned *output_length)
             }
         }
     }
+
 
     if (!strcmp(state, "eq"))
     {
@@ -757,6 +828,7 @@ void second_perimeter(char *state, char **output, unsigned *output_length)
             result.type = _const;
             result.data.type = _string;
 
+
             str2write = 1;
             return;
         }
@@ -766,6 +838,7 @@ void second_perimeter(char *state, char **output, unsigned *output_length)
     {
         input_c = fgetc(stdin);
 
+        // Checking for allowed escape sequences
         switch(input_c)
         {   
             case 'n':
@@ -795,7 +868,7 @@ void second_perimeter(char *state, char **output, unsigned *output_length)
                 return;
             }
 
-            case '0' ... '2':
+            case '0' ... '2':                                       // Escape sequence in form \ddd where ddd is number from 001 to 255
             {
                 ungetc(input_c, stdin);
                 strcpy(state, "esc_num");
@@ -817,6 +890,14 @@ void second_perimeter(char *state, char **output, unsigned *output_length)
     }
 }
 
+
+/* @brief Other states - last perimeter of states, returns nack with complete token
+ * 
+ * @param state Array of characters storin actual state of FSM
+ * @param output Pointer to array of characters storing characters of actual token
+ * @param output_length Pointer to actual length of output variable
+ */
+
 void other_states(char *state, char **output, unsigned *output_length)
 {
     char input_c;
@@ -835,7 +916,7 @@ void other_states(char *state, char **output, unsigned *output_length)
                 strcpy(tmp, (*output));
 
                 int size = (((*output_length / STR_SIZE)+1) * (STR_SIZE)) * sizeof(char);
-                (*output) = realloc((*output), size);
+                (*output) = realloc((*output), size + 5);
                 if((*output) == NULL)
                 {
                     lex_err_flag = MALLOC_ERR_CODE;
@@ -850,11 +931,17 @@ void other_states(char *state, char **output, unsigned *output_length)
         ungetc(input_c, stdin);
         result.type = _const;
         result.data.type = _number;
-        result.data._double = atof((*output));
+        result.data._double = atof((*output));                          // Convert string to float number
         return;
     }
 
 }
+
+
+/* @brief Left bracket can be start of block commentary
+ * 
+ * @param state Array of characters storin actual state of FSM
+ */
 
 int left_bracket(char* state)
 {
@@ -866,6 +953,7 @@ int left_bracket(char* state)
         bl_cmt(state);
         return 1;
     }
+    // returns back to line commentary if character is not '['
     else
     {
         strcpy(state, "ln_cmt");
@@ -873,6 +961,11 @@ int left_bracket(char* state)
         return 0;
     }
 }
+
+/* @brief Start of block commentary
+ * 
+ * @param state Array of characters storin actual state of FSM
+ */
 
 void bl_cmt(char* state)
 {
@@ -883,7 +976,8 @@ void bl_cmt(char* state)
         if(input_c == '\n') line_cnt++;
         input_c = fgetc(stdin);
     }
-          
+
+    // ']' can lead to end of block commentary
     if(input_c == ']')
     {
         strcpy(state, "right_bracket");
@@ -903,14 +997,21 @@ void bl_cmt(char* state)
     }
 }
 
+/* @brief Right bracket can be end of block commentary
+ * 
+ * @param state Array of characters storin actual state of FSM
+ */
+
 int right_bracket(char* state)
 {
     char input_c = fgetc(stdin);
+
     if(input_c == ']')
     {
         strcpy(state, "start");
         return 1;
     }
+    // returns back to block commentary if character is not ']'
     else
     {
         strcpy(state, "bl_cmt");
@@ -919,22 +1020,34 @@ int right_bracket(char* state)
     }
 }
 
+/* @brief Check if identifier is from array of keywords
+ * 
+ * @param output Actual identifier (already complete token)
+ */
+
 int IsKeyword(char **output)
 {
+    // Initiallisation of array of keywords
     KeyArrInit();
 
     int i = 0;
+
+    // Sequential search in array of keywords
     while((i < ARR_LEN) && (strcmp((*output), arr_keywords[i])))
     {
-
         i++;
     }
     
-    if(i == ARR_LEN) return -1;
-    if (!strcmp((*output), arr_keywords[i])) return i;
+    if(i == ARR_LEN) return -1;                                                 // Returns -1 if string is not a keyword
+    if (!strcmp((*output), arr_keywords[i])) return i;                          // Returns index of keyword to calling function
 
     return -2;
 }
+
+/* @brief Escpae sequence in \ddd form (ASCII code) - function returns character accroding to its ASCII code 
+ * 
+ * @param state Array of characters storing actual state of FSM
+ */
 
 char esc_num(char *state)
 {
@@ -942,6 +1055,7 @@ char esc_num(char *state)
     char output_c[3];
     unsigned int output_len = 0;
     
+    // Dividing according to fisrt number - it can be only 0, 1 or 2
     switch(input_c)
     {
         case '0': 
@@ -970,22 +1084,31 @@ char esc_num(char *state)
 
         default:
         {
+            // Any other character than sets error flag
             lex_err_flag = INVALID_TOKEN_CONST_CODE;
             strcpy(state, "esc_seq");
             return input_c;
         }
     }
 
-    int tmp = atoi(output_c);
-    char result = tmp;
+    int tmp = atoi(output_c);                   // Converts string to integer
+    char result = tmp;                          // Sets result as ASCII number of character
     strcpy(state, "esc_seq");
     return result;
 }
+
+/* @brief Number escape sequence starts with 0
+ * 
+ * @param state Array of characters storin actual state of FSM
+ * @param output_c Array of characters storing characters of escape sequence
+ * @param output_len Pointer to actual length of output variable
+ */
 
 void zero(char *output_c, unsigned *output_len, char *state)
 {
     char input_c = fgetc(stdin);
 
+    // Changing states according to next number
     switch(input_c)
     {
         case '0':
@@ -1006,6 +1129,7 @@ void zero(char *output_c, unsigned *output_len, char *state)
 
         default:
         {
+            // Any other character than sets error flag
             lex_err_flag = INVALID_TOKEN_CONST_CODE;
             strcpy(state, "esc_num");
             ungetc(input_c, stdin);
@@ -1014,9 +1138,18 @@ void zero(char *output_c, unsigned *output_len, char *state)
     }
 }
 
+/* @brief Number escape sequence starts with 1
+ * 
+ * @param state Array of characters storin actual state of FSM
+ * @param output_c Array of characters storing characters of escape sequence
+ * @param output_len Pointer to actual length of output variable
+ */
+
 void one(char *output_c, unsigned *output_len, char *state)
 {
     char input_c = fgetc(stdin);
+
+    // Next number can be any number from 0 to 9
     if(input_c >= '0' && input_c <= '9')
     {
         output_c[(*output_len)++] = input_c;
@@ -1026,6 +1159,7 @@ void one(char *output_c, unsigned *output_len, char *state)
     }
     else
     {
+        // Any other character than sets error flag
         lex_err_flag = INVALID_TOKEN_CONST_CODE;
         ungetc(input_c,stdin);
         strcpy(state, "esc_num");
@@ -1033,9 +1167,18 @@ void one(char *output_c, unsigned *output_len, char *state)
     }
 }
 
+/* @brief Number escape sequence starts with 2
+ * 
+ * @param state Array of characters storin actual state of FSM
+ * @param output_c Array of characters storing characters of escape sequence
+ * @param output_len Pointer to actual length of output variable
+ */
+
 void two(char *output_c, unsigned *output_len, char *state)
 {
     char input_c = fgetc(stdin);
+
+    // Changing states according to next number
     switch(input_c)
     {
         case '0' ... '4':
@@ -1056,6 +1199,7 @@ void two(char *output_c, unsigned *output_len, char *state)
 
         default:
         {
+            // Any other character than sets error flag
             lex_err_flag = INVALID_TOKEN_CONST_CODE;
             ungetc(input_c, stdin);
             return;
@@ -1063,9 +1207,19 @@ void two(char *output_c, unsigned *output_len, char *state)
     }
 }
 
+
+/* @brief Number escape sequence starts with 00
+ * 
+ * @param state Array of characters storin actual state of FSM
+ * @param output_c Array of characters storing characters of escape sequence
+ * @param output_len Pointer to actual length of output variable
+ */
+
 void zero_zero(char *output_c, unsigned *output_len, char *state)
 {
     char input_c = fgetc(stdin);
+
+    // Last number can be just from 1 to 9
     if(input_c >= '1' && input_c <= '9')
     {
         output_c[*output_len] = input_c;
@@ -1074,6 +1228,7 @@ void zero_zero(char *output_c, unsigned *output_len, char *state)
     }
     else
     {
+        // Any other character than sets error flag
         lex_err_flag = INVALID_TOKEN_CONST_CODE;
         ungetc(input_c, stdin);
         strcpy(state, "esc_num");
@@ -1081,9 +1236,18 @@ void zero_zero(char *output_c, unsigned *output_len, char *state)
     }
 }
 
+/* @brief Number escape sequence starts with 25
+ * 
+ * @param state Array of characters storin actual state of FSM
+ * @param output_c Array of characters storing characters of escape sequence
+ * @param output_len Pointer to actual length of output variable
+ */
+
 void two_five(char *output_c, unsigned *output_len, char *state)
 {
     char input_c = fgetc(stdin);
+
+    // Last number can be just from 0 to 5
     if(input_c >= '0' && input_c <= '5')
     {
         output_c[*output_len] = input_c;
@@ -1092,12 +1256,20 @@ void two_five(char *output_c, unsigned *output_len, char *state)
     }
     else
     {
+        // Any other character than sets error flag
         lex_err_flag = INVALID_TOKEN_CONST_CODE;
         ungetc(input_c, stdin);
         strcpy(state, "esc_num");
         return;
     }
 }
+
+/* @brief Last number can be any number from 0 to 9
+ * 
+ * @param state Array of characters storin actual state of FSM
+ * @param output_c Array of characters storing characters of escape sequence
+ * @param output_len Pointer to actual length of output variable
+ */
 
 void others(char *output_c, unsigned *output_len, char *state)
 {
@@ -1110,6 +1282,7 @@ void others(char *output_c, unsigned *output_len, char *state)
     }
     else
     {
+        // Any other character than sets error flag
         lex_err_flag = INVALID_TOKEN_CONST_CODE;
         ungetc(input_c, stdin);
         strcpy(state, "esc_num");
@@ -1117,10 +1290,18 @@ void others(char *output_c, unsigned *output_len, char *state)
     }
 }
 
+/* @brief Returns actual line number in stdin
+ * 
+ */
+
 int GetLineNumber()
 {
     return line_cnt;
 }
+
+/* @brief Array of keywords
+ * 
+ */
 
 void KeyArrInit()
 {
@@ -1142,3 +1323,6 @@ void KeyArrInit()
     strcpy(arr_keywords[15],"number");
     strcpy(arr_keywords[16],"string");            
 }
+
+
+/**      ----------------       END OF ANALYSIS.C      -------------------     **/
