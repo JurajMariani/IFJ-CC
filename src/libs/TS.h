@@ -23,7 +23,7 @@ void TreeInit(Tree *tree);
  * 	Frees the allocated memory
  * 	@param Tree pointer
  */
-void TreeDestroy(Tree *tree);
+void TreeDestroy(Tree *tree,int func);
 
 /**
  * 	Inserting new variable to tree
@@ -66,7 +66,7 @@ int TS_OpenLayer(TreeSupport *ts);
  * 	Closes a curently opened layer and delets the current tree
  * 	@param TS pointer
  */
-void TS_CloseLayer(TreeSupport *ts);
+void TS_CloseLayer(TreeSupport *ts,int func);
 
 /**
  * 	Closes all Layers and frees memory

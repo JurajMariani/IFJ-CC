@@ -54,6 +54,7 @@ typedef enum {_while_begin,_while_end,_if_begin,_if_else,_if_end,_assign_express
 typedef struct variable{
 	dataType type;
 	int vDefined;
+	int isNil;
 }variable;
 
 typedef struct user_func{
@@ -112,6 +113,7 @@ typedef struct expression_block{
 	char *str;
 	double _double;
 	int _integer;
+	int isZero;
 }expression_block;
 
 /**

@@ -28,7 +28,7 @@ void VL_Dispose(TreeElement **vl){
 }
 
 int ParamCheck(TreeElement* func, BubbleStack_t *stack){
-    if(strcmp(func->name,"write")==0)return 1;
+    if(strcmp(func->name,"write")==0){fprintf(stderr,"on");fflush(stderr); return 1;}
     BubbleStack_t helper;
     BS_Init(&helper);
     if (stack_err_flag){BS_Dispose(stack); comError(99)}
@@ -67,20 +67,20 @@ int SemanticCheck(TreeElement** vl,BubbleStack_t *stack){
     int bad = 0;
     int length=0;
     while (vl[length]!=NULL){length+=1;}
+    while(!BS_IsEmpty(stack)){BS_Push(&helper,BS_TopStack(stack));BS_Pop(stack);}
     for(int i=length-1;i>=0;i--){
-        if(BS_IsEmpty(stack)){BS_Dispose(stack);BS_Dispose(&helper);comError(4)}
-        BS_Push(&helper,BS_TopStack(stack));
-        BS_Pop(stack);
+        if(BS_IsEmpty(&helper)){BS_Dispose(stack);BS_Dispose(&helper);comError(4)}
         variable* temp = (variable*)vl[i]->data;
         if(BS_TopStack(&helper)->dt!= temp->type){
             if(BS_TopStack(&helper)->dt==_integer && temp->type==_number)convert_to_float(BS_TopStack(&helper)); //<-----------------LK
             else if(BS_TopStack(&helper)->dt==_number && temp->type==_integer) convert_to_int(BS_TopStack(&helper));
-            else bad=1;
+            else if(BS_TopStack(&helper)->dt!=_nan){ bad=1;break;}
         }
+        BS_Push(stack,BS_TopStack(&helper));
+        BS_Pop(&helper);
     }
-    if(!BS_IsEmpty(stack)){BS_Dispose(stack);BS_Dispose(&helper);comError(4)}
-
-    while(!BS_IsEmpty(&helper)){BS_Push(stack,BS_TopStack(&helper));BS_Pop(&helper);}
+    //comError(99)
+    if(!BS_IsEmpty(&helper)){BS_Dispose(stack);BS_Dispose(&helper);comError(4)}
 
     BS_Dispose(&helper);
     if(bad)
@@ -253,7 +253,7 @@ int ConvertToBlock(expression_block *block, token* nextToken){
         block->TSPointer=TS_LookVariable(ts,nextToken->data.str);
         if(block->TSPointer == NULL){return UNKNOWN_IDENTIF;}
         block->dt = ((variable*)(block->TSPointer->data))->type;
-        block->str=malloc(sizeof(char)*strlen(nextToken->data.str));
+        block->str=malloc(sizeof(char)*strlen(nextToken->data.str)+1);
         strcpy(block->str,nextToken->data.str);
     }else
     if (nextToken->type==_const){
@@ -263,7 +263,7 @@ int ConvertToBlock(expression_block *block, token* nextToken){
         block->_double=nextToken->data._double;
         block->_integer=nextToken->data._integer;
         if(block->dt==_string){
-            block->str=malloc(sizeof(char)*strlen(nextToken->data.str));
+            block->str=malloc(sizeof(char)*strlen(nextToken->data.str)+1);
             strcpy(block->str,nextToken->data.str);
         }
     }else
@@ -271,8 +271,6 @@ int ConvertToBlock(expression_block *block, token* nextToken){
         block->blockType=_operand_expr;
         block->operType=_constant_oper;
         block->dt=_nan;
-        block->str=malloc(sizeof(char));
-        block->str[0]='\0';
     }
     return 0;
 }
@@ -319,7 +317,10 @@ int TypeCheck(expression_block* operand1,expression_block* sign, expression_bloc
         if (operand1->blockType==_operand_expr && operand1->dt==_string && operand2->blockType==_operand_expr && operand2->dt==_string)
             return 1;
         else
-            return 0;
+            if(operand1->dt==_nan || operand2->dt==_nan)
+                return -1;
+            else
+                return 0;
     }else if (sign-> blockType==_operator_expr && (sign->oper==_Eq || sign->oper==_nEq || sign->oper==_less || sign->oper==_lessEq || sign->oper==_great || sign->oper==_greatEq)){
         if (operand1->blockType==_operand_expr && operand2->blockType==_operand_expr){
             if (operand1->dt==_integer && operand2->dt== _integer)return 1;
@@ -329,15 +330,25 @@ int TypeCheck(expression_block* operand1,expression_block* sign, expression_bloc
             else if (operand1->dt==_string && operand2->dt == _string) return 1;
             else if (operand1->dt==_bool && operand2->dt == _bool) return 1;
             else if ((sign->oper==_Eq || sign->oper==_nEq) && ( operand1->dt==_nan || operand2->dt==_nan)) return 1;
-            return 0;
+            else if(operand1->dt==_nan || operand2->dt==_nan)
+                return -1;
+            else
+                return 0;
         }else
-            return 0;  
+            if(operand1->dt==_nan || operand2->dt==_nan)
+                return -1;
+            else
+                return 0; 
     }else if (sign->blockType==_operator_expr){
+        if((sign->oper==_div||sign->oper==_div2)&&operand2->isZero==1)return -2;
         if(operand1->dt == _integer && operand2->dt==_integer)return 1;
         else if(operand1->dt == _integer && operand2->dt==_number) {convert_to_float(operand1); return 1;} //<----------------------------------------------------------------------------------------------- JUROVE FUNKCIE
         else if(operand1->dt == _number && operand2->dt ==_integer) {convert_to_float(operand2); return 1;}
         else if(operand1->dt == _number && operand2->dt == _number) return 1;
-        else return 0;
+        else if(operand1->dt==_nan || operand2->dt==_nan)
+                return -1;
+            else
+                return 0;
     }
     else return 0;
 
@@ -432,11 +443,21 @@ void TAB_Terminalize(BubbleStack_t *stack,token *nextToken,int* termNumber){
         if(newTerm==NULL){free(operand2);BS_Dispose(stack);comError(99)}
         newTerm->blockType=_operand_expr;
         newTerm->operType=_not_terminal_oper;
-        newTerm->dt=operand2->dt;
+        
+        if(operand2->operType == _variable_oper){
+            if(((variable*)(operand2->TSPointer->data))->isNil==1)
+                newTerm->dt=_nan;
+            else
+                newTerm->dt=operand2->dt;
+        }else
+            newTerm->dt=operand2->dt;
+
         newTerm->_integer=*termNumber;
         newTerm->_double=exprCounter;
         newTerm->TSPointer=NULL;
         newTerm->str=NULL;
+        if(operand2->dt==_integer && operand2->_integer==0) newTerm->isZero=1;
+        else newTerm->isZero=0;
         (*termNumber)++;
         var_to_term_assign(newTerm,operand2);//<-----------------------------------------------------------LK FIXME
         BS_Push(stack,newTerm);
@@ -450,7 +471,8 @@ void TAB_Terminalize(BubbleStack_t *stack,token *nextToken,int* termNumber){
     //Unary Operand
     if (operand1->blockType==_misc_expr && operand1->em==_bgnMark){
         free(operand1);
-        if(TypeCheck(operand2,sign,NULL)==0){free(operand2);free(sign); BS_Dispose(stack);comError(6)}
+        int tp = TypeCheck(operand2,sign,NULL);
+        if(tp!=1){free(operand2);free(sign); BS_Dispose(stack); if(tp==-1){comError(8)}else {comError(6)}}
         expression_block *newTerm = malloc(sizeof(expression_block));
         if(newTerm==NULL){free(operand2);free(sign);BS_Dispose(stack);comError(6)}
         newTerm->blockType=_operand_expr;
@@ -473,7 +495,8 @@ void TAB_Terminalize(BubbleStack_t *stack,token *nextToken,int* termNumber){
     //diary operand *duary *bilingual *binary
     if(bumper->blockType==_misc_expr && bumper->em == _bgnMark){
         free(bumper);
-        if (TypeCheck(operand1,sign,operand2)==0){free(operand1);free(operand2);free(sign); BS_Dispose(stack);comError(6)}
+        int tp = TypeCheck(operand1,sign,operand2);
+        if (tp!=1){free(operand1);free(operand2);free(sign); BS_Dispose(stack); if(tp==-2){comError(9)}else if(tp == -1){comError(8)} else{ comError(6)}}
         expression_block *newTerm = malloc(sizeof(expression_block));
         if(newTerm==NULL){free(operand1);free(operand2);free(sign);BS_Dispose(stack);comError(99)}
         newTerm->blockType=_operand_expr;

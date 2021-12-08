@@ -30,23 +30,20 @@
 
 int param_cter;
 
-//Function to free all the allocs - TBD
+//Function to free all the allocs
 void FreeTheseBees(TreeSupport *ts){
-    // Bees Knees 
-    (void)ts;
+    TS_COLLAPSE(&ts);
 
 }
 
-//DNT
+//Pushes datatype to func
 dataType* PushDataType(dataType *toPush,dataType newType){
     int count = 1;
     while (toPush[count-1]!=_ender){
         count+=1;
     }
-    dataType* help;
-    help = realloc(toPush,sizeof(dataType)*count + 1);
-    if (help==NULL)return NULL;
-    toPush=help;
+    toPush = realloc(toPush,sizeof(dataType)*count + 15);
+    if (toPush==NULL)return NULL;
     toPush[count-1]=newType;
     toPush[count]=_ender;
 
@@ -73,44 +70,7 @@ char** PushParamName(char** param_names, char* param_name)
     param_names[count] = NULL;    
     return param_names;
 }
-/*
-int update_param_name(char* param_name, char** param_names, int position)
-{
-    int index = 0;
-    int max = 0;
 
-    while(param_names[max] != NULL)
-        {
-            max++;
-        }
-
-    if (position < 0)
-    {
-        while(param_names[index][0] != '\0')
-        {
-            index++;
-            if (index == max )
-                break;
-        }
-
-        if (param_names[index] == NULL)
-            return CONFLICTING_NUMBER_OF_PARAMS;   // define Conflicting number of parameters ' ' new integer 
-        
-        if (param_names[index][0] == '\0')
-            strcpy(param_names[index], param_name);
-    }
-    else
-    {
-        if ( position < max )
-            strcpy(param_names[position], param_name);
-        else
-            return INTERNAL_UPDATE_PARAM_NAME_ERROR;   // internal error, should not happen
-    }
-
-    return 0;
-
-}
-*/
 //DNT
 user_func* CreateFunctionData(){
     user_func* newData = malloc(sizeof(user_func));
@@ -121,15 +81,6 @@ user_func* CreateFunctionData(){
     newData->param_names = malloc (sizeof(char*));
     if ( newData->param_names == NULL )
     {
-        free(newData->params);
-        free(newData);
-        return NULL;
-    }
-
-    newData->param_names[0] = malloc (100 * sizeof(char));
-    if ( newData->param_names[0] == NULL )
-    {
-        free(newData->param_names);
         free(newData->params);
         free(newData);
         return NULL;
@@ -151,6 +102,7 @@ variable* CreateVariableData(dataType newType){
     if(newData==NULL)return NULL;
     newData->type=newType;
     newData->vDefined=0;
+    newData->isNil=0;
     return newData;
 }
 
@@ -162,7 +114,7 @@ void F_Prog(token* nextToken){
         if (!IFIdentif){RError(2)}//<---------------------------------------_Error
         if (TS_LookFunction(ts,nextToken->data.str)!=NULL){ RError(4)}//<---------------------------------------_Error
         user_func* newData = CreateFunctionData();
-        char *newStr = malloc(sizeof(char)*strlen(nextToken->data.str));
+        char *newStr = malloc(sizeof(char)*strlen(nextToken->data.str)+1);
         if(newStr==NULL){RError(99)}//<---------------------------------------_Error
         strcpy(newStr,nextToken->data.str);
         if (newData==NULL){free(newStr); RError(99);}//<---------------------------------------_Error
@@ -197,7 +149,7 @@ void F_Prog(token* nextToken){
         }else{
             user_func* newData = CreateFunctionData();
             if (newData==NULL) {RError(99)}//<---------------------------------------_Error
-            newStr = malloc(sizeof(char)*strlen(nextToken->data.str));
+            newStr = malloc(sizeof(char)*strlen(nextToken->data.str)+1);
             if(newStr==NULL){free(newData);RError(99)}//<---------------------------------------_Error
             strcpy(newStr,nextToken->data.str);
             if(TS_InsertFunction(ts,newStr,w_func,newData)==MALLOC_ERR_CODE) {RError(99)}//<---------------------------------------_Error
@@ -217,14 +169,17 @@ void F_Prog(token* nextToken){
         while(((user_func*)function->data)->params[i]!=_ender){
             variable *new=CreateVariableData(((user_func*)function->data)->params[i]);
             if(new==NULL){RError(99)}
-            if(TS_InsertVariable(ts,((user_func*)function->data)->param_names[i],((user_func*)function->data)->params[i],new)!=0){free(new); RError(99)}
+            char* nwSt = malloc(1+sizeof(char)*strlen(((user_func*)function->data)->param_names[i]));
+            if(nwSt == NULL){free(new); RError(99)}
+            strcpy(nwSt,((user_func*)function->data)->param_names[i]);
+            if(TS_InsertVariable(ts,nwSt,((user_func*)function->data)->params[i],new)!=0){free(new); RError(99)}
             i++;
         }
 
         G_function_bgn(function);//<---------------------------------------------_LK
 
         F_StList(nextToken,TS_LookFunction(ts,newStr));
-        TS_CloseLayer(ts);
+        TS_CloseLayer(ts,0);
         if (!IFKwEnd){RError(2)}//<---------------------------------------_Error
         ((user_func*)func->data)->vDefined=1;                              
         NEXT;
@@ -377,57 +332,6 @@ void F_SecondParamFunction(token *nextToken,TreeElement* func,int globaled){
         {RError(2)}
 }
 
-/*
-void F_Params(token* nextToken, char* func_name)
-{
-    int output = 0;
-    char** test;
-
-    TreeElement* func = TS_LookFunction(ts, func_name);
-    dataType* param_array = ((user_func*)(func->data))->params;
-
-    if ( IFKwInteger || IFKwString || IFKwNumber || IFKwNil )
-    {
-        param_cter++;
-        test = PushParamName(((user_func*)func->data)->param_names, "\0");
-        if (test == NULL) {RError(99)}
-        ((user_func*)func->data)->param_names = test;
-        dataType tmp = _ender;
-        F_Type(nextToken, &tmp);
-        dataType *newParamAddr=PushDataType(((user_func*)func->data)->params,tmp);
-        if(newParamAddr==NULL){RError(99)}
-        ((user_func*)func->data)->params = newParamAddr;
-        NEXT;
-        F_SecondParam(nextToken, func_name);
-    }
-    else if ( IFIdentif ){
-        param_cter++;
-        test = PushParamName(((user_func*)func->data)->param_names, NULL);
-        if (test == NULL) {RError(99)}
-        ((user_func*)func->data)->param_names = test;
-        output = update_param_name(nextToken->data.str, ((user_func*)func->data)->param_names, param_cter);
-        if(output==INTERNAL_UPDATE_PARAM_NAME_ERROR) {RError(99)}//<---------------------------------------_Error
-        else if (output == CONFLICTING_NUMBER_OF_PARAMS){RError(4)}//<---------------------------------------_Error
-        NEXT;
-        if (!IFDoubleKomma){RError(2)}
-        NEXT;
-        if ( IFKwInteger || IFKwString || IFKwNumber || IFKwNil ){
-            dataType tmp =_ender;
-            F_Type(nextToken, &tmp);
-            dataType* newParamAddr = PushDataType(param_array,tmp);
-            if(newParamAddr==NULL){RError(99)}
-            ((user_func*)func->data)->params = newParamAddr;
-        }else {
-            RError(2)
-        }
-        NEXT;
-        F_SecondParam(nextToken, func_name);
-    }else
-    {
-        if ( !IFRightBracket )
-            {RError(2)}
-    }
-}*/
 
 void F_ParamsR(token *nextToken, char* name_func,int globaled)
 {   
@@ -462,20 +366,7 @@ void F_ParamsR(token *nextToken, char* name_func,int globaled)
     else
         {RError(2)}
 }
-/*
-void F_SecondParam(token* nextToken, char* name_func)
-{ 
-    if ( IfKomma )
-    {
-        NEXT
-        F_Params(nextToken, name_func);
-    }
-    else if( IFRightBracket )
-        return;
-    else
-        {RError(2)}
-}
-*/
+
 
 void F_SecondParamR(token* nextToken, char* name_func,int  globaled)
 {
@@ -557,6 +448,7 @@ void F_Statement(token* nextToken, TreeElement* curFunc){
         int thisWhile = while_counter;
         NEXT;
         G_WhileBGN();//<---------------------------------------------------------------------LF
+        if(TS_OpenLayer(ts)!=0){RError(99)}
         expression_block *ret=F_Expression(nextToken);
         if (ret->dt==_bool){
             G_CompareBool(ret);//<------------------------------------------------------------LF
@@ -568,6 +460,7 @@ void F_Statement(token* nextToken, TreeElement* curFunc){
         NEXT;
         F_StList(nextToken,curFunc);
         if(!IFKwEnd){RError(2)}//<-------------------------------------------------Error
+        TS_CloseLayer(ts,0);
         G_WhileEND(thisWhile);//<------------------------------------------------------------------------LF
         NEXT;
         return;
@@ -582,7 +475,7 @@ void F_Statement(token* nextToken, TreeElement* curFunc){
         NEXT;
         if(TS_OpenLayer(ts)!=0){RError(99)}
         F_StList(nextToken,curFunc);
-        TS_CloseLayer(ts);
+        TS_CloseLayer(ts,0);
         G_IfELSE(thisIf);
         if (IFKwElse)
             F_Else(nextToken,curFunc);
@@ -596,7 +489,7 @@ void F_Statement(token* nextToken, TreeElement* curFunc){
         if(!IFIdentif){RError(2)}//<----------------------------------------------Error
         if(TS_LookLayerVariable(ts,nextToken->data.str)!=NULL){RError(3)}//<----------------------------------------------Error
         if(TS_LookFunction(ts,nextToken->data.str)!=NULL){RError(3)}//<----------------------------------------------Error
-        char* newVarName = malloc((strlen(nextToken->data.str)+1)*sizeof(char));
+        char* newVarName = malloc((1+strlen(nextToken->data.str)+1)*sizeof(char));
         if (newVarName==NULL){RError(99)}//<---------------------------------------_Error
         strcpy(newVarName,nextToken->data.str);
         NEXT;
@@ -628,30 +521,39 @@ void F_Statement(token* nextToken, TreeElement* curFunc){
         NEXT;
         if(!IFLeftBracket){RError(2)}
         NEXT;
-        BubbleStack_t paramStack;
-        BubbleStack_t returnStack;
-        BubbleStack_t helperS;
-        BS_Init(&paramStack);
+
+        BubbleStack_t *paramStack = malloc(sizeof(BubbleStack_t));
+        if(paramStack == NULL){RError(99)}
+        BubbleStack_t *returnStack= malloc(sizeof(BubbleStack_t));
+        if(returnStack == NULL){free(paramStack); RError(99)}
+        BubbleStack_t *helperS= malloc(sizeof(BubbleStack_t));
+        if(helperS==NULL){free(paramStack); free(returnStack); RError(99)}
+
+        BS_Init(paramStack);
         if(stack_err_flag){RError(99)}
-        BS_Init(&returnStack);
+        BS_Init(returnStack);
         if(stack_err_flag){RError(99)}
-        BS_Init(&helperS);
+        BS_Init(helperS);
         if(stack_err_flag){RError(99)}
-        F_SentPar(nextToken,&paramStack);
-        if (!IFRightBracket){BS_Dispose(&paramStack); BS_Dispose(&returnStack);BS_Dispose(&helperS); RError(2)}//<---------------------------------------_Error
+
+        F_SentPar(nextToken,paramStack);
+        if (!IFRightBracket){BS_Dispose(paramStack); BS_Dispose(returnStack);BS_Dispose(helperS); RError(2)}//<---------------------------------------_Error
         NEXT;
-        int help = ParamCheck(func,&paramStack);
+        int help = ParamCheck(func,paramStack);
         if(help!=1){RError(5)}
 
-        while(!BS_IsEmpty(&paramStack)){
-            expression_block* rr = BS_TopStack(&paramStack);
-            BS_Push(&helperS,rr);
-            BS_Pop(&paramStack);
+
+        while(!BS_IsEmpty(paramStack)){
+            expression_block* rr = BS_TopStack(paramStack);
+            BS_Push(helperS,rr);
+            BS_Pop(paramStack);
         }
-        G_CallFunc(func,&helperS,&returnStack );//<---------------------------------------------------------_Lukasova funkci
-        BS_Dispose(&paramStack);
-        BS_Dispose(&returnStack);
-        BS_Dispose(&helperS);
+        DebbugPrintStack(helperS);
+        BS_Dispose(paramStack);
+        G_CallFunc(func,helperS,returnStack);//<---------------------------------------------------------_Lukasova funkci
+        BS_Dispose(returnStack);
+        BS_Dispose(helperS);
+        free(paramStack);free(returnStack);free(helperS);
         return;
     }else if(IFIdentif && TS_LookVariable(ts,nextToken->data.str)!=NULL){
         TreeElement **vl=VL_INIT();
@@ -683,7 +585,7 @@ void F_Else(token* nextToken,TreeElement* curFunc){
     NEXT;
     if(TS_OpenLayer(ts)!=0){RError(99)}
     F_StList(nextToken,curFunc);
-    TS_CloseLayer(ts);
+    TS_CloseLayer(ts,0);
 }
 
 void Returner(token* nextToken,BubbleStack_t *returnStack){
@@ -773,14 +675,19 @@ void F_ExprAfterLoc(token* nextToken,TreeElement* targetVar){
                 if(help!=0){BS_Dispose(&mockStack);BS_Dispose(&stack);RError(99)}//<--------------------------------------------Error
                 if(SemanticCheck(vl,&mockStack)!=1){BS_Dispose(&mockStack);BS_Dispose(&stack);RError(4)}//<--------------------------Error
                 G_AssignToVar(targetVar,BS_TopStack(&mockStack));
+                if(BS_TopStack(&mockStack)->dt==_nan) ((variable*)targetVar->data)->isNil=1; else ((variable*)targetVar->data)->isNil=0; 
                 BS_Dispose(&mockStack);
                 BS_Dispose(&stack);
+                VL_Dispose(vl);
                 return;       
             }else{
                 expression_block* block=F_Expression(nextToken);
                 if (C_AssignToVar(targetVar,block)){
                     G_AssignToVar(targetVar,block);//<----------------------------------------------------LK
                     ((variable*)targetVar->data)->vDefined=1;
+                    //DebbugPrintExpress(block);
+                    if(block->dt==_nan) ((variable*)targetVar->data)->isNil=1; else ((variable*)targetVar->data)->isNil=0; 
+                    free(block);
                     return;
                 }else{
                     RError(4)//<------------------------------------------------------------------------------Error
@@ -791,6 +698,10 @@ void F_ExprAfterLoc(token* nextToken,TreeElement* targetVar){
                 if (C_AssignToVar(targetVar,block)){
                     G_AssignToVar(targetVar,block);//<------------------------------------------------------------___LK
                     ((variable*)targetVar->data)->vDefined=1;
+                    //DebbugPrintExpress(block);
+                    if(block->dt==_nan) ((variable*)targetVar->data)->isNil=1; else ((variable*)targetVar->data)->isNil=0; 
+                    //fprintf(stderr,"%d",((variable*)targetVar->data)->isNil);
+                    free(block);
                     return;
                 }else{
                     RError(4)// <-------------------------------------------------------------Error
@@ -857,7 +768,6 @@ void ashes_to_ashes_dust_to_dust()
     // free ( everything and anything and everything and anything and everything and anything and everything and anything amd all of the time )
     
     FreeTheseBees(ts);
-    //dtroy_variable_name_catcher();
     return;
 }
 
@@ -868,7 +778,7 @@ int PushBuiltInFunctions(){
     new->vDefined=1;
     new->returns = PushDataType( new->returns,_integer);
     if(new->returns==NULL){free(new); return MALLOC_ERR_CODE;}
-    char *readi = malloc(sizeof(char)*6);
+    char *readi = malloc(sizeof(char)*10);
     if(readi==NULL)return MALLOC_ERR_CODE;
     strcpy(readi,"readi");
     int help = TS_InsertFunction(ts,readi,w_func,new);
@@ -879,7 +789,7 @@ int PushBuiltInFunctions(){
     new->vDefined=1;
     new->returns = PushDataType( new->returns,_number);
     if(new->returns==NULL){free(new); return MALLOC_ERR_CODE;}
-    char *readn = malloc(sizeof(char)*6);
+    char *readn = malloc(sizeof(char)*10);
     if(readn==NULL)return MALLOC_ERR_CODE;
     strcpy(readn,"readn");
     help = TS_InsertFunction(ts,readn,w_func,new);
@@ -890,7 +800,7 @@ int PushBuiltInFunctions(){
     new->vDefined=1;
     new->returns = PushDataType( new->returns,_string);
     if(new->returns==NULL){free(new); return MALLOC_ERR_CODE;}
-    char *reads = malloc(sizeof(char)*6);
+    char *reads = malloc(sizeof(char)*10);
     if(reads==NULL)return MALLOC_ERR_CODE;
     strcpy(reads,"reads");
     help = TS_InsertFunction(ts,reads,w_func,new);
@@ -903,7 +813,7 @@ int PushBuiltInFunctions(){
     if(new->returns==NULL){free(new); return MALLOC_ERR_CODE;}
     new->params = PushDataType( new->params,_number);
     if(new->params==NULL){free(new); return MALLOC_ERR_CODE;}
-    char *tointeger = malloc(sizeof(char)*10);
+    char *tointeger = malloc(sizeof(char)*15);
     if(tointeger==NULL)return MALLOC_ERR_CODE;
     strcpy(tointeger,"tointeger");
     help = TS_InsertFunction(ts,tointeger,w_func,new);
@@ -920,7 +830,7 @@ int PushBuiltInFunctions(){
     if(new->params==NULL){free(new); return MALLOC_ERR_CODE;}
     new->params = PushDataType( new->params,_number);//<----------------------------------_NOT SURE ABOUT THIS
     if(new->params==NULL){free(new); return MALLOC_ERR_CODE;}
-    char *substr = malloc(sizeof(char)*7);
+    char *substr = malloc(sizeof(char)*10);
     if(substr==NULL)return MALLOC_ERR_CODE;
     strcpy(substr,"substr");
     help = TS_InsertFunction(ts,substr,w_func,new);
@@ -935,7 +845,7 @@ int PushBuiltInFunctions(){
     if(new->params==NULL){free(new); return MALLOC_ERR_CODE;}
     new->params = PushDataType( new->params,_integer);
     if(new->params==NULL){free(new); return MALLOC_ERR_CODE;}
-    char *ord = malloc(sizeof(char)*4);
+    char *ord = malloc(sizeof(char)*10);
     if(ord==NULL)return MALLOC_ERR_CODE;
     strcpy(ord,"ord");
     help = TS_InsertFunction(ts,ord,w_func,new);
@@ -948,7 +858,7 @@ int PushBuiltInFunctions(){
     if(new->returns==NULL){free(new); return MALLOC_ERR_CODE;}
     new->params = PushDataType( new->params,_integer);
     if(new->params==NULL){free(new); return MALLOC_ERR_CODE;}
-    char *chr = malloc(sizeof(char)*4);
+    char *chr = malloc(sizeof(char)*10);
     if(chr==NULL)return MALLOC_ERR_CODE;
     strcpy(chr,"chr");
     help = TS_InsertFunction(ts,chr,w_func,new);
@@ -957,13 +867,12 @@ int PushBuiltInFunctions(){
     new = CreateFunctionData();
     if(new==NULL)return MALLOC_ERR_CODE;
     new->vDefined=1;
-    char *write = malloc(sizeof(char)*6);
+    char *write = malloc(sizeof(char)*10);
     if(write==NULL)return MALLOC_ERR_CODE;
     strcpy(write,"write");
     help = TS_InsertFunction(ts,write,w_func,new);
     if (help!=0){free(write);free(new);return MALLOC_ERR_CODE;}
     return 0;
-    //TODO - others
 }
 
 void key_arr_init(){
@@ -1019,6 +928,51 @@ int mainParseFunction(){
         F_Prog(nextToken);
     }
     TS_FunctionCaller();
-    FreeTheseBees(ts);
+    free(nextToken);
     return 0;
 }
+
+/*
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWNXXXXXWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWNXXKXXWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWXxl:;:::::;coONWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWXxl;'.....,:oONWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWOc';lx0KXXXKOdc,;oKWWWWWWWWWWWWWWWWWWWWWWWWWW0c.             'oKWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWXl.;kNWWWWWWWWWWWXx,'xNWNXK0OOkxxxxxxkO00XNWWXl.                 'xNWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWXc.oNWWWWWWWWWWWWWWWK:.,:;;;;;:;;.       ...,;'                    .oNWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWd.cNWWWWWWWWWWWWWWWWWXkxkO0XNWWWNc                                  .kWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWN:.kWWWWWWWWWWWWWWWWWWWWWWWWWWWWWNc                                   cNWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWc.xWWWWWWWWWWWWWWWWWWWWWWWWWWWWWNc                                   cNWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWx.:XWWWWWWWWWWWWWWWWWWWWWWWWWWWWNc                                  .xWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWNo.:KWWWWWWWWWWWWWWWWWWWWWWWWWWWNc                                  lNWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWX:.oNWWWWWWWWWWWWWWWWWWWWWWWWWWNc                                 :XWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWXl.lXWWWWWWWWWWWWWWWWWWWWWWWWWWWNc                                 .dNWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWK;.dNWWWWWWWWWWWWWWWWWWWWWWWWWWWWNc                                   lXWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW0,.xWWWWWWWWWWWWWWWWXOxkKWWWWWWWWWNc                          ':.       cXWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWK;.xWWWWWWWWWWWWWWWKc.   .:0WWWWWWWNc             ,,        .:xKl         lNWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWNl.oWWWWWWWWWWWWWWWWl       :NWWWWWWNc           .,lc..''...,oKNd.         .dWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWk.;XWWWWWWWWWWWWWWWWo       lNWWWWWNX:                .:,.    .,.           '0WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWNc.dWWWWWWWWWWWWWWWWWNx:...;xKKkoc:;::'.....                                  oWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWK,.OWWWWWWWWWWWWWWWWWWWWXKX0d;,;cdxOOOkxkkO0Oxo:'                             :XWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW0';XWWWWWWWWWWWWWWWWWWWWWKc';dKNWWKo,.....';xXMWNOl.                          ,KWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW0';XWWWWWWWWWWWWWWWWWWWWk',kNWWWWNl         .kWWWWWKl.              .         '0WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW0';XWWWWWWWWWWWWWWWWWWWk.,KWWWWWWWXxc'   .;lONWWWWWWWx.          .,,.         '0WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWX;.OWWWWWWWWWWWWWWWWWWNc.dWWWWWWWWWWWX; .oWWWWWWWWWWWN:         .c'           ;XWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWo.lWWWWWWWWWWWWWWWWWWWo.lNWWWWWWWWWMX; .oWWWWWWWWWWW0,    .:xd.              lWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWK,.kWWWWWWWWWWWWWWWWWWXl.:x0XWWWNKOo,...':x0XNWWNKOo'':l:.;0k;              '0WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWO.'0WWWWWWWWWWWWWWWWWWNOl,.';;,'.   ,0XOo:;',::::' ,KWNd. .               .xWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWO''kWWWWWWWWWWWWWWWWWWWWK;.lo.     ,KMMWW0',k0O0d.'l:.                  .xWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW0;.lKWWWWWWWWWWWWWWWWWWW0,.xOl'   .lddoo:..::,..                      'OWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWXx,'dXWWWWWWWWWWWWWWWWWWK:.lKX0xooooodddxd:.                       .lXWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWXd,'l0NWWWWWWWWWWWWWWWWNk;'cx0XNXXX0Odc'                       .c0WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWXx:';o0NWWWWWWWWWWWWWWWNOo:::,....                         'oKWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW0d;';cx0NWWWWWWWWWWWWWWWNK:                          'ckNWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWKxl;,,:ox0XNWWWWWWWWWWNc                      .:oONWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWNKko:;,,,;clddkOO000;                .';lxOXWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWX0kdoc:,,,,,,'.........',;cloxOKNWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWNNXXKKKK0K0KKXXNWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWTrust me, this was really despair inductingW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+*/

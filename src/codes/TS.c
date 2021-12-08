@@ -4,30 +4,7 @@
 #include <stdio.h>
 #include "../libs/TS.h"
 
-/*
-//DNT
-user_func* CreateFunctionData(){
-    user_func* newData = malloc(sizeof(user_func));
-    if (newData == NULL) return NULL;
-    newData->params=malloc(sizeof(dataType));
-    if(newData->params==NULL){free(newData); return NULL;}
-    newData->returns=malloc(sizeof(dataType));
-    if(newData->returns==NULL){free(newData->params);free(newData);return NULL;}
-    newData->params=NULL;
-    newData->returns=NULL;
-    newData->vDefined=0;
-    return newData;
-}
 
-//DNT
-variable* CreateVariableData(dataType newType){
-    variable *newData = malloc(sizeof(variable));
-    if(newData==NULL)return NULL;
-    newData->type=newType;
-    newData->vDefined=0;
-    return newData;
-}
-*/
 /*
 	Tree
 */
@@ -35,22 +12,35 @@ void TreeInit(Tree *tree){
 	tree->root=NULL;
 }
 
-void TreeDive(TreeElement *element){
+void TreeDive(TreeElement *element,int func){
 	TreeElement *hElement=element->left;
 	if(hElement!=NULL){
-		TreeDive(hElement);
+		TreeDive(hElement,func);
 	}
 	hElement=element->right;
 	if(hElement!=NULL){
-		TreeDive(hElement);
+		TreeDive(hElement,func);
+	}
+	if(func){
+		user_func* dt=element->data;
+		int i=0;
+		while (dt->params[i]!=_ender)
+		{
+			free(dt->param_names[i]);
+			i++;
+		}
+		free(dt->param_names);
+		free(dt->params);
+		free(dt->returns);
 	}
 	free(element->data);
+	free(element->name);
 	free(element);
 }
 
-void TreeDestroy(Tree *tree){
+void TreeDestroy(Tree *tree,int func){
 	if(tree->root!=NULL)
-		TreeDive(tree->root);
+		TreeDive(tree->root,func);
 	tree->root=NULL;
 }
 
@@ -156,7 +146,7 @@ int TS_Init(TreeSupport **ts){
     if((*ts)->curLayer==NULL){free(*ts); return MALLOC_ERR_CODE;}
 	(*ts)->functionLayer=(*ts)->curLayer;
 	if(TS_OpenLayer(*ts)!=0){
-		TS_CloseLayer(*ts);
+		TS_CloseLayer(*ts,0);
 		return MALLOC_ERR_CODE;
 	}
 	(*ts)->bounceLayer=(*ts)->curLayer;
@@ -171,20 +161,25 @@ int TS_OpenLayer(TreeSupport *ts){
 	return 0;
 }
 
-void TS_CloseLayer(TreeSupport *ts){
+void TS_CloseLayer(TreeSupport *ts,int func){
 	TreeLayer *toDelete = ts->curLayer;
 	ts->curLayer=ts->curLayer->prevLayer;
-	TreeDestroy(toDelete->tree);
+	TreeDestroy(toDelete->tree,func);
 	free(toDelete->tree);
 	free(toDelete);
 }
 
 void TS_COLLAPSE(TreeSupport **ts){
+	if(*ts == NULL)return;
 	while((*ts)->curLayer!=NULL){
-		TS_CloseLayer(*ts);
+		if((*ts)->curLayer==(*ts)->functionLayer)
+			TS_CloseLayer(*ts,1);
+		else
+			TS_CloseLayer(*ts,0);
 	}
 	free(*ts);
 	*ts=NULL;
+	//fprintf(stderr,"got");fflush(stderr);
 }
 
 int TS_InsertVariable(TreeSupport *ts, char* name,treeElementType type,void* data){

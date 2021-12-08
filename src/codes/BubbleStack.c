@@ -18,7 +18,7 @@ void BS_Init(BubbleStack_t* stack)
         return;
     }
 
-    stack->BS_Element = (expression_block**) malloc(BS_MAX_ELEMS * sizeof(expression_block*));
+    stack->BS_Element = malloc(300* sizeof(expression_block*));
 
     stack->BS_TopIndex = -1;
 }

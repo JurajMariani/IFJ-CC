@@ -16,19 +16,75 @@ typedef enum {_tab_shift,_tab_equals,_tab_terminalize,_tab_end}actions;
 #define IsTerminal (block->blockType!=_operand_expr && block->operType != _not_terminal_oper)
 
 //VL FUNCS
-
+/**
+ * @brief Inits array of variables, use in multiple assignments
+ * 
+ * @return TreeElement** 
+ */
 TreeElement** VL_INIT();
+
+/**
+ * @brief Appends a new variable, use in multiple assignment
+ * 
+ * @param vl 
+ * @param new 
+ * @return TreeElement** 
+ */
 TreeElement** VL_PUSH(TreeElement **vl,TreeElement* new);
 
+/**
+ * @brief Disposes of array of vars
+ * 
+ */
 void VL_Dispose (TreeElement **);
 
+/**
+ * @brief Checks if function has correct parametres, and converts the ints and floats if needed
+ * 
+ * @param func 
+ * @param stack 
+ * @return int 
+ */
 int ParamCheck(TreeElement* func, BubbleStack_t *stack);
+
+/**
+ * @brief In assign, checks if types are compatible
+ * 
+ * @return int 
+ */
 int SemanticCheck(TreeElement**,BubbleStack_t *);
+
+/**
+ * @brief In return, checks if all returning values are of correct type and adds nil values if needed, also disposess of excess values
+ * 
+ * @return int 
+ */
 int ReturnsCheck(TreeElement *, BubbleStack_t *);
+
+/**
+ * @brief Helping function that just appends elements of one stack to other
+ * 
+ */
 void MoveStack(BubbleStack_t*, BubbleStack_t*);
+
+/**
+ * @brief In assignment of single variable
+ * 
+ * @return int 
+ */
 int C_AssignToVar(TreeElement* , expression_block* );
 
+/**
+ * @brief Recursive function, that checks if all used functions were defined
+ * 
+ * @param root 
+ */
 void TS_Looper(TreeElement* root);
+
+/**
+ * @brief Calls TS_Looper, to check if all used functions were defined
+ * 
+ */
 void TS_FunctionCaller();
 
 /**
@@ -99,7 +155,7 @@ int TypeCheck(expression_block* operand1,expression_block* sign, expression_bloc
 void GetClosestTerminal(BubbleStack_t *stack, expression_block **block);
 
 /**
- * @brief Makes < operation
+ * @brief Makes < operation from tab
  * 
  * @param stack 
  * @param nextToken  
@@ -115,7 +171,7 @@ void TAB_Shift(BubbleStack_t *stack,token *nextToken);
 void TAB_Equals(BubbleStack_t *stack, token *nextToken);
 
 /**
- * @brief Makes > operation 
+ * @brief Makes > operation from tab
  * 
  * @param stack 
  * @param nextToken 
@@ -134,7 +190,7 @@ void TAB_Terminalize(BubbleStack_t *stack,token *nextToken,int* termNumber);
 actions ChooseAction(BubbleStack_t *stack,token* nextToken);
 
 /**
- * @brief Cycle of suffering eternal 
+ * @brief Cycle of suffering eternal, main cycle that resolves expression
  * 
  * @param stack 
  * @param nextToken 
